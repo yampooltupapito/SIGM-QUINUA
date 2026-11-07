@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Control de Vencimientos y Alertas | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y emisión de alertas -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Control de Vencimientos</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Control Centralizado de Vencimientos y Alertas
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Monitoreo anticipado de plazos de vigencia de contratos de ocupación y autorizaciones comerciales.</p>
+        </div>
+
+        <button onclick="emitirAlertasVencimiento()"
+                sec:authorize="hasAuthority('MERCADOS_CONTRATO_APROBAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            Emitir Alertas a Notificaciones
+        </button>
+    </div>
+
+    <!-- Pestañas: Próximos a Vencer vs Vencidos -->
+    <div class="flex items-center gap-3 border-b border-[#334155]/60 pb-3">
+        <button onclick="mostrarPestana('tab-proximos')" id="btn-tab-proximos"
+                class="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow transition-colors">
+            Próximos a Vencer
+            <span class="ml-1.5 px-2 py-0.5 text-[10px] bg-blue-900/60 rounded-full" th:text="${proximos.size()}">0</span>
+        </button>
+        <button onclick="mostrarPestana('tab-vencidos')" id="btn-tab-vencidos"
+                class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            Vencidos / Plazo Expirado
+            <span class="ml-1.5 px-2 py-0.5 text-[10px] bg-rose-950 text-rose-400 rounded-full" th:text="${vencidos.size()}">0</span>
+        </button>
+    </div>
+
+    <!-- Tabla 1: Próximos a Vencer -->
+    <div id="tab-proximos" class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg">
+        <div class="p-4 border-b border-[#334155]/40 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Instrumentos con Vencimiento en los Próximos Días</span>
+            <span class="text-[10px] text-slate-400">Ordenados por días restantes de vigencia</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                <tr>
+                    <th class="px-5 py-3">Tipo</th>
+                    <th class="px-5 py-3">Código</th>
+                    <th class="px-5 py-3">Comerciante</th>
+                    <th class="px-5 py-3">Puesto / Mercado</th>
+                    <th class="px-5 py-3">Fecha Fin</th>
+                    <th class="px-5 py-3">Días Restantes</th>
+                    <th class="px-5 py-3">Alerta</th>
+                    <th class="px-5 py-3 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40">
+                <tr th:if="${proximos.empty}">
+                    <td colspan="8" class="px-6 py-10 text-center text-slate-400">
+                        No hay documentos próximos a vencer en el período configurado.
+                    </td>
+                </tr>
+                <tr th:each="v : ${proximos}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="px-5 py-3.5">
+                        <span th:if="${v.tipoDocumento == 'CONTRATO'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-900/40 text-blue-400 border border-blue-800">CONTRATO</span>
+                        <span th:if="${v.tipoDocumento == 'AUTORIZACION'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-900/40 text-purple-400 border border-purple-800">AUTORIZACIÓN</span>
+                    </td>
+                    <td class="px-5 py-3.5 font-mono font-bold text-slate-200" th:text="${v.codigo}">-</td>
+                    <td class="px-5 py-3.5">
+                        <span class="font-semibold text-white" th:text="${v.comercianteNombre}">-</span>
+                        <div class="text-[10px] text-slate-400" th:text="${v.comercianteDocumento}">-</div>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="text-slate-200" th:text="${v.mercadoNombre}">-</span>
+                        <div class="text-[10px] text-slate-400" th:text="${'Puesto ' + v.puestoCodigo}">-</div>
+                    </td>
+                    <td class="px-5 py-3.5 font-semibold text-slate-200" th:text="${v.fechaFin}">-</td>
+                    <td class="px-5 py-3.5 font-bold text-amber-400" th:text="${v.diasRestantes + ' días'}">-</td>
+                    <td class="px-5 py-3.5">
+                        <span th:if="${v.alertaNivel == 'CRITICO_7_DIAS'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-950 text-rose-400 border border-rose-800">URGENTE (≤ 7 días)</span>
+                        <span th:if="${v.alertaNivel == 'ALERTA_30_DIAS'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-900/40 text-amber-400 border border-amber-800">AVISO (≤ 30 días)</span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right">
+                        <a th:href="@{${v.tipoDocumento == 'CONTRATO' ? '/dashboard/mercados/contratos/' + v.id : '/dashboard/mercados/autorizaciones/' + v.id}}"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                           title="Ver Expediente">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tabla 2: Ya Vencidos -->
+    <div id="tab-vencidos" class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg hidden">
+        <div class="p-4 border-b border-[#334155]/40 flex items-center justify-between">
+            <span class="text-xs font-bold text-rose-400">Documentos con Plazo de Vigencia Expirado</span>
+            <span class="text-[10px] text-slate-400">Requieren renovación autorizada o terminación formal</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                <tr>
+                    <th class="px-5 py-3">Tipo</th>
+                    <th class="px-5 py-3">Código</th>
+                    <th class="px-5 py-3">Comerciante</th>
+                    <th class="px-5 py-3">Puesto / Mercado</th>
+                    <th class="px-5 py-3">Fecha Fin Expirada</th>
+                    <th class="px-5 py-3">Días de Expiración</th>
+                    <th class="px-5 py-3 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40">
+                <tr th:if="${vencidos.empty}">
+                    <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+                        No se registran documentos con plazos vencidos pendientes de atención.
+                    </td>
+                </tr>
+                <tr th:each="v : ${vencidos}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="px-5 py-3.5">
+                        <span th:if="${v.tipoDocumento == 'CONTRATO'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-900/40 text-blue-400 border border-blue-800">CONTRATO</span>
+                        <span th:if="${v.tipoDocumento == 'AUTORIZACION'}" class="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-900/40 text-purple-400 border border-purple-800">AUTORIZACIÓN</span>
+                    </td>
+                    <td class="px-5 py-3.5 font-mono font-bold text-rose-400" th:text="${v.codigo}">-</td>
+                    <td class="px-5 py-3.5">
+                        <span class="font-semibold text-white" th:text="${v.comercianteNombre}">-</span>
+                        <div class="text-[10px] text-slate-400" th:text="${v.comercianteDocumento}">-</div>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="text-slate-200" th:text="${v.mercadoNombre}">-</span>
+                        <div class="text-[10px] text-slate-400" th:text="${'Puesto ' + v.puestoCodigo}">-</div>
+                    </td>
+                    <td class="px-5 py-3.5 font-semibold text-rose-400" th:text="${v.fechaFin}">-</td>
+                    <td class="px-5 py-3.5 font-bold text-rose-400" th:text="${v.diasRestantes != null ? (v.diasRestantes * -1) + ' días atrás' : '-'}">-</td>
+                    <td class="px-5 py-3.5 text-right">
+                        <a th:href="@{${v.tipoDocumento == 'CONTRATO' ? '/dashboard/mercados/contratos/' + v.id : '/dashboard/mercados/autorizaciones/' + v.id}}"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                           title="Gestionar Regularización">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/documentos-vencimientos.js}"></script>
+</th:block>
+</body>
+</html>

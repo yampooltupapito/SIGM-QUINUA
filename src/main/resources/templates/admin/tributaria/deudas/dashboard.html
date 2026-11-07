@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        titulo='Gestión de Deudas Tributarias - SIGM Quinua',
+        moduloActivo='tributaria',
+        submenuActivo='deudas',
+        contenido=~{::#main-content}
+      )}">
+<head>
+    <title>Gestión de Deudas Tributarias</title>
+</head>
+<body>
+<div id="main-content" class="space-y-6">
+
+    <!-- Header Institucional -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-700/60">
+        <div>
+            <div class="flex items-center space-x-2.5">
+                <div class="p-2 bg-blue-600/10 rounded-lg border border-blue-500/20 text-blue-400">
+                    <i data-lucide="wallet" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-100 tracking-tight">Gestión de Deudas Tributarias</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Control de cartera, vencimientos, morosidad y seguimiento administrativo de la Municipalidad Distrital de Quinua</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <form method="get" th:action="@{/dashboard/tributaria/deudas}" class="flex items-center gap-2">
+                <label for="fechaCorte" class="text-xs text-slate-400 font-medium">Fecha de Corte:</label>
+                <input type="date" id="fechaCorte" name="fechaCorte" th:value="${fechaCorte}"
+                       onchange="this.form.submit()"
+                       class="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+            </form>
+            <a th:href="@{/dashboard/tributaria/deudas/cartera(fechaCorte=${fechaCorte})}"
+               class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Ver Cartera</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/deudas/intereses(fechaCorte=${fechaCorte})}"
+               class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors">
+                <i data-lucide="calculator" class="w-4 h-4 text-amber-400"></i>
+                <span>Simulador TIM</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas y Mensajes Flash -->
+    <div th:if="${successMessage}" class="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center space-x-2">
+        <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${successMessage}">Operación exitosa</span>
+    </div>
+    <div th:if="${errorMessage}" class="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center space-x-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${errorMessage}">Error detectado</span>
+    </div>
+
+    <!-- KPIs Principales (Saldos Reales Conciliados) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Saldo Total Pendiente -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saldo Total Pendiente</span>
+                <span class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
+                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 font-mono mt-2"
+               th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoTotalPendiente, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/40 text-[11px] text-slate-400">
+                <span>Obligaciones Activas:</span>
+                <span class="font-bold text-slate-300 font-mono" th:text="${dashboard.totalObligacionesPendientes}">0</span>
+            </div>
+        </div>
+
+        <!-- Saldo No Vencido (Corriente) -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Saldo Corriente (No Vencido)</span>
+                <span class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
+                    <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-emerald-300 font-mono mt-2"
+               th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoNoVencido, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/40 text-[11px] text-slate-400">
+                <span>Dentro de fecha límite</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">Sin Mora</span>
+            </div>
+        </div>
+
+        <!-- Saldo Vencido -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Saldo Vencido en Cartera</span>
+                <span class="p-1.5 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-amber-300 font-mono mt-2"
+               th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoVencido, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/40 text-[11px] text-slate-400">
+                <span>Vencidas a la fecha:</span>
+                <span class="font-bold text-amber-300 font-mono" th:text="${dashboard.totalObligacionesVencidas}">0</span>
+            </div>
+        </div>
+
+        <!-- Saldo Exigible Verificado -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-rose-400 uppercase tracking-wider">Saldo Exigible Verificado</span>
+                <span class="p-1.5 bg-rose-500/10 text-rose-400 rounded-lg border border-rose-500/20">
+                    <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-rose-300 font-mono mt-2"
+               th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoExigible, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/40 text-[11px] text-slate-400">
+                <span>Con Cobranza Ordinaria</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-medium">Exigible</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Operativos y de Seguimiento -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-700/50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 block">Contribuyentes Deudores</span>
+                    <span class="text-base font-bold text-slate-200 font-mono" th:text="${dashboard.totalContribuyentesConDeuda}">0</span>
+                </div>
+            </div>
+            <a th:href="@{/dashboard/tributaria/contribuyentes}" class="text-[11px] text-blue-400 hover:underline">Ver</a>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-700/50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    <i data-lucide="activity" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 block">Seguimientos Asignados</span>
+                    <span class="text-base font-bold text-slate-200 font-mono" th:text="${dashboard.totalSeguimientosActivos}">0</span>
+                </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Personal RNT</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-850 border border-slate-700/50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 block">Compromisos de Pago Pendientes</span>
+                    <span class="text-base font-bold text-amber-300 font-mono" th:text="${dashboard.totalCompromisosPendientes}">0</span>
+                </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">En curso</span>
+        </div>
+    </div>
+
+    <!-- Gráficos de Distribución de Cartera -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 1. Distribución por Tramo de Antigüedad -->
+        <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200">Antigüedad de la Deuda</h3>
+                    <p class="text-[11px] text-slate-400">Distribución por tramos de morosidad</p>
+                </div>
+                <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div class="h-56 relative flex items-center justify-center">
+                <canvas id="chartAntiguedad"></canvas>
+            </div>
+            <div class="space-y-1.5 pt-2 border-t border-slate-700/40 text-xs">
+                <div th:each="entry : ${dashboard.distribucionPorTramo}" class="flex items-center justify-between">
+                    <span class="text-slate-400 text-[11px]" th:text="${entry.key}">Tramo</span>
+                    <span class="font-mono font-semibold text-slate-200 text-[11px]"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Distribución por Concepto Tributario -->
+        <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200">Cartera por Concepto</h3>
+                    <p class="text-[11px] text-slate-400">Impuesto Predial y Arbitrios</p>
+                </div>
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div class="h-56 relative flex items-center justify-center">
+                <canvas id="chartConceptos"></canvas>
+            </div>
+            <div class="space-y-1.5 pt-2 border-t border-slate-700/40 text-xs">
+                <div th:each="entry : ${dashboard.distribucionPorConcepto}" class="flex items-center justify-between">
+                    <span class="text-slate-400 text-[11px] truncate max-w-[160px]" th:text="${entry.key}">Concepto</span>
+                    <span class="font-mono font-semibold text-slate-200 text-[11px]"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Evolución por Ejercicio Fiscal -->
+        <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200">Cartera por Período</h3>
+                    <p class="text-[11px] text-slate-400">Saldos por ejercicio fiscal</p>
+                </div>
+                <i data-lucide="trending-up" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div class="h-56 relative flex items-center justify-center">
+                <canvas id="chartPeriodos"></canvas>
+            </div>
+            <div class="space-y-1.5 pt-2 border-t border-slate-700/40 text-xs">
+                <div th:each="entry : ${dashboard.distribucionPorPeriodo}" class="flex items-center justify-between">
+                    <span class="text-slate-400 text-[11px]" th:text="'Año ' + ${entry.key}">Año</span>
+                    <span class="font-mono font-semibold text-slate-200 text-[11px]"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guía y Advertencias de Gestión Tributaria -->
+    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400 space-y-2">
+        <div class="flex items-center space-x-2 text-slate-300 font-semibold">
+            <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+            <span>Lineamientos Técnicos y Legales de Gestión de Deuda (Módulo de Recaudación)</span>
+        </div>
+        <ul class="list-disc list-inside space-y-1 text-[11px] text-slate-400">
+            <li>La fuente financiera de la deuda corresponde exclusivamente a los saldos pendientes registrados en las obligaciones y la cuenta corriente.</li>
+            <li>No se generan nuevas obligaciones ni cargos ficticios por clasificar o consultar el estado de una deuda.</li>
+            <li>El cálculo de intereses moratorios se efectúa mediante la Tasa de Interés Moratorio (TIM) aprobada normativamente, sin incurrir en anatocismo (capitalización de intereses prohibida por el Código Tributario).</li>
+            <li>El registro de compromisos informativos o derivaciones no altera fechas de vencimiento ni sustituye convenios formales de fraccionamiento.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Inicialización de Gráficos Chart.js -->
+<script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        const rawTramos = /*[[${dashboard.distribucionPorTramo}]]*/ {};
+        const rawConceptos = /*[[${dashboard.distribucionPorConcepto}]]*/ {};
+        const rawPeriodos = /*[[${dashboard.distribucionPorPeriodo}]]*/ {};
+
+        // 1. Gráfico Antigüedad
+        if (document.getElementById('chartAntiguedad') && Object.keys(rawTramos).length > 0) {
+            new Chart(document.getElementById('chartAntiguedad'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(rawTramos),
+                    datasets: [{
+                        data: Object.values(rawTramos),
+                        backgroundColor: ['#10b981', '#0ea5e9', '#f59e0b', '#f97316', '#f43f5e'],
+                        borderWidth: 1,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 2. Gráfico Conceptos
+        if (document.getElementById('chartConceptos') && Object.keys(rawConceptos).length > 0) {
+            new Chart(document.getElementById('chartConceptos'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(rawConceptos),
+                    datasets: [{
+                        label: 'Saldo (S/)',
+                        data: Object.values(rawConceptos),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+        }
+
+        // 3. Gráfico Períodos
+        if (document.getElementById('chartPeriodos') && Object.keys(rawPeriodos).length > 0) {
+            new Chart(document.getElementById('chartPeriodos'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(rawPeriodos),
+                    datasets: [{
+                        label: 'S/ por Período',
+                        data: Object.values(rawPeriodos),
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

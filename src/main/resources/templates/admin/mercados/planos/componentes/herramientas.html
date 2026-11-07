@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"></head>
+<body>
+<div th:fragment="herramientasVisor" class="flex flex-wrap items-center justify-between gap-3 bg-[#1e293b] p-3 rounded-2xl border border-[#202c3d] shadow-lg">
+
+    <!-- Buscador de puesto -->
+    <div class="flex items-center gap-2 flex-1 min-w-[240px] max-w-md">
+        <div class="relative w-full">
+            <input type="text" id="buscadorPuesto" placeholder="Buscar por código (ej. P-101) o número..."
+                   autocomplete="off"
+                   class="w-full bg-[#101827] border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <div id="resultadosBusqueda" class="absolute left-0 right-0 top-full mt-1 bg-[#1e293b] border border-slate-700 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto hidden"></div>
+        </div>
+        <button type="button" onclick="limpiarBusqueda()" title="Limpiar búsqueda"
+                class="p-1.5 text-slate-400 hover:text-white bg-[#101827] border border-slate-700 rounded-xl transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Filtros de Sector y Pabellón -->
+    <div class="flex items-center gap-2">
+        <select id="filtroSector" onchange="aplicarFiltrosEstructura()"
+                class="bg-[#101827] border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+            <option value="">Todos los sectores</option>
+            <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.nombre}"></option>
+        </select>
+
+        <select id="filtroPabellon" onchange="aplicarFiltrosEstructura()"
+                class="bg-[#101827] border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+            <option value="">Todos los pabellones</option>
+            <option th:each="p : ${pabellones}" th:value="${p.id}" th:text="${p.nombre}"></option>
+        </select>
+    </div>
+
+    <!-- Controles de Zoom y Encuadre -->
+    <div class="flex items-center gap-1.5 bg-[#101827] p-1 rounded-xl border border-slate-700">
+        <button type="button" onclick="zoomIn()" title="Acercar plano (+)"
+                class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        </button>
+        <button type="button" onclick="zoomOut()" title="Alejar plano (-)"
+                class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+        </button>
+        <button type="button" onclick="resetZoom()" title="Restablecer vista (100%)"
+                class="px-2 py-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg text-[11px] font-semibold transition-colors">
+            100%
+        </button>
+        <button type="button" onclick="fitToScreen()" title="Ajustar al contenedor"
+                class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        </button>
+    </div>
+
+</div>
+</body>
+</html>

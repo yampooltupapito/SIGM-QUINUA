@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja de Alertas Ciudadanas — Serenazgo Quinua</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Notificación -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación completada con éxito.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 bg-rose-950/60 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado Principal y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="bell-ring" class="w-7 h-7 text-indigo-400"></i>
+                Alertas ciudadanas
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Recepción, revisión y seguimiento administrativo de comunicaciones ciudadanas.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/serenazgo/alertas/exportar/excel(desde=${filtro.desde}, hasta=${filtro.hasta})}"
+               class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="sheet" class="w-4 h-4 text-emerald-400"></i>
+                <span>Exportar Excel</span>
+            </a>
+            <a th:href="@{/portal/seguridad/reportar}" target="_blank"
+               class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>Ver Portal Ciudadano</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Advertencia Institucional de No Urgencia -->
+    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0 text-amber-400"></i>
+        <span>
+            <strong>Restricción Operativa:</strong> Las alertas ciudadanas son comunicaciones preventivas pendientes de evaluación técnica. No constituyen prueba concluyente ni despacho automático de emergencia.
+        </span>
+    </div>
+
+    <!-- Indicadores KPIs en Tiempo Real -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- Total Alertas -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Alertas</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-slate-100" th:text="${kpis.totalAlertas}">0</span>
+                <i data-lucide="inbox" class="w-5 h-5 text-slate-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">Registradas</span>
+        </div>
+
+        <!-- Recibidas / Nuevas -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Nuevas / Recibidas</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-blue-400" th:text="${kpis.totalRecibidas}">0</span>
+                <i data-lucide="bell" class="w-5 h-5 text-blue-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">Sin revisar</span>
+        </div>
+
+        <!-- En Revisión -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">En Revisión</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-amber-400" th:text="${kpis.totalEnRevision}">0</span>
+                <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">Evaluación</span>
+        </div>
+
+        <!-- Requiere Información -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-400">Req. Información</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-rose-400" th:text="${kpis.totalRequierenInformacion}">0</span>
+                <i data-lucide="help-circle" class="w-5 h-5 text-rose-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">Pendiente vecino</span>
+        </div>
+
+        <!-- Vinculadas a Incidencia -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Vinculadas</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-indigo-400" th:text="${kpis.totalVinculadas}">0</span>
+                <i data-lucide="link" class="w-5 h-5 text-indigo-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">A incidencias</span>
+        </div>
+
+        <!-- Cerradas -->
+        <div class="p-4 rounded-2xl bg-card border border-theme flex flex-col justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Cerradas</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-black text-emerald-400" th:text="${kpis.totalCerradas}">0</span>
+                <i data-lucide="check-check" class="w-5 h-5 text-emerald-500"></i>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1">Finalizadas</span>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros de Búsqueda -->
+    <div class="p-5 rounded-2xl bg-card border border-theme">
+        <form th:action="@{/dashboard/serenazgo/alertas}" method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Término de búsqueda -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Buscar por Código / Título</label>
+                    <div class="relative">
+                        <input type="text" name="termino" th:value="${filtro.termino}" placeholder="Código o palabras clave..."
+                               class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 pl-8 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5"></i>
+                    </div>
+                </div>
+
+                <!-- Estado -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Estado Administrativo</label>
+                    <select name="estado" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Todos los estados --</option>
+                        <option th:each="est : ${estados}" th:value="${est}" th:text="${est}" th:selected="${filtro.estado == est}">RECIBIDA</option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Reporte -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Tipo de Situación</label>
+                    <select name="tipoId" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Todos los tipos --</option>
+                        <option th:each="tipo : ${tiposReporte}" th:value="${tipo.id}" th:text="${tipo.nombre}" th:selected="${filtro.tipoId == tipo.id}">Ruidos</option>
+                    </select>
+                </div>
+
+                <!-- Sector -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Sector Territorial</label>
+                    <select name="sectorId" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Todos los sectores --</option>
+                        <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.codigo + ' - ' + sec.nombre}" th:selected="${filtro.sectorId == sec.id}">Sector 1</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Fila Secundaria de Filtros -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Desde</label>
+                        <input type="date" name="desde" th:value="${filtro.desde}" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-1.5 px-3 text-slate-200">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Hasta</label>
+                        <input type="date" name="hasta" th:value="${filtro.hasta}" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-1.5 px-3 text-slate-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Prioridad</label>
+                    <select name="prioridad" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-1.5 px-3 text-slate-200">
+                        <option value="">-- Todas las prioridades --</option>
+                        <option th:each="prio : ${prioridades}" th:value="${prio}" th:text="${prio}" th:selected="${filtro.prioridad == prio}">ALTA</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Aplicar Filtros</span>
+                    </button>
+                    <a th:href="@{/dashboard/serenazgo/alertas}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-semibold transition">
+                        Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Alertas -->
+    <div class="rounded-2xl bg-card border border-theme overflow-hidden shadow-sm">
+        <div th:if="${alertas.empty}" class="p-12 text-center text-slate-400">
+            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-500"></i>
+            <p class="text-sm font-semibold text-slate-300">No se encontraron alertas ciudadanas</p>
+            <p class="text-xs text-slate-500 mt-1">Prueba modificando los criterios de búsqueda o filtros de fecha.</p>
+        </div>
+
+        <div th:unless="${alertas.empty}" class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 border-b border-theme text-slate-400 uppercase font-bold text-[10px] tracking-wider">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Fecha Recepción</th>
+                        <th class="py-3 px-4">Tipo Situación</th>
+                        <th class="py-3 px-4">Título / Referencia</th>
+                        <th class="py-3 px-4">Sector</th>
+                        <th class="py-3 px-4">Prioridad</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4">Canal</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    <tr th:each="alerta : ${alertas.content}" class="hover:bg-slate-800/50 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-indigo-400" th:text="${alerta.codigo}">ALT-2026-00001</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(alerta.fechaRecepcion, 'dd/MM/yyyy HH:mm')}">25/10/2026 10:30</td>
+                        <td class="py-3 px-4 font-semibold text-slate-200" th:text="${alerta.tipoNombre}">Ruidos</td>
+                        <td class="py-3 px-4 text-slate-200 max-w-xs truncate" th:text="${alerta.titulo}">Título breve</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${alerta.sectorNombre ?: '-'}">Sector 1</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                  th:classappend="${alerta.prioridad.name() == 'CRITICA' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                                                  (alerta.prioridad.name() == 'ALTA' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                                                  (alerta.prioridad.name() == 'MEDIA' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-slate-700/50 text-slate-300'))}"
+                                  th:text="${alerta.prioridad}">MEDIA</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold"
+                                  th:classappend="${alerta.estado.name() == 'RECIBIDA' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                                                  (alerta.estado.name() == 'EN_REVISION' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                                                  (alerta.estado.name() == 'REQUIERE_INFORMACION' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                                                  (alerta.estado.name() == 'VINCULADA' || alerta.estado.name() == 'CONVERTIDA_EN_INCIDENCIA' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                                                  (alerta.estado.name() == 'CERRADA' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'))))}"
+                                  th:text="${alerta.estado}">RECIBIDA</span>
+                        </td>
+                        <td class="py-3 px-4 text-[10px] text-slate-400" th:text="${alerta.canalOrigen}">PORTAL</td>
+                        <td class="py-3 px-4 text-right">
+                            <a th:href="@{/dashboard/serenazgo/alertas/{id}(id=${alerta.id})}"
+                               class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-semibold text-xs border border-indigo-500/30 transition inline-flex items-center gap-1">
+                                <span>Atender</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Real desde Base de Datos -->
+        <div th:if="${alertas.totalPages > 1}" class="p-4 border-t border-theme flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <span>Mostrando página <strong class="text-slate-200" th:text="${alertas.number + 1}">1</strong> de <strong class="text-slate-200" th:text="${alertas.totalPages}">1</strong> (<span th:text="${alertas.totalElements}">0</span> alertas)</span>
+            <div class="flex gap-1.5">
+                <a th:if="${alertas.hasPrevious()}"
+                   th:href="@{/dashboard/serenazgo/alertas(page=${alertas.number - 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipoId=${filtro.tipoId}, sectorId=${filtro.sectorId}, prioridad=${filtro.prioridad}, desde=${filtro.desde}, hasta=${filtro.hasta})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Anterior</a>
+                <a th:if="${alertas.hasNext()}"
+                   th:href="@{/dashboard/serenazgo/alertas(page=${alertas.number + 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipoId=${filtro.tipoId}, sectorId=${filtro.sectorId}, prioridad=${filtro.prioridad}, desde=${filtro.desde}, hasta=${filtro.hasta})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

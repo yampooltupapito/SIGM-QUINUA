@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Mis Obligaciones Tributarias | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Mis Obligaciones Tributarias</h2>
+                    <p class="text-xs text-slate-500">Tributos liquidados formalmente por la Municipalidad Distrital de Quinua</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a th:href="@{/portal/tributario/impuesto-predial}" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-1.5">
+                        <i data-lucide="building" class="w-3.5 h-3.5 text-blue-600"></i> Solo Predial
+                    </a>
+                    <a th:href="@{/portal/tributario/arbitrios}" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i> Solo Arbitrios
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tabla de Obligaciones -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Código / Concepto</th>
+                                <th class="py-3 px-4">Año / Cuota</th>
+                                <th class="py-3 px-4">Predio Asociado</th>
+                                <th class="py-3 px-4">Vencimiento</th>
+                                <th class="py-3 px-4 text-right">Monto (S/)</th>
+                                <th class="py-3 px-4 text-right">Saldo (S/)</th>
+                                <th class="py-3 px-4 text-center">Estado</th>
+                                <th class="py-3 px-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${obligacionesPage == null || obligacionesPage.empty}">
+                                <td colspan="8" class="text-center py-10 text-slate-400">
+                                    <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    No se encontraron obligaciones tributarias registradas.
+                                </td>
+                            </tr>
+                            <tr th:each="ob : ${obligacionesPage}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-900 block" th:text="${ob.conceptoNombre}">Impuesto Predial</span>
+                                    <span class="text-[11px] font-mono text-slate-400" th:text="${ob.codigoObligacion}">OBL-2026-001</span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="font-semibold text-slate-800" th:text="${ob.anioPeriodo}">2026</span>
+                                    <span class="text-slate-400 text-[11px]" th:text="${ob.cuotaNumero != null ? ' - Cuota ' + ob.cuotaNumero : ''}"></span>
+                                </td>
+                                <td class="py-3.5 px-4 text-slate-600 max-w-[200px] truncate" th:title="${ob.predioDireccion}">
+                                    <span th:text="${ob.predioDireccion != null ? ob.predioDireccion : '—'}">Jr. Sucre 120</span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span th:text="${#temporals.format(ob.fechaVencimiento, 'dd/MM/yyyy')}"
+                                          th:classappend="${ob.vencida and ob.saldo > 0} ? 'text-rose-600 font-bold' : 'text-slate-600'">28/02/2026</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-right font-medium text-slate-600" th:text="${#numbers.formatDecimal(ob.importeVigente, 1, 'POINT', 2, 'POINT')}">150.00</td>
+                                <td class="py-3.5 px-4 text-right font-bold"
+                                    th:classappend="${ob.saldo > 0} ? 'text-amber-600' : 'text-emerald-600'"
+                                    th:text="${#numbers.formatDecimal(ob.saldo, 1, 'POINT', 2, 'POINT')}">0.00</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <span th:if="${ob.saldo <= 0}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CANCELADO</span>
+                                    <span th:if="${ob.saldo > 0 and ob.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">VENCIDO</span>
+                                    <span th:if="${ob.saldo > 0 and !ob.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">PENDIENTE</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <a th:href="@{'/portal/tributario/obligaciones/' + ${ob.id}}" class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors" title="Ver Detalle">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div th:if="${obligacionesPage != null && obligacionesPage.totalPages > 1}" class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                    <div>Página <span class="font-bold text-slate-800" th:text="${obligacionesPage.number + 1}">1</span> de <span class="font-bold text-slate-800" th:text="${obligacionesPage.totalPages}">1</span></div>
+                    <div class="flex gap-1">
+                        <a th:if="${obligacionesPage.hasPrevious()}" th:href="@{/portal/tributario/obligaciones(page=${obligacionesPage.number - 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Anterior</a>
+                        <a th:if="${obligacionesPage.hasNext()}" th:href="@{/portal/tributario/obligaciones(page=${obligacionesPage.number + 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Siguiente</a>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

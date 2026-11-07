@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Detalle de Pago | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <a th:href="@{/portal/tributario/pagos}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center gap-1 mb-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Pagos
+                    </a>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight" th:text="'Comprobante ' + (${pago.reciboNumero != null ? pago.reciboNumero : pago.codigoPago})">Comprobante de Caja</h2>
+                    <p class="text-xs text-slate-500 font-mono" th:text="'Operación ID: ' + ${pago.codigoPago}">PAGO-001</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a th:if="${pago.reciboId != null}" th:href="@{'/portal/tributario/recibos/' + ${pago.reciboId} + '/pdf'}" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                        <i data-lucide="download" class="w-4 h-4"></i> Descargar Recibo Oficial (PDF)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Ficha de Pago -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha y Hora de Recaudación:</span>
+                        <span class="font-bold text-slate-800 text-sm" th:text="${#temporals.format(pago.fechaPago, 'dd/MM/yyyy HH:mm:ss')}">28/02/2026 11:30:00</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Medio de Abono:</span>
+                        <span class="font-bold text-slate-800 text-sm" th:text="${pago.medioPago}">EFECTIVO</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Estado de Transacción:</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block mt-0.5" th:text="${pago.estado}">CONFIRMADO</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Observaciones del Cajero:</span>
+                        <span class="text-slate-700 text-xs italic" th:text="${pago.observaciones != null ? pago.observaciones : 'Ninguna'}">Sin observaciones registradas</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-400 block text-[11px]">Monto Total Abonado:</span>
+                        <span class="text-2xl font-black text-emerald-600 tracking-tight" th:text="'S/ ' + ${#numbers.formatDecimal(pago.montoTotal, 1, 'POINT', 2, 'POINT')}">S/ 150.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-100 rounded-xl text-[11px] text-slate-500 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                <span>Comprobante registrado y auditado bajo el Sistema Integrado de Recaudación Municipal de Quinua. Puede validar su autenticidad mediante el código QR impreso en el recibo PDF oficial.</span>
+            </div>
+</div>
+</body>
+</html>

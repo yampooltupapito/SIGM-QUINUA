@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Autorizaciones Comerciales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Mis Autorizaciones Comerciales</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Licencias y autorizaciones municipales emitidas para la conducción y ejercicio de actividades comerciales.
+        </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código / N° Autorización</th>
+                        <th class="px-6 py-3.5">Puesto / Mercado</th>
+                        <th class="px-6 py-3.5">Giro Autorizado</th>
+                        <th class="px-6 py-3.5">Emisión</th>
+                        <th class="px-6 py-3.5">Vigencia</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="a : ${autorizacionesPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-bold text-blue-700 block" th:text="${a.codigoAutorizacion}">AUT-2026-0001</span>
+                            <span class="text-xs text-slate-500" th:text="${a.numeroAutorizacion}">N° 045-2026</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-900 font-mono block" th:text="${a.puestoCodigo}">P-01</span>
+                            <span class="text-xs text-slate-500" th:text="${a.mercadoNombre}">Mercado Central</span>
+                        </td>
+                        <td class="px-6 py-4" th:text="${a.giroComercial}">Abarrotes</td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${#temporals.format(a.fechaEmision, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td class="px-6 py-4 font-mono text-xs">
+                            <span th:text="${#temporals.format(a.fechaInicio, 'dd/MM/yyyy')}">01/01/2026</span>
+                            <span> al </span>
+                            <span th:text="${a.fechaFin != null ? #temporals.format(a.fechaFin, 'dd/MM/yyyy') : 'Indeterminado'}">31/12/2026</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${a.vigente ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}"
+                                  th:text="${a.vigente ? 'VIGENTE' : a.estadoLabel}">VIGENTE</span>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-1.5">
+                            <a th:href="${a.urlVerificacionQr}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors" title="Verificar validez oficial con QR">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> QR
+                            </a>
+                            <a th:href="@{'/api/portal/comerciante/autorizaciones/' + ${a.autorizacionId} + '/descargar'}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${autorizacionesPage.empty}">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="badge-check" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra autorizaciones comerciales emitidas.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

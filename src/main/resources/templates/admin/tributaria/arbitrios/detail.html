@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Ficha de Determinación ' + ${calculo.codigoCalculo} + ' — SIGM-QUINUA'">Ficha de Arbitrios — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta Flash -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeExito}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/arbitrios}" class="hover:text-blue-400 transition-colors">Arbitrios Municipales</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium" th:text="${calculo.codigoCalculo}">ARB-2026-000001</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight font-mono" th:text="${calculo.codigoCalculo}">ARB-2026-000001</h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold"
+                      th:classappend="${calculo.badgeClass}"
+                      th:text="${calculo.estado.descripcion}">PRELIMINAR</span>
+                <span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-xs font-mono border border-slate-700"
+                      th:text="'Versión ' + ${calculo.versionCalculo}">Versión 1</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+                Contribuyente: <strong class="text-slate-200" th:text="${calculo.contribuyenteNombre}">Juan Pérez</strong> |
+                Documento: <span class="font-mono" th:text="${calculo.contribuyenteDocumento}">DNI 10293847</span> |
+                Ejercicio: <strong class="text-blue-400" th:text="${calculo.periodoAnio}">2026</strong>
+            </p>
+        </div>
+
+        <!-- Barra de Acciones del Ciclo de Vida -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Descargar PDF -->
+            <a th:href="@{/dashboard/tributaria/arbitrios/calculos/{id}/liquidacion-pdf(id=${calculo.id})}"
+               target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-sm">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Hoja Liquidación PDF</span>
+            </a>
+
+            <!-- Enviar a Revisión -->
+            <form th:if="${calculo.estado.name() == 'PRELIMINAR' or calculo.estado.name() == 'OBSERVADO'}"
+                  th:action="@{/dashboard/tributaria/arbitrios/calculos/{id}/revision(id=${calculo.id})}" method="POST"
+                  sec:authorize="hasAnyAuthority('TRIBUTARIA_ARBITRIOS_REVISAR_CALCULO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA')">
+                <button type="submit" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Enviar a Revisión</span>
+                </button>
+            </form>
+
+            <!-- Observar -->
+            <button th:if="${calculo.estado.name() == 'EN_REVISION'}"
+                    onclick="abrirModalObservar()"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_ARBITRIOS_REVISAR_CALCULO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA')"
+                    class="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span>Observar</span>
+            </button>
+
+            <!-- Aprobar -->
+            <button th:if="${calculo.estado.name() == 'EN_REVISION' or calculo.estado.name() == 'PRELIMINAR'}"
+                    onclick="abrirModalAprobar()"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_ARBITRIOS_APROBAR_CALCULO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA')"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md flex items-center space-x-1.5">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Aprobar Determinación</span>
+            </button>
+
+            <!-- Recalcular -->
+            <button th:if="${calculo.estado.name() != 'ANULADO' and calculo.estado.name() != 'SIMULACION'}"
+                    onclick="abrirModalRecalcular()"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_ARBITRIOS_CALCULAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA')"
+                    class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-600">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Recalcular (Nueva versión)</span>
+            </button>
+
+            <!-- Anular -->
+            <button th:if="${calculo.estado.name() != 'ANULADO'}"
+                    onclick="abrirModalAnular()"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_ARBITRIOS_ANULAR_CALCULO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span>Anular</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Indicadores Financieros de la Ficha -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-slate-400 mb-1">Subtotal de Costos Brutos</div>
+            <div class="text-xl font-bold font-mono text-slate-200" th:text="'S/ ' + ${#numbers.formatDecimal(calculo.subtotalCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1">Suma al 100% de servicios aplicables</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-slate-400 mb-1">Deducción / Beneficio Legal</div>
+            <div class="text-xl font-bold font-mono text-rose-400" th:text="${calculo.importeBeneficio > 0 ? '-S/ ' + #numbers.formatDecimal(calculo.importeBeneficio, 1, 'COMMA', 2, 'POINT') : 'S/ 0.00'}">S/ 0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1" th:text="${calculo.tipoBeneficio != null ? calculo.tipoBeneficio.descripcion : 'Sin beneficio'}">Sin beneficio</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-blue-500/30 rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-blue-300 font-semibold mb-1">Importe Anual Determinado</div>
+            <div class="text-2xl font-bold font-mono text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(calculo.importeCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1" th:text="'% Condómino: ' + ${calculo.porcentajeCondomino} + '%'">% Condómino: 100%</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-slate-400 mb-1">Cuota Periódica Estimada</div>
+            <div class="text-xl font-bold font-mono text-blue-400" th:text="'S/ ' + ${#numbers.formatDecimal(calculo.importePeriodico, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1" th:text="'Periodicidad: ' + ${calculo.periodicidad.descripcion}">Periodicidad: Trimestral</div>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-slate-700/80">
+        <nav class="flex space-x-6 text-xs font-semibold" aria-label="Pestañas de Liquidación">
+            <button onclick="cambiarPestana('pestana-resumen')" id="btn-pestana-resumen"
+                    class="py-3 border-b-2 border-blue-500 text-blue-400 flex items-center space-x-2 transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Resumen y Predio</span>
+            </button>
+            <button onclick="cambiarPestana('pestana-servicios')" id="btn-pestana-servicios"
+                    class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Desglose de Servicios</span>
+            </button>
+            <button onclick="cambiarPestana('pestana-normas')" id="btn-pestana-normas"
+                    class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span>Sustento Normativo y Costos</span>
+            </button>
+            <button onclick="cambiarPestana('pestana-historial')" id="btn-pestana-historial"
+                    class="py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>Historial y Auditoría</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Pestaña 1: Resumen y Datos del Predio / Contribuyente -->
+    <div id="pestana-resumen" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Datos Contribuyente -->
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+                <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2.5">
+                    <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Sujeto Pasivo / Contribuyente</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Código:</span>
+                        <span class="font-mono font-bold text-blue-400" th:text="${calculo.contribuyenteCodigo}">CT-000001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Documento de Identidad:</span>
+                        <span class="font-mono text-slate-200" th:text="${calculo.contribuyenteDocumento}">DNI 10293847</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block text-[11px]">Razón Social / Nombre:</span>
+                        <span class="font-semibold text-white" th:text="${calculo.contribuyenteNombre}">Juan Pérez Quispe</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Participación Condómino:</span>
+                        <span class="font-mono font-bold text-emerald-400" th:text="${calculo.porcentajeCondomino} + ' %'">100.00 %</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Beneficio Aplicado:</span>
+                        <span class="font-medium text-amber-400" th:text="${calculo.tipoBeneficio != null ? calculo.tipoBeneficio.descripcion : 'Ninguno'}">Ninguno</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos Predio -->
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+                <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2.5">
+                    <i data-lucide="home" class="w-4 h-4 text-blue-400"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Unidad Predial Gravada</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Código de Predio:</span>
+                        <span class="font-mono font-bold text-blue-400" th:text="${calculo.predioCodigo}">PR-000001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Clasificación Predial:</span>
+                        <span class="text-slate-200 font-medium" th:text="${calculo.predioClasificacion}">Urbano</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block text-[11px]">Ubicación / Dirección:</span>
+                        <span class="text-white" th:text="${calculo.predioDireccion}">Jr. Ayacucho 123</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Frente Lineal (ml):</span>
+                        <span class="font-mono text-emerald-400 font-bold" th:text="${calculo.predioFrenteLinealMetros != null ? calculo.predioFrenteLinealMetros + ' ml' : '0.00 ml'}">10.00 ml</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Área Terreno:</span>
+                        <span class="font-mono text-slate-300" th:text="${calculo.predioAreaTerrenoM2 != null ? calculo.predioAreaTerrenoM2 + ' m²' : '0.00 m²'}">120.00 m²</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Desglose de Servicios -->
+    <div id="pestana-servicios" class="hidden space-y-5">
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                    <tr class="bg-slate-900/60 border-b border-slate-700/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        <th class="py-3 px-4">Servicio Público</th>
+                        <th class="py-3 px-3">Metodología</th>
+                        <th class="py-3 px-3">Criterio / Factor</th>
+                        <th class="py-3 px-3 text-right">Costo Total Anual</th>
+                        <th class="py-3 px-3 text-right">Subtotal Bruto</th>
+                        <th class="py-3 px-3 text-right">Beneficio</th>
+                        <th class="py-3 px-4 text-right">Importe Liquidado</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40">
+                    <tr th:each="det : ${calculo.detalles}" class="hover:bg-slate-700/20 transition-colors">
+                        <td class="py-3 px-4 font-semibold text-white">
+                            <span th:text="${det.servicioNombre}">Limpieza Pública</span>
+                        </td>
+                        <td class="py-3 px-3 text-slate-300" th:text="${det.metodoDistribucion != null ? det.metodoDistribucion : '-'}">
+                            Metodología
+                        </td>
+                        <td class="py-3 px-3">
+                            <span class="text-blue-300" th:text="${det.criterioNombre}">Criterio</span>
+                            <span class="text-slate-400 text-[11px] font-mono" th:text="' (' + ${#numbers.formatDecimal(det.factorPredio, 1, 'COMMA', 2, 'POINT')} + ')'">(1.00)</span>
+                        </td>
+                        <td class="py-3 px-3 text-right font-mono text-slate-400" th:text="${#numbers.formatDecimal(det.costoServicioTotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="py-3 px-3 text-right font-mono text-slate-300" th:text="${#numbers.formatDecimal(det.importeSubtotal, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        <td class="py-3 px-3 text-right font-mono text-rose-400" th:text="${det.importeBeneficio != null and det.importeBeneficio.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '-' + #numbers.formatDecimal(det.importeBeneficio, 1, 'COMMA', 2, 'POINT') : '0.00'}">0.00</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(det.importeCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 3: Sustento Normativo y Costos -->
+    <div id="pestana-normas" class="hidden space-y-5">
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+            <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2.5">
+                <i data-lucide="landmark" class="w-4 h-4 text-blue-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Fundamento Jurídico y Control de Constitucionalidad</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Conforme al <strong>Texto Único Ordenado de la Ley de Tributación Municipal (D.S. 156-2004-EF)</strong> y la doctrina constitucional establecida en las sentencias vinculantes <strong>STC 0041-2004-AI/TC</strong> y <strong>STC 0053-2004-PI/TC</strong>, los arbitrios municipales se determinan en base al costo global del servicio efectivamente prestado por la Municipalidad Distrital de Quinua y distribuido de forma equitativa entre los beneficiarios mediante criterios objetivos verificables.
+            </p>
+            <div class="bg-slate-900/60 border border-slate-700/40 rounded-lg p-3 text-xs text-slate-400 space-y-1">
+                <div>• <strong>Recolección de Residuos:</strong> Criterio de uso predial y volumen estimado por área construida.</div>
+                <div>• <strong>Barrido de Calles:</strong> Metros lineales de frontis o longitud de fachada efectiva.</div>
+                <div>• <strong>Parques y Jardines:</strong> Ubicación territorial en zona urbana (predios rurales expresamente exonerados).</div>
+                <div>• <strong>Seguridad Ciudadana (Serenazgo):</strong> Nivel de riesgo del sector catastral y naturaleza de la actividad desarrollada.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 4: Historial de Auditoría -->
+    <div id="pestana-historial" class="hidden space-y-5">
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+            <div class="flex items-center space-x-2 border-b border-slate-700/60 pb-2.5 mb-4">
+                <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider">Trazabilidad de Determinación y Auditoría</h3>
+            </div>
+
+            <div class="space-y-3">
+                <div th:each="h : ${calculo.historial}" class="flex items-start space-x-3 p-3 bg-slate-900/40 rounded-lg border border-slate-700/40 text-xs">
+                    <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 mt-0.5">
+                        <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-200" th:text="${h.accion != null ? h.accion.descripcion : 'Acción'}">Acción</span>
+                            <span class="text-[10px] text-slate-400 font-mono" th:text="${#temporals.format(h.fechaRegistro, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026</span>
+                        </div>
+                        <p class="text-slate-300 mt-1" th:text="${h.motivo}">Motivo de la acción</p>
+                        <div class="text-[10px] text-slate-400 mt-1 flex items-center space-x-2">
+                            <span>Usuario: <strong class="text-slate-300" th:text="${h.usuarioRegistro}">usuario</strong></span>
+                            <span>•</span>
+                            <span th:text="'Estado: ' + (${h.nuevoEstado != null ? h.nuevoEstado : '-'})">Estado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales de Acción -->
+
+    <!-- Modal Observar -->
+    <div id="modalObservar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-sm font-bold text-rose-400 flex items-center space-x-2">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    <span>Observar Determinación de Arbitrios</span>
+                </h3>
+                <button onclick="cerrarModalObservar()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/tributaria/arbitrios/calculos/{id}/observar(id=${calculo.id})}" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de la observación <span class="text-rose-500">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Especifique el fundamento de la observación técnica..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModalObservar()" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-bold">Registrar Observación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Aprobar -->
+    <div id="modalAprobar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-sm font-bold text-emerald-400 flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>Aprobar Determinación de Arbitrios</span>
+                </h3>
+                <button onclick="cerrarModalAprobar()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <p class="text-xs text-slate-300">
+                ¿Está seguro de aprobar la determinación tributaria <strong class="text-white" th:text="${calculo.codigoCalculo}">ARB-2026-000001</strong> por el importe anual de <strong class="text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(calculo.importeCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</strong>?
+            </p>
+            <form th:action="@{/dashboard/tributaria/arbitrios/calculos/{id}/aprobar(id=${calculo.id})}" method="POST" class="pt-2 border-t border-slate-700 flex justify-end space-x-2">
+                <button type="button" onclick="cerrarModalAprobar()" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-xs">Cancelar</button>
+                <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold">Confirmar Aprobación</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Recalcular -->
+    <div id="modalRecalcular" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-sm font-bold text-blue-400 flex items-center space-x-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    <span>Recalcular (Generar Nueva Versión)</span>
+                </h3>
+                <button onclick="cerrarModalRecalcular()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/tributaria/arbitrios/calculos/{id}/recalcular(id=${calculo.id})}" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo del recálculo <span class="text-rose-500">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Especifique el motivo de la rectificación o nueva versión..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModalRecalcular()" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold">Generar Nueva Versión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Anular -->
+    <div id="modalAnular" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-sm font-bold text-rose-500 flex items-center space-x-2">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    <span>Anulación de Determinación</span>
+                </h3>
+                <button onclick="cerrarModalAnular()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/tributaria/arbitrios/calculos/{id}/anular(id=${calculo.id})}" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de la anulación <span class="text-rose-500">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Indique la causa legal o administrativa de anulación..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModalAnular()" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-bold">Confirmar Anulación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Script para pestañas y modales -->
+<script>
+    function cambiarPestana(id) {
+        const pestanas = ['pestana-resumen', 'pestana-servicios', 'pestana-normas', 'pestana-historial'];
+        pestanas.forEach(p => {
+            const el = document.getElementById(p);
+            const btn = document.getElementById('btn-' + p);
+            if (p === id) {
+                el.classList.remove('hidden');
+                btn.classList.add('border-blue-500', 'text-blue-400');
+                btn.classList.remove('border-transparent', 'text-slate-400');
+            } else {
+                el.classList.add('hidden');
+                btn.classList.remove('border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            }
+        });
+    }
+
+    function abrirModalObservar() { document.getElementById('modalObservar').classList.remove('hidden'); }
+    function cerrarModalObservar() { document.getElementById('modalObservar').classList.add('hidden'); }
+
+    function abrirModalAprobar() { document.getElementById('modalAprobar').classList.remove('hidden'); }
+    function cerrarModalAprobar() { document.getElementById('modalAprobar').classList.add('hidden'); }
+
+    function abrirModalRecalcular() { document.getElementById('modalRecalcular').classList.remove('hidden'); }
+    function cerrarModalRecalcular() { document.getElementById('modalRecalcular').classList.add('hidden'); }
+
+    function abrirModalAnular() { document.getElementById('modalAnular').classList.remove('hidden'); }
+    function cerrarModalAnular() { document.getElementById('modalAnular').classList.add('hidden'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Puesto ' + puesto.codigo + ' | SIGM-QUINUA'}"></title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/{id}(id=${mercado.id})}" th:text="${mercado.nombre}" class="hover:text-blue-400 transition-colors"></a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id})}" class="hover:text-blue-400 transition-colors">Puestos</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${puesto.codigo}"></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight font-mono flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    PUESTO <span th:text="${puesto.codigo}"></span>
+                </h1>
+                <span th:if="${puesto.estado.name() == 'DISPONIBLE'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Disponible</span>
+                <span th:if="${puesto.estado.name() == 'OCUPADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Ocupado</span>
+                <span th:if="${puesto.estado.name() == 'RESERVADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Reservado</span>
+                <span th:if="${puesto.estado.name() == 'NO_ASIGNABLE' or puesto.estado.name() == 'INHABILITADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">No asignable</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="${'Mercado: ' + mercado.nombre + ' (' + mercado.codigo + ') — Tipo: ' + (puesto.tipoPuestoNombre != null ? puesto.tipoPuestoNombre : 'General')}"></p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button type="button" th:attr="onclick='abrirModalEstado(\'' + ${puesto.id} + '\', \'' + ${puesto.codigo} + '\', \'' + ${puesto.estadoFisico} + '\', \'' + ${puesto.estado} + '\')'"
+                    class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                Cambiar Estado
+            </button>
+            <button type="button" onclick="abrirModalUbicacion()"
+                    class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Reubicar
+            </button>
+            <a th:href="@{/dashboard/mercados/{mId}/puestos/{pId}/editar(mId=${mercado.id}, pId=${puesto.id})}"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas Métricas Rápidas -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-xs text-slate-400 font-medium">Área Ocupada</span>
+            <div class="text-xl font-black text-white font-mono mt-1" th:text="${puesto.areaMetrosCuadrados != null ? puesto.areaMetrosCuadrados + ' m²' : '-'}"></div>
+            <span class="text-[10px] text-slate-500" th:text="${'Ancho: ' + (puesto.anchoMetros != null ? puesto.anchoMetros + 'm' : '-') + ' | Largo: ' + (puesto.largoMetros != null ? puesto.largoMetros + 'm' : '-')}"></span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-xs text-slate-400 font-medium">Estado Físico</span>
+            <div class="text-base font-bold text-slate-200 mt-1" th:text="${puesto.estadoFisicoDescripcion}"></div>
+            <span class="text-[10px] text-slate-500" th:text="${'Nivel: ' + puesto.nivel}"></span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-xs text-slate-400 font-medium">Sector / Pabellón</span>
+            <div class="text-sm font-bold text-slate-200 mt-1" th:text="${puesto.sectorNombre != null ? puesto.sectorNombre : 'Sin sector'}"></div>
+            <span class="text-[10px] text-slate-500" th:text="${puesto.pabellonNombre != null ? 'Pab: ' + puesto.pabellonNombre : 'Sin pabellón'}"></span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-xs text-slate-400 font-medium">Ocupante Actual</span>
+            <div class="text-sm font-bold text-blue-400 mt-1" th:text="${detalle.ocupanteActualNombre != null ? detalle.ocupanteActualNombre : 'Sin asignación activa'}"></div>
+            <span class="text-[10px] text-slate-500" th:text="${detalle.ocupanteActualDni != null ? 'DNI: ' + detalle.ocupanteActualDni : 'Disponible'}"></span>
+        </div>
+    </div>
+
+    <!-- Pestañas Operativas -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-xl">
+        <div class="flex border-b border-[#202c3d] bg-[#101827] px-4">
+            <button type="button" onclick="cambiarPestana('pestana-info')" id="btn-pestana-info"
+                    class="py-3 px-4 text-xs font-bold border-b-2 border-blue-500 text-blue-400 transition-colors">
+                Información Técnica
+            </button>
+            <button type="button" onclick="cambiarPestana('pestana-estados')" id="btn-pestana-estados"
+                    class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                Historial de Estados
+                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800" th:text="${detalle.historialEstados.size()}"></span>
+            </button>
+            <button type="button" onclick="cambiarPestana('pestana-ubicacion')" id="btn-pestana-ubicacion"
+                    class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                Historial de Reubicación
+                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800" th:text="${detalle.historialUbicacion.size()}"></span>
+            </button>
+            <button type="button" onclick="cambiarPestana('pestana-documentos')" id="btn-pestana-documentos"
+                    class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                Documentos Asociados
+                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800" th:text="${detalle.documentos.size()}"></span>
+            </button>
+            <button type="button" onclick="cambiarPestana('pestana-asignaciones')" id="btn-pestana-asignaciones"
+                    class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                Asignaciones y Ocupación
+                <span class="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800" th:text="${detalle.asignaciones != null ? detalle.asignaciones.size() : 0}"></span>
+            </button>
+        </div>
+
+        <!-- Contenido Pestaña 1: Ficha Técnica -->
+        <div id="pestana-info" class="p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Datos Generales</h4>
+                    <dl class="space-y-2 text-xs">
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Código Oficial:</dt>
+                            <dd class="font-mono font-bold text-white" th:text="${puesto.codigo}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Número Visible:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.numero}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Nombre Referencial:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.nombreReferencial != null ? puesto.nombreReferencial : '-'}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Tipo de Puesto:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.tipoPuestoNombre != null ? puesto.tipoPuestoNombre : '-'}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Mercado:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${mercado.nombre}"></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Dimensiones y Localización</h4>
+                    <dl class="space-y-2 text-xs">
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Sector Comercial:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.sectorNombre != null ? puesto.sectorNombre : 'Sin Sector'}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Pabellón:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.pabellonNombre != null ? puesto.pabellonNombre : 'Sin Pabellón'}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Nivel / Piso:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.nivel}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Dimensiones (Ancho x Largo):</dt>
+                            <dd class="font-mono text-slate-200" th:text="${(puesto.anchoMetros != null ? puesto.anchoMetros + 'm' : '-') + ' x ' + (puesto.largoMetros != null ? puesto.largoMetros + 'm' : '-')}"></dd>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-[#202c3d]">
+                            <dt class="text-slate-400">Ubicación Referencia:</dt>
+                            <dd class="font-medium text-slate-200" th:text="${puesto.ubicacionReferencia != null ? puesto.ubicacionReferencia : '-'}"></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div th:if="${puesto.descripcion != null and !puesto.descripcion.isBlank()}" class="pt-4 border-t border-[#202c3d]">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción y Acabados</h4>
+                <p class="text-xs text-slate-300 leading-relaxed bg-[#101827] p-3 rounded-xl border border-[#202c3d]" th:text="${puesto.descripcion}"></p>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 2: Historial de Estados -->
+        <div id="pestana-estados" class="hidden p-6">
+            <div th:if="${detalle.historialEstados.empty}" class="py-8 text-center text-xs text-slate-500">
+                No se registran cambios de estado físico u operativo en este puesto.
+            </div>
+            <div th:if="${!detalle.historialEstados.empty}" class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827] text-slate-400 font-bold border-b border-[#202c3d]">
+                        <tr>
+                            <th class="py-2.5 px-3">Fecha y Hora</th>
+                            <th class="py-2.5 px-3">Estado Anterior</th>
+                            <th class="py-2.5 px-3">Estado Nuevo</th>
+                            <th class="py-2.5 px-3">Motivo / Sustento</th>
+                            <th class="py-2.5 px-3">Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#202c3d]">
+                        <tr th:each="h : ${detalle.historialEstados}" class="hover:bg-[#101827]/40">
+                            <td class="py-2.5 px-3 font-mono text-slate-400" th:text="${#temporals.format(h.fechaCambio, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300" th:text="${h.estadoAnterior}"></span></td>
+                            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20" th:text="${h.estadoNuevo}"></span></td>
+                            <td class="py-2.5 px-3 text-slate-200" th:text="${h.motivo}"></td>
+                            <td class="py-2.5 px-3 text-slate-400" th:text="${h.usuarioResponsable}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 3: Historial de Ubicación -->
+        <div id="pestana-ubicacion" class="hidden p-6">
+            <div th:if="${detalle.historialUbicacion.empty}" class="py-8 text-center text-xs text-slate-500">
+                Este puesto conserva su ubicación original sin reubicaciones registradas.
+            </div>
+            <div th:if="${!detalle.historialUbicacion.empty}" class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827] text-slate-400 font-bold border-b border-[#202c3d]">
+                        <tr>
+                            <th class="py-2.5 px-3">Fecha</th>
+                            <th class="py-2.5 px-3">Sector Anterior &rarr; Nuevo</th>
+                            <th class="py-2.5 px-3">Pabellón Anterior &rarr; Nuevo</th>
+                            <th class="py-2.5 px-3">Motivo de Reubicación</th>
+                            <th class="py-2.5 px-3">Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#202c3d]">
+                        <tr th:each="u : ${detalle.historialUbicacion}" class="hover:bg-[#101827]/40">
+                            <td class="py-2.5 px-3 font-mono text-slate-400" th:text="${#temporals.format(u.fechaCambio, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="py-2.5 px-3" th:text="${u.sectorAnteriorNombre + ' → ' + u.sectorNuevoNombre}"></td>
+                            <td class="py-2.5 px-3" th:text="${u.pabellonAnteriorNombre + ' → ' + u.pabellonNuevoNombre}"></td>
+                            <td class="py-2.5 px-3 text-slate-200" th:text="${u.motivo}"></td>
+                            <td class="py-2.5 px-3 text-slate-400" th:text="${u.usuarioResponsable}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 4: Documentos Asociados -->
+        <div id="pestana-documentos" class="p-6">
+            <div th:if="${detalle.documentos.empty}" class="py-8 text-center text-xs text-slate-500">
+                No hay documentos institucionales vinculados a este puesto comercial.
+            </div>
+            <div th:if="${!detalle.documentos.empty}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div th:each="d : ${detalle.documentos}" class="bg-[#101827] p-3 rounded-xl border border-[#202c3d] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <div>
+                            <div class="text-xs font-bold text-white truncate max-w-[180px]" th:text="${d.nombreArchivo}"></div>
+                            <span class="text-[10px] text-slate-500" th:text="${d.tipoDocumento}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 5: Asignaciones y Ocupación -->
+        <div id="pestana-asignaciones" class="p-6 space-y-4 hidden">
+            <div th:if="${detalle.asignaciones == null or detalle.asignaciones.empty}" class="py-8 text-center text-xs text-slate-500">
+                No hay historial de asignaciones registrado para este puesto comercial.
+            </div>
+            <div th:if="${detalle.asignaciones != null and !detalle.asignaciones.empty}" class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827] text-slate-400 font-bold border-b border-[#202c3d]">
+                        <tr>
+                            <th class="py-2.5 px-3">Código Asignación</th>
+                            <th class="py-2.5 px-3">Comerciante Titular</th>
+                            <th class="py-2.5 px-3">Documento</th>
+                            <th class="py-2.5 px-3">Modalidad</th>
+                            <th class="py-2.5 px-3">Vigencia</th>
+                            <th class="py-2.5 px-3">Estado</th>
+                            <th class="py-2.5 px-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#202c3d]">
+                        <tr th:each="asig : ${detalle.asignaciones}" class="hover:bg-[#101827]/40">
+                            <td class="py-2.5 px-3 font-mono font-bold text-blue-400" th:text="${asig.codigoAsignacion != null ? asig.codigoAsignacion : 'BORRADOR'}"></td>
+                            <td class="py-2.5 px-3 font-medium text-white" th:text="${asig.titularNombre}"></td>
+                            <td class="py-2.5 px-3 font-mono text-slate-400" th:text="${asig.documentoEnmascarado}"></td>
+                            <td class="py-2.5 px-3" th:text="${asig.tipoAsignacion}"></td>
+                            <td class="py-2.5 px-3" th:text="${(asig.fechaInicio != null ? asig.fechaInicio : '-') + ' al ' + (asig.fechaFin != null ? asig.fechaFin : 'Indefinida')}"></td>
+                            <td class="py-2.5 px-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                      th:classappend="${asig.badgeClase}"
+                                      th:text="${asig.estadoDescripcion}"></span>
+                            </td>
+                            <td class="py-2.5 px-3 text-right">
+                                <a th:href="@{/dashboard/mercados/asignaciones/{id}(id=${asig.id})}"
+                                   class="text-blue-400 hover:text-blue-300 font-semibold text-xs">
+                                    Ver Expediente
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reubicación de Puesto -->
+    <div id="modalReubicarPuesto" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-[#202c3d] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-[#e2e8f0]">
+            <div class="flex items-center justify-between pb-4 border-b border-[#202c3d]">
+                <h3 class="text-base font-bold text-white">Reubicar Puesto Comercial</h3>
+                <button type="button" onclick="cerrarModalUbicacion()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form id="formReubicarPuesto" class="mt-4 space-y-4">
+                <input type="hidden" id="reubicarPuestoId" th:value="${puesto.id}" />
+                <input type="hidden" id="reubicarMercadoId" th:value="${mercado.id}" />
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nuevo Sector</label>
+                    <select id="nuevoSectorId" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                        <option value="">Sin Sector (Directo al mercado)</option>
+                        <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.codigo + ' - ' + s.nombre}"
+                                th:selected="${puesto.sectorId == s.id}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nuevo Pabellón</label>
+                    <select id="nuevoPabellonId" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                        <option value="">Sin Pabellón</option>
+                        <option th:each="p : ${pabellones}" th:value="${p.id}" th:text="${p.codigo + ' - ' + p.nombre}"
+                                th:selected="${puesto.pabellonId == p.id}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nueva Referencia de Ubicación</label>
+                    <input type="text" id="nuevaUbicacionRef" maxlength="255" th:value="${puesto.ubicacionReferencia}"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo / Justificación de la Reubicación *</label>
+                    <textarea id="motivoReubicacion" rows="3" required minlength="5" maxlength="500" placeholder="Fundamente la necesidad técnica de reubicar el puesto..."
+                              class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#202c3d]">
+                    <button type="button" onclick="cerrarModalUbicacion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition-colors">
+                        Confirmar Reubicación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Cambio de Estado Fragment -->
+    <div th:replace="~{admin/mercados/puestos/componentes/modal-estado :: modalEstadoPuesto}"></div>
+
+</div>
+
+<!-- Scripts -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/puestos-detalle.js}"></script>
+    <script th:src="@{/js/mercados/puestos-listado.js}"></script>
+</th:block>
+</body>
+</html>

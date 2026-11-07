@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<div id="modalEvaluacion" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#1e293b] w-full max-w-lg rounded-2xl border border-[#334155] shadow-2xl overflow-hidden flex flex-col">
+        <div class="px-6 py-4 bg-[#101827] border-b border-[#334155] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Evaluación Técnica de Solicitud
+            </h3>
+            <button type="button" onclick="cerrarModal('modalEvaluacion')" class="text-slate-400 hover:text-white">&times;</button>
+        </div>
+
+        <form id="formEvaluacion" class="p-6 space-y-4">
+            <div>
+                <label for="evalResultado" class="block text-xs font-medium text-slate-300 mb-1">Resultado de la Revisión *</label>
+                <select id="evalResultado" name="resultado" required
+                        class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <option value="CONFORME">CONFORME — Cumple con todos los requisitos</option>
+                    <option value="EN_REVISION">EN_REVISION — Requiere cotejo adicional</option>
+                    <option value="DESFAVORABLE">DESFAVORABLE — Criterios técnicos desfavorables</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="evalMotivo" class="block text-xs font-medium text-slate-300 mb-1">Informe o Sustento Técnico *</label>
+                <textarea id="evalMotivo" name="motivo" rows="3" required
+                          placeholder="Fundamente detalladamente el resultado de la evaluación técnica municipal..."
+                          class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+
+            <div>
+                <label for="evalObservaciones" class="block text-xs font-medium text-slate-300 mb-1">Anotaciones Adicionales</label>
+                <input type="text" id="evalObservaciones" name="observaciones"
+                       placeholder="Anotaciones para el expediente..."
+                       class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#334155]">
+                <button type="button" onclick="cerrarModal('modalEvaluacion')"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-[#334155]">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-lg">
+                    Registrar Evaluación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</html>

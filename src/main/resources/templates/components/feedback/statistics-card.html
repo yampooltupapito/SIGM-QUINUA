@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE STATISTICS CARD (Tarjeta KPI para Dashboards y Bandejas)
+     ========================================================================== -->
+<div th:fragment="statisticsCard(etiqueta, valor, subtexto, icono, color)"
+     class="sigm-kpi-card">
+    <div class="flex items-start justify-between gap-3">
+        <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider" th:text="${etiqueta}">Indicador</p>
+            <p class="text-2xl font-extrabold text-slate-100 mt-1.5 font-mono-code" th:text="${valor}">0</p>
+            <p th:if="${!#strings.isEmpty(subtexto)}" class="text-[11px] text-slate-400 mt-1" th:text="${subtexto}">Detalle operativo</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0"
+             th:classappend="${color == 'emerald' or color == 'success'} ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
+                             (${color == 'amber' or color == 'warning'} ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' :
+                             (${color == 'rose' or color == 'danger'} ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' :
+                             (${color == 'purple' or color == 'indigo'} ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' :
+                             (${color == 'cyan'} ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' :
+                             'bg-blue-500/15 text-blue-400 border-blue-500/30'))))">
+            <i th:attr="data-lucide=${!#strings.isEmpty(icono) ? icono : 'activity'}" class="w-5 h-5"></i>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+

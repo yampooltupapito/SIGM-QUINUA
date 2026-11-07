@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title='Lotes de Notificaciones | SIGM-QUINUA',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Lotes de Notificaciones</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header Institucional -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/notificaciones}" class="hover:underline">Notificaciones</a>
+                <span>/</span>
+                <span>Emisión por Lotes</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-100 tracking-tight">Gestión de Lotes de Notificaciones</h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Generación masiva y controlada de comunicaciones y notificaciones municipales.
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <a th:href="@{/dashboard/tributaria/notificaciones}"
+               class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg transition-colors border border-slate-600 flex items-center space-x-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver al Listado</span>
+            </a>
+            <button type="button" onclick="document.getElementById('modalNuevoLote').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_NOTIFICACIONES_GENERAR_LOTES') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_TRIBUTACION')"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center space-x-2">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Lote</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center space-x-3">
+        <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Tabla de Lotes -->
+    <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-700/60 flex justify-between items-center">
+            <h2 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+                <span>Historial de Lotes Emitidos</span>
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-slate-800/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700/60">
+                    <th class="py-3 px-4">Código Lote</th>
+                    <th class="py-3 px-4">Tipo de Comunicación</th>
+                    <th class="py-3 px-4">Fecha Creación</th>
+                    <th class="py-3 px-4 text-center">Total Notificaciones</th>
+                    <th class="py-3 px-4 text-center">Válidos</th>
+                    <th class="py-3 px-4 text-center">Observados</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                <tr th:if="${lotes.empty}">
+                    <td colspan="8" class="text-center py-10 text-slate-500">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                        <p class="text-xs">No se han emitido lotes masivos de notificaciones.</p>
+                    </td>
+                </tr>
+                <tr th:each="l : ${lotes.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${l.codigo}"></td>
+                    <td class="py-3 px-4 font-medium text-slate-200" th:text="${l.tipoNotificacion.nombre}"></td>
+                    <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(l.fechaCreacion, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-100" th:text="${l.totalRegistros}"></td>
+                    <td class="py-3 px-4 text-center text-emerald-400 font-semibold" th:text="${l.totalValidos}"></td>
+                    <td class="py-3 px-4 text-center text-amber-400 font-semibold" th:text="${l.totalObservados}"></td>
+                    <td class="py-3 px-4">
+                        <span th:class="${l.estado == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoLoteNotificaciones).AUTORIZADO} ? 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                       (${l.estado == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoLoteNotificaciones).BORRADOR} ? 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                       'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-700 text-slate-300 border border-slate-600')"
+                              th:text="${l.estado.etiqueta}"></span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <form th:if="${l.estado == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoLoteNotificaciones).BORRADOR}"
+                              th:action="@{/dashboard/tributaria/notificaciones/lotes/{loteId}/autorizar(loteId=${l.id})}" method="post" class="inline">
+                            <button type="submit" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[11px] font-semibold transition-colors">
+                                Autorizar Lote
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO LOTE -->
+    <div id="modalNuevoLote" class="fixed inset-0 bg-slate-950/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-lg w-full p-6 rounded-xl border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center space-x-3 text-blue-400">
+                <i data-lucide="layers" class="w-6 h-6 flex-shrink-0"></i>
+                <h3 class="text-base font-bold text-slate-100">Generar Lote Masivo de Notificaciones</h3>
+            </div>
+            <p class="text-xs text-slate-400">
+                El lote genera las notificaciones en borrador individualizadas para su posterior validación y autorización. No genera envíos automáticos.
+            </p>
+            <form th:action="@{/dashboard/tributaria/notificaciones/lotes}" method="post" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tipo de Notificación *</label>
+                    <select name="tipoNotificacionId" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar Tipo --</option>
+                        <option th:each="t : ${tipos}" th:value="${t.id}" th:text="${t.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Medio de Notificación *</label>
+                    <select name="medioNotificacionId" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar Medio --</option>
+                        <option th:each="m : ${medios}" th:value="${m.id}" th:text="${m.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción / Motivo del Lote</label>
+                    <textarea name="descripcion" rows="2" placeholder="Campaña de emisión predial primer trimestre, etc."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modalNuevoLote').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm">
+                        Generar Lote
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block th:fragment="scripts">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>
+

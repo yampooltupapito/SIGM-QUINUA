@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Mapa de Seguridad Ciudadana — SIGM-QUINUA</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .leaflet-container {
+            background-color: #0b1120 !important;
+            font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+        }
+        .leaflet-popup-tip {
+            background-color: #1e293b !important;
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px !important;
+            line-height: 1.4 !important;
+        }
+        /* Custom map control styling */
+        .leaflet-bar a {
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+            border-bottom: 1px solid #334155 !important;
+        }
+        .leaflet-bar a:hover {
+            background-color: #334155 !important;
+            color: #ffffff !important;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-4">
+
+    <!-- Encabezado Principal y KPIs -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-100">Mapa de seguridad ciudadana</h1>
+                    <p class="text-xs text-slate-400">Visualización geográfica de sectores, incidencias y patrullajes registrados.</p>
+                </div>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-2">
+                <span class="inline-flex items-center gap-1 text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Centro Operativo Quinua
+                </span>
+                <span>&bull;</span>
+                <span>WGS84 / EPSG:4326</span>
+                <span>&bull;</span>
+                <span class="text-slate-500">Ley N° 31297 (Serenazgo Municipal Preventivo)</span>
+            </div>
+        </div>
+
+        <!-- Indicadores Compactos (KPI Cards) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="bg-[#101827]/70 border border-slate-700/60 p-2.5 rounded-lg text-center min-w-[110px]">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Incidencias Geo</span>
+                <span class="text-lg font-bold text-blue-400" th:text="${stats.incidenciasGeorreferenciadas}">0</span>
+                <span class="text-[9px] text-slate-500 block" th:text="'de ' + ${stats.totalIncidencias} + ' totales'">de 0 totales</span>
+            </div>
+            <div class="bg-[#101827]/70 border border-slate-700/60 p-2.5 rounded-lg text-center min-w-[110px]">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Patrullajes Activos</span>
+                <span class="text-lg font-bold text-emerald-400" th:text="${stats.totalPatrullajesActivos}">0</span>
+                <span class="text-[9px] text-slate-500 block" th:text="${stats.totalRutasActivas} + ' rutas oficiales'">3 rutas oficiales</span>
+            </div>
+            <div class="bg-[#101827]/70 border border-slate-700/60 p-2.5 rounded-lg text-center min-w-[110px]">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Checkpoints</span>
+                <span class="text-lg font-bold text-amber-400" th:text="${stats.totalPuntosControl}">0</span>
+                <span class="text-[9px] text-slate-500 block">Puntos de control</span>
+            </div>
+            <div class="bg-[#101827]/70 border border-slate-700/60 p-2.5 rounded-lg text-center min-w-[110px]">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Intervenciones</span>
+                <span class="text-lg font-bold text-indigo-400" th:text="${stats.intervencionesGeorreferenciadas}">0</span>
+                <span class="text-[9px] text-slate-500 block">Con ubicación</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Herramientas y Filtros -->
+    <div class="bg-[#1e293b] p-3.5 rounded-xl border border-slate-700/60 shadow flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <!-- Buscador con autocompletado -->
+        <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="mapSearchInput"
+                   placeholder="Buscar por código (INC-..., PAT-...), sector o ruta..."
+                   class="w-full pl-9 pr-8 py-2 bg-[#101827] border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+            <button id="btnClearSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+            <!-- Dropdown de resultados de búsqueda -->
+            <div id="searchResultsDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-[#1e293b] border border-slate-700 rounded-lg shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-slate-800"></div>
+        </div>
+
+        <!-- Filtros Rápidos -->
+        <div class="flex flex-wrap items-center gap-2">
+            <select id="filterSector" class="bg-[#101827] border border-slate-700 rounded-lg text-xs text-slate-200 px-2.5 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">Todos los sectores</option>
+                <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.nombre}">Sector</option>
+            </select>
+
+            <select id="filterPrioridad" class="bg-[#101827] border border-slate-700 rounded-lg text-xs text-slate-200 px-2.5 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">Todas las prioridades</option>
+                <option th:each="p : ${prioridades}" th:value="${p.name()}" th:text="${p.descripcion}">Prioridad</option>
+            </select>
+
+            <select id="filterEstadoIncidencia" class="bg-[#101827] border border-slate-700 rounded-lg text-xs text-slate-200 px-2.5 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">Todos los estados</option>
+                <option th:each="e : ${estadosIncidencia}" th:value="${e.name()}" th:text="${e.descripcion}">Estado</option>
+            </select>
+
+            <button id="btnAplicarFiltros" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                Filtrar
+            </button>
+
+            <button id="btnResetView" title="Restablecer extensión a Quinua" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 flex items-center gap-1 transition">
+                <i data-lucide="compass" class="w-3.5 h-3.5 text-blue-400"></i>
+                Centrar
+            </button>
+
+            <button id="btnFitBounds" title="Ajustar a todos los marcadores visibles" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 flex items-center gap-1 transition">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                Extensión
+            </button>
+
+            <button id="btnToggleTabla" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700 flex items-center gap-1 transition">
+                <i data-lucide="table" class="w-3.5 h-3.5 text-amber-400"></i>
+                Tabla
+            </button>
+
+            <!-- Menú de Exportaciones -->
+            <div class="relative inline-block text-left" id="exportMenuContainer">
+                <button id="btnExportMenu" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    Exportar
+                    <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                </button>
+                <div id="exportMenuDropdown" class="hidden absolute right-0 mt-1 w-44 bg-[#1e293b] border border-slate-700 rounded-lg shadow-2xl z-50 py-1 text-xs text-slate-200">
+                    <a th:href="@{/dashboard/serenazgo/mapa/exportar/geojson?capa=TODAS}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-700/60 transition">
+                        <i data-lucide="code" class="w-3.5 h-3.5 text-emerald-400"></i> Capa GeoJSON
+                    </a>
+                    <a th:href="@{/dashboard/serenazgo/mapa/exportar/excel}" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-700/60 transition">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i> Listado en Excel
+                    </a>
+                    <a th:href="@{/dashboard/serenazgo/mapa/exportar/pdf}" target="_blank" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-700/60 transition">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i> Ficha PDF Cartográfica
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal: Capas + Mapa + Panel Lateral de Detalle -->
+    <div class="relative bg-[#101827] rounded-xl border border-slate-700/60 overflow-hidden shadow-2xl flex" style="height: calc(100vh - 290px); min-height: 550px;">
+
+        <!-- Panel Lateral Izquierdo: Gestión de Capas (plegable) -->
+        <div id="panelCapas" class="w-64 bg-[#1e293b]/95 border-r border-slate-700/80 p-3.5 flex flex-col justify-between overflow-y-auto transition-all duration-300 z-10">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i> Capas activas
+                    </span>
+                    <button id="btnToggleAllLayers" class="text-[10px] text-blue-400 hover:underline">Alternar</button>
+                </div>
+
+                <!-- Capas Territoriales -->
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Territorio</span>
+                    <div class="space-y-1.5">
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-3 h-3 rounded bg-blue-500/40 border border-blue-500"></span>
+                                Sectores
+                            </span>
+                            <input type="checkbox" id="layerSectores" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-3 h-3 rounded bg-emerald-500/40 border border-emerald-500"></span>
+                                Zonas
+                            </span>
+                            <input type="checkbox" id="layerZonas" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-3 h-1 bg-amber-400 rounded"></span>
+                                Rutas Oficiales
+                            </span>
+                            <input type="checkbox" id="layerRutas" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                                Checkpoints (Puntos)
+                            </span>
+                            <input type="checkbox" id="layerPuntos" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Capas Operativas -->
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Operaciones</span>
+                    <div class="space-y-1.5">
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                Incidencias
+                            </span>
+                            <input type="checkbox" id="layerIncidencias" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                Alertas Ciudadanas
+                            </span>
+                            <input type="checkbox" id="layerAlertas" class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                                Intervenciones
+                            </span>
+                            <input type="checkbox" id="layerIntervenciones" class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-[#101827]/60 hover:bg-[#101827] border border-slate-700/50 cursor-pointer text-xs">
+                            <span class="flex items-center gap-2 text-slate-200">
+                                <span class="w-3 h-1 bg-emerald-400 rounded"></span>
+                                Patrullajes Activos
+                            </span>
+                            <input type="checkbox" id="layerPatrullajes" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de recarga -->
+            <button id="btnRecargarCapas" class="w-full mt-4 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                Actualizar Datos
+            </button>
+        </div>
+
+        <!-- Botón para colapsar/expandir panel de capas -->
+        <button id="btnCollapseLayers" class="absolute left-[256px] top-3 z-20 bg-[#1e293b] text-slate-300 hover:text-white border border-slate-700 rounded-r-md p-1 shadow-lg transition-all" title="Ocultar/Mostrar Capas">
+            <i data-lucide="chevron-left" class="w-4 h-4" id="iconCollapseLayers"></i>
+        </button>
+
+        <!-- Contenedor del Mapa Central -->
+        <div class="relative flex-1 h-full w-full">
+            <div id="map" class="w-full h-full"></div>
+
+            <!-- Loader de capas -->
+            <div id="mapLoader" class="hidden absolute inset-0 bg-[#0b1120]/60 backdrop-blur-sm z-30 flex items-center justify-center">
+                <div class="flex items-center gap-3 bg-[#1e293b] px-4 py-3 rounded-xl border border-slate-700 shadow-xl text-slate-200 text-xs">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin text-blue-400"></i>
+                    <span>Actualizando capas cartográficas...</span>
+                </div>
+            </div>
+
+            <!-- Leyenda Flotante (Esquina inferior derecha) -->
+            <div id="legendContainer" class="absolute bottom-4 right-4 z-20 bg-[#1e293b]/95 border border-slate-700/80 rounded-xl p-3 shadow-2xl max-w-xs text-xs text-slate-200 backdrop-blur-sm">
+                <div class="flex items-center justify-between gap-3 mb-2 pb-1 border-b border-slate-700">
+                    <span class="font-bold text-[11px] uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400"></i> Leyenda
+                    </span>
+                    <button id="btnToggleLegend" class="text-slate-400 hover:text-white">
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5" id="legendIcon"></i>
+                    </button>
+                </div>
+                <div id="legendBody" class="space-y-1.5 text-[11px]">
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Incidencia Crítica / Alta</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Incidencia Media / Alerta</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Incidencia Baja / Ordinaria</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white"></span> Checkpoint de Ruta</div>
+                    <div class="flex items-center gap-2"><span class="w-3.5 h-1 bg-emerald-400 rounded"></span> Patrullaje en Curso</div>
+                    <div class="flex items-center gap-2"><span class="w-3.5 h-1 bg-amber-400 rounded"></span> Ruta Planificada</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-500/30 border border-blue-500 rounded"></span> Delimitación de Sector</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral Derecho: Ficha de Detalle de Elemento Seleccionado -->
+        <div id="panelDetalle" class="hidden w-80 bg-[#1e293b]/95 border-l border-slate-700/80 p-4 flex flex-col justify-between overflow-y-auto transition-all duration-300 z-20">
+            <div>
+                <div class="flex items-start justify-between pb-3 border-b border-slate-700">
+                    <div>
+                        <span id="detTipoBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase">INCIDENCIA</span>
+                        <h3 id="detCodigo" class="text-base font-bold text-slate-100 mt-1 font-mono">INC-2026-00001</h3>
+                    </div>
+                    <button id="btnCloseDetalle" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="mt-3 space-y-3 text-xs">
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold block">Título / Hecho</span>
+                        <p id="detTitulo" class="text-slate-200 font-medium">-</p>
+                    </div>
+
+                    <div id="detDescBox">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold block">Descripción</span>
+                        <p id="detDescripcion" class="text-slate-300 text-[11px] leading-relaxed max-h-24 overflow-y-auto bg-[#101827]/50 p-2 rounded border border-slate-800">-</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Estado</span>
+                            <span id="detEstado" class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-300">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Prioridad</span>
+                            <span id="detPrioridad" class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-300">-</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Fecha / Hora</span>
+                            <span id="detFechaHora" class="text-slate-200 text-[11px]">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Sector</span>
+                            <span id="detSector" class="text-slate-200 text-[11px] truncate block">-</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold block">Referencia Ubicación</span>
+                        <p id="detUbicacion" class="text-slate-300 text-[11px]">-</p>
+                    </div>
+
+                    <div id="detCoordsBox" class="bg-[#101827]/70 p-2 rounded border border-slate-800">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold block">Coordenadas WGS84</span>
+                        <span id="detCoords" class="text-blue-400 font-mono text-[11px]">-</span>
+                    </div>
+
+                    <!-- Atributos dinámicos adicionales -->
+                    <div id="detAtributosBox" class="space-y-1.5 pt-2 border-t border-slate-800"></div>
+                </div>
+            </div>
+
+            <!-- Botón enlace al detalle administrativo completo -->
+            <div class="pt-4 border-t border-slate-700">
+                <a id="detBtnLink" href="#" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow">
+                    <span>Abrir Ficha Administrativa</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alternativa Tabular (Accesibilidad y Consulta Offline) -->
+    <div id="modalTabla" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex items-center justify-between bg-[#202c3d]">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="table" class="w-5 h-5 text-amber-400"></i>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-100">Alternativa Tabular — Registros Georreferenciados</h3>
+                        <p class="text-[11px] text-slate-400">Consulta tabular de seguridad ciudadana conforme a principios de accesibilidad.</p>
+                    </div>
+                </div>
+                <button id="btnCloseTabla" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1">
+                <div class="flex items-center justify-between mb-3">
+                    <input type="text" id="filtroTablaRapido" placeholder="Filtrar por texto en tabla..."
+                           class="px-3 py-1.5 bg-[#101827] border border-slate-700 rounded text-xs text-slate-200 placeholder-slate-500 w-64">
+                    <span id="tablaConteo" class="text-xs text-slate-400">0 registros</span>
+                </div>
+                <div class="overflow-x-auto border border-slate-700 rounded-lg">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-2.5">Tipo</th>
+                                <th class="p-2.5">Código</th>
+                                <th class="p-2.5">Título / Resumen</th>
+                                <th class="p-2.5">Sector</th>
+                                <th class="p-2.5">Coordenadas</th>
+                                <th class="p-2.5 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyTablaModal" class="divide-y divide-slate-700/60 font-mono text-[11px]">
+                            <!-- Rellenado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-slate-700 bg-[#202c3d] flex justify-end">
+                <button id="btnCloseTablaFooter" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Leaflet e Interacción del Mapa -->
+<th:block layout:fragment="scripts">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Inicialización del Mapa
+        // Coordenadas oficiales de Quinua: Lat -13.0450, Lng -74.1380
+        const QUINUA_COORDS = [-13.0450, -74.1380];
+        const DEFAULT_ZOOM = 15;
+
+        let map = null;
+        let layerGroups = {
+            sectores: L.layerGroup(),
+            zonas: L.layerGroup(),
+            rutas: L.layerGroup(),
+            puntos: L.layerGroup(),
+            incidencias: L.layerGroup(),
+            alertas: L.layerGroup(),
+            intervenciones: L.layerGroup(),
+            patrullajes: L.layerGroup()
+        };
+
+        let todosLosElementosTabulares = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof L === 'undefined') {
+                console.warn('Leaflet no está disponible en este entorno.');
+                const mapEl = document.getElementById('map');
+                if (mapEl) {
+                    mapEl.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-400 text-xs p-6 text-center"><i data-lucide="map-pin-off" class="w-8 h-8 mb-2 text-amber-400"></i><span>Módulo cartográfico en modo sin conexión o telemetría local de Quinua.</span></div>';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+            initMap();
+            cargarTodasLasCapas();
+            setupEventListeners();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+
+        function initMap() {
+            map = L.map('map', {
+                center: QUINUA_COORDS,
+                zoom: DEFAULT_ZOOM,
+                zoomControl: true
+            });
+
+            // Capa Base OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> | MD Quinua Serenazgo'
+            }).addTo(map);
+
+            // Agregar LayerGroups al mapa
+            Object.values(layerGroups).forEach(lg => lg.addTo(map));
+        }
+
+        function mostrarLoader(show) {
+            const l = document.getElementById('mapLoader');
+            if (l) l.classList.toggle('hidden', !show);
+        }
+
+        function construirQueryFiltros() {
+            const params = new URLSearchParams();
+            const sec = document.getElementById('filterSector').value;
+            const pri = document.getElementById('filterPrioridad').value;
+            const est = document.getElementById('filterEstadoIncidencia').value;
+
+            if (sec) params.append('sectorId', sec);
+            if (pri) params.append('prioridad', pri);
+            if (est) params.append('estadoIncidencia', est);
+            return params.toString();
+        }
+
+        function cargarTodasLasCapas() {
+            mostrarLoader(true);
+            todosLosElementosTabulares = [];
+            const query = construirQueryFiltros();
+
+            // Limpiar capas previas
+            Object.values(layerGroups).forEach(lg => lg.clearLayers());
+
+            // 1. Sectores
+            fetch('/api/v1/serenazgo/mapa/sectores?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarPoligonos(fc, layerGroups.sectores, '#3b82f6', 0.25))
+                .catch(err => console.warn('Error sectores:', err));
+
+            // 2. Zonas
+            fetch('/api/v1/serenazgo/mapa/zonas?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarPoligonos(fc, layerGroups.zonas, '#10b981', 0.35))
+                .catch(err => console.warn('Error zonas:', err));
+
+            // 3. Rutas
+            fetch('/api/v1/serenazgo/mapa/rutas?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarLineas(fc, layerGroups.rutas, '#f59e0b', 3, '5, 5'))
+                .catch(err => console.warn('Error rutas:', err));
+
+            // 4. Puntos de Control (Checkpoints)
+            fetch('/api/v1/serenazgo/mapa/puntos?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarPuntosControl(fc, layerGroups.puntos))
+                .catch(err => console.warn('Error checkpoints:', err));
+
+            // 5. Patrullajes Activos
+            fetch('/api/v1/serenazgo/mapa/patrullajes?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarLineas(fc, layerGroups.patrullajes, '#10b981', 4, null))
+                .catch(err => console.warn('Error patrullajes:', err));
+
+            // 6. Incidencias
+            fetch('/api/v1/serenazgo/mapa/incidencias?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarIncidencias(fc, layerGroups.incidencias))
+                .catch(err => console.warn('Error incidencias:', err));
+
+            // 7. Alertas
+            fetch('/api/v1/serenazgo/mapa/alertas?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarMarcadoresSimples(fc, layerGroups.alertas, '#f59e0b', 'ALERTA'))
+                .catch(err => console.warn('Error alertas:', err));
+
+            // 8. Intervenciones
+            fetch('/api/v1/serenazgo/mapa/intervenciones?' + query)
+                .then(r => r.json())
+                .then(fc => renderizarMarcadoresSimples(fc, layerGroups.intervenciones, '#8b5cf6', 'INTERVENCION'))
+                .catch(err => console.warn('Error intervenciones:', err))
+                .finally(() => {
+                    setTimeout(() => mostrarLoader(false), 300);
+                });
+        }
+
+        function renderizarPoligonos(fc, group, defaultColor, fillOpacity) {
+            if (!fc || !fc.features) return;
+            fc.features.forEach(f => {
+                const geom = f.geometry;
+                const props = f.properties || {};
+                const color = props.colorHex || defaultColor;
+
+                const layer = L.geoJSON(geom, {
+                    style: {
+                        color: color,
+                        weight: 2,
+                        opacity: 0.9,
+                        fillColor: color,
+                        fillOpacity: fillOpacity
+                    }
+                });
+
+                layer.on('click', () => abrirDetalle(props.tipo || 'SECTOR', props.id));
+                layer.bindTooltip(`<strong>${props.codigo || ''}</strong><br/>${props.nombre || ''}`, { sticky: true });
+                group.addLayer(layer);
+
+                todosLosElementosTabulares.push({
+                    tipo: props.tipo || 'SECTOR',
+                    codigo: props.codigo,
+                    titulo: props.nombre,
+                    sector: props.sectorNombre || props.nombre,
+                    coords: 'Polígono Delimitado',
+                    id: props.id
+                });
+            });
+        }
+
+        function renderizarLineas(fc, group, color, weight, dashArray) {
+            if (!fc || !fc.features) return;
+            fc.features.forEach(f => {
+                const geom = f.geometry;
+                const props = f.properties || {};
+                const layer = L.geoJSON(geom, {
+                    style: {
+                        color: color,
+                        weight: weight,
+                        opacity: 0.9,
+                        dashArray: dashArray
+                    }
+                });
+
+                layer.on('click', () => abrirDetalle(props.tipo || 'RUTA', props.id));
+                layer.bindTooltip(`<strong>${props.codigo || ''}</strong>: ${props.nombre || props.rutaNombre || ''}`, { sticky: true });
+                group.addLayer(layer);
+
+                todosLosElementosTabulares.push({
+                    tipo: props.tipo || 'RUTA',
+                    codigo: props.codigo,
+                    titulo: props.nombre || props.rutaNombre,
+                    sector: props.sectorNombre || '-',
+                    coords: 'Recorrido Lineal',
+                    id: props.id
+                });
+            });
+        }
+
+        function renderizarPuntosControl(fc, group) {
+            if (!fc || !fc.features) return;
+            fc.features.forEach(f => {
+                const coords = f.geometry.coordinates; // [lng, lat]
+                const props = f.properties || {};
+                const lat = coords[1];
+                const lng = coords[0];
+
+                const iconHtml = `<div style="background-color:#f59e0b; width:22px; height:22px; border-radius:50%; border:2px solid #ffffff; display:flex; align-items:center; justify-content:center; color:#1e293b; font-weight:bold; font-size:10px; box-shadow:0 4px 6px rgba(0,0,0,0.4);">${props.orden || ''}</div>`;
+                const customIcon = L.divIcon({ html: iconHtml, className: 'custom-cp-marker', iconSize: [22, 22], iconAnchor: [11, 11] });
+
+                const marker = L.marker([lat, lng], { icon: customIcon });
+                marker.on('click', () => abrirDetalle('PUNTO_CONTROL', props.id));
+                marker.bindTooltip(`Checkpoint #${props.orden}: ${props.nombre}`, { direction: 'top' });
+                group.addLayer(marker);
+
+                todosLosElementosTabulares.push({
+                    tipo: 'PUNTO_CONTROL',
+                    codigo: props.codigo,
+                    titulo: props.nombre,
+                    sector: props.sectorNombre || '-',
+                    coords: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+                    id: props.id
+                });
+            });
+        }
+
+        function renderizarIncidencias(fc, group) {
+            if (!fc || !fc.features) return;
+            fc.features.forEach(f => {
+                const coords = f.geometry.coordinates;
+                const props = f.properties || {};
+                const lat = coords[1];
+                const lng = coords[0];
+
+                let color = '#3b82f6';
+                if (props.prioridad === 'ALTA' || props.prioridad === 'CRITICA') color = '#ef4444';
+                else if (props.prioridad === 'MEDIA') color = '#f59e0b';
+
+                const iconHtml = `<div style="background-color:${color}; width:20px; height:20px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 4px 6px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:#ffffff; font-size:10px; font-weight:bold;">!</div>`;
+                const customIcon = L.divIcon({ html: iconHtml, className: 'custom-inc-marker', iconSize: [20, 20], iconAnchor: [10, 10] });
+
+                const marker = L.marker([lat, lng], { icon: customIcon });
+                marker.on('click', () => abrirDetalle('INCIDENCIA', props.id));
+
+                const popupHtml = `
+                    <div style="min-width:180px;">
+                        <span style="font-size:10px; font-weight:bold; color:${color}; text-transform:uppercase;">${props.prioridadDesc || 'INCIDENCIA'}</span>
+                        <h4 style="font-size:12px; font-weight:bold; margin:2px 0 4px 0; color:#f8fafc;">${props.codigo}: ${props.titulo}</h4>
+                        <p style="font-size:11px; color:#cbd5e1; margin-bottom:6px;">${props.ubicacionReferencia || ''}</p>
+                        <a href="${props.urlDetalle}" style="display:inline-block; font-size:10px; font-weight:bold; color:#60a5fa; text-decoration:underline;">Ver Ficha Completa &rarr;</a>
+                    </div>
+                `;
+                marker.bindPopup(popupHtml);
+                group.addLayer(marker);
+
+                todosLosElementosTabulares.push({
+                    tipo: 'INCIDENCIA',
+                    codigo: props.codigo,
+                    titulo: props.titulo,
+                    sector: props.sectorNombre || '-',
+                    coords: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+                    id: props.id
+                });
+            });
+        }
+
+        function renderizarMarcadoresSimples(fc, group, color, tipoLabel) {
+            if (!fc || !fc.features) return;
+            fc.features.forEach(f => {
+                const coords = f.geometry.coordinates;
+                const props = f.properties || {};
+                const lat = coords[1];
+                const lng = coords[0];
+
+                const iconHtml = `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 2px 4px rgba(0,0,0,0.5);"></div>`;
+                const customIcon = L.divIcon({ html: iconHtml, className: 'custom-simple-marker', iconSize: [16, 16], iconAnchor: [8, 8] });
+
+                const marker = L.marker([lat, lng], { icon: customIcon });
+                marker.on('click', () => abrirDetalle(tipoLabel, props.id));
+                marker.bindTooltip(`${props.codigo}: ${props.titulo || ''}`, { direction: 'top' });
+                group.addLayer(marker);
+
+                todosLosElementosTabulares.push({
+                    tipo: tipoLabel,
+                    codigo: props.codigo,
+                    titulo: props.titulo,
+                    sector: props.sectorNombre || '-',
+                    coords: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+                    id: props.id
+                });
+            });
+        }
+
+        function abrirDetalle(tipo, id) {
+            if (!tipo || !id) return;
+            fetch(`/api/v1/serenazgo/mapa/detalle/${tipo}/${id}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('No se pudo obtener el detalle');
+                    return r.json();
+                })
+                .then(data => {
+                    document.getElementById('detTipoBadge').innerText = data.tipo;
+                    document.getElementById('detCodigo').innerText = data.codigo;
+                    document.getElementById('detTitulo').innerText = data.titulo || '-';
+                    document.getElementById('detDescripcion').innerText = data.descripcion || 'Sin descripción detallada registrada.';
+                    document.getElementById('detEstado').innerText = data.estadoDescripcion || data.estado || '-';
+                    document.getElementById('detPrioridad').innerText = data.prioridadDescripcion || data.prioridad || '-';
+                    document.getElementById('detFechaHora').innerText = data.fechaHora || '-';
+                    document.getElementById('detSector').innerText = data.sectorNombre || '-';
+                    document.getElementById('detUbicacion').innerText = data.ubicacionReferencia || '-';
+
+                    if (data.tieneCoordenadas && data.latitud && data.longitud) {
+                        document.getElementById('detCoords').innerText = `${data.latitud.toFixed(6)}, ${data.longitud.toFixed(6)}`;
+                        document.getElementById('detCoordsBox').classList.remove('hidden');
+                    } else {
+                        document.getElementById('detCoordsBox').classList.add('hidden');
+                    }
+
+                    // Atributos dinámicos
+                    const atrBox = document.getElementById('detAtributosBox');
+                    atrBox.innerHTML = '';
+                    if (data.atributos) {
+                        Object.entries(data.atributos).forEach(([k, v]) => {
+                            const row = document.createElement('div');
+                            row.className = 'flex justify-between items-center text-[11px]';
+                            row.innerHTML = `<span class="text-slate-400 font-medium">${k}:</span> <span class="text-slate-200 font-semibold text-right">${v}</span>`;
+                            atrBox.appendChild(row);
+                        });
+                    }
+
+                    document.getElementById('detBtnLink').href = data.urlDetalle || '#';
+                    document.getElementById('panelDetalle').classList.remove('hidden');
+                })
+                .catch(err => console.error(err));
+        }
+
+        function setupEventListeners() {
+            // Checkboxes de Capas
+            const layerMap = {
+                'layerSectores': layerGroups.sectores,
+                'layerZonas': layerGroups.zonas,
+                'layerRutas': layerGroups.rutas,
+                'layerPuntos': layerGroups.puntos,
+                'layerIncidencias': layerGroups.incidencias,
+                'layerAlertas': layerGroups.alertas,
+                'layerIntervenciones': layerGroups.intervenciones,
+                'layerPatrullajes': layerGroups.patrullajes
+            };
+
+            Object.entries(layerMap).forEach(([id, layer]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', (e) => {
+                        if (e.target.checked) map.addLayer(layer);
+                        else map.removeLayer(layer);
+                    });
+                }
+            });
+
+            // Botón Alternar Capas
+            document.getElementById('btnToggleAllLayers').addEventListener('click', () => {
+                const anyUnchecked = Object.keys(layerMap).some(id => !document.getElementById(id).checked);
+                Object.keys(layerMap).forEach(id => {
+                    const el = document.getElementById(id);
+                    el.checked = anyUnchecked;
+                    if (anyUnchecked) map.addLayer(layerMap[id]);
+                    else map.removeLayer(layerMap[id]);
+                });
+            });
+
+            // Colapsar / Expandir panel de capas
+            const btnCol = document.getElementById('btnCollapseLayers');
+            const panelCapas = document.getElementById('panelCapas');
+            const iconCol = document.getElementById('iconCollapseLayers');
+            btnCol.addEventListener('click', () => {
+                const isHidden = panelCapas.classList.contains('hidden');
+                panelCapas.classList.toggle('hidden');
+                btnCol.style.left = isHidden ? '256px' : '0px';
+                iconCol.setAttribute('data-lucide', isHidden ? 'chevron-left' : 'chevron-right');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                setTimeout(() => map.invalidateSize(), 310);
+            });
+
+            // Cerrar Panel Detalle
+            document.getElementById('btnCloseDetalle').addEventListener('click', () => {
+                document.getElementById('panelDetalle').classList.add('hidden');
+            });
+
+            // Aplicar Filtros
+            document.getElementById('btnAplicarFiltros').addEventListener('click', cargarTodasLasCapas);
+            document.getElementById('btnRecargarCapas').addEventListener('click', cargarTodasLasCapas);
+
+            // Centrar
+            document.getElementById('btnResetView').addEventListener('click', () => {
+                map.setView(QUINUA_COORDS, DEFAULT_ZOOM);
+            });
+
+            // Ajustar a Extensión
+            document.getElementById('btnFitBounds').addEventListener('click', () => {
+                let bounds = L.latLngBounds([]);
+                Object.values(layerGroups).forEach(group => {
+                    group.eachLayer(l => {
+                        if (l.getBounds) bounds.extend(l.getBounds());
+                        else if (l.getLatLng) bounds.extend(l.getLatLng());
+                    });
+                });
+                if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
+                else map.setView(QUINUA_COORDS, DEFAULT_ZOOM);
+            });
+
+            // Leyenda Toggle
+            document.getElementById('btnToggleLegend').addEventListener('click', () => {
+                const b = document.getElementById('legendBody');
+                const i = document.getElementById('legendIcon');
+                b.classList.toggle('hidden');
+                i.setAttribute('data-lucide', b.classList.contains('hidden') ? 'chevron-up' : 'chevron-down');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+
+            // Menú Exportar Toggle
+            const btnExp = document.getElementById('btnExportMenu');
+            const dropExp = document.getElementById('exportMenuDropdown');
+            btnExp.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropExp.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => dropExp.classList.add('hidden'));
+
+            // Buscador Rápido
+            const searchInput = document.getElementById('mapSearchInput');
+            const searchDropdown = document.getElementById('searchResultsDropdown');
+            const btnClear = document.getElementById('btnClearSearch');
+
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim();
+                btnClear.classList.toggle('hidden', q.length === 0);
+                if (q.length < 2) {
+                    searchDropdown.classList.add('hidden');
+                    return;
+                }
+
+                fetch('/api/v1/serenazgo/mapa/buscar?q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(res => {
+                        searchDropdown.innerHTML = '';
+                        if (!res || res.length === 0) {
+                            searchDropdown.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">No se encontraron elementos</div>';
+                        } else {
+                            res.forEach(item => {
+                                const row = document.createElement('div');
+                                row.className = 'p-2.5 hover:bg-slate-700/60 cursor-pointer text-xs';
+                                row.innerHTML = `
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-slate-100 font-mono">${item.codigo}</span>
+                                        <span class="text-[10px] text-blue-400 font-semibold">${item.tipo}</span>
+                                    </div>
+                                    <p class="text-slate-300 text-[11px] truncate">${item.titulo || ''}</p>
+                                `;
+                                row.addEventListener('click', () => {
+                                    searchDropdown.classList.add('hidden');
+                                    if (item.latitud && item.longitud) {
+                                        map.setView([item.latitud, item.longitud], 18);
+                                    }
+                                    abrirDetalle(item.tipo, item.id);
+                                });
+                                searchDropdown.appendChild(row);
+                            });
+                        }
+                        searchDropdown.classList.remove('hidden');
+                    })
+                    .catch(() => searchDropdown.classList.add('hidden'));
+            });
+
+            btnClear.addEventListener('click', () => {
+                searchInput.value = '';
+                btnClear.classList.add('hidden');
+                searchDropdown.classList.add('hidden');
+            });
+
+            // Modal Alternativa Tabular
+            const modalTabla = document.getElementById('modalTabla');
+            document.getElementById('btnToggleTabla').addEventListener('click', () => {
+                renderizarTablaModal();
+                modalTabla.classList.remove('hidden');
+            });
+            document.getElementById('btnCloseTabla').addEventListener('click', () => modalTabla.classList.add('hidden'));
+            document.getElementById('btnCloseTablaFooter').addEventListener('click', () => modalTabla.classList.add('hidden'));
+
+            // Filtro rápido dentro de la tabla modal
+            document.getElementById('filtroTablaRapido').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = todosLosElementosTabulares.filter(it =>
+                    (it.codigo && it.codigo.toLowerCase().includes(term)) ||
+                    (it.titulo && it.titulo.toLowerCase().includes(term)) ||
+                    (it.sector && it.sector.toLowerCase().includes(term))
+                );
+                poblarTablaModal(filtered);
+            });
+        }
+
+        function renderizarTablaModal() {
+            document.getElementById('filtroTablaRapido').value = '';
+            poblarTablaModal(todosLosElementosTabulares);
+        }
+
+        function poblarTablaModal(items) {
+            const tbody = document.getElementById('tbodyTablaModal');
+            tbody.innerHTML = '';
+            document.getElementById('tablaConteo').innerText = `${items.length} registros`;
+
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500 font-sans">No hay registros para mostrar en la tabla.</td></tr>';
+                return;
+            }
+
+            items.forEach(it => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50';
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-400">${it.tipo}</td>
+                    <td class="p-2.5 text-blue-400 font-semibold">${it.codigo || '-'}</td>
+                    <td class="p-2.5 font-sans text-slate-200">${it.titulo || '-'}</td>
+                    <td class="p-2.5 font-sans text-slate-300">${it.sector || '-'}</td>
+                    <td class="p-2.5 text-slate-400">${it.coords || '-'}</td>
+                    <td class="p-2.5 text-center">
+                        <button class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-sans">Ver en Mapa</button>
+                    </td>
+                `;
+                tr.querySelector('button').addEventListener('click', () => {
+                    document.getElementById('modalTabla').classList.add('hidden');
+                    abrirDetalle(it.tipo, it.id);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

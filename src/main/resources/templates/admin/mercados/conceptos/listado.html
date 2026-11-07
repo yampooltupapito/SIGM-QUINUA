@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Conceptos de Cobro | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y botón de nuevo concepto -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/finanzas}" class="hover:text-blue-400 transition-colors">Finanzas</a>
+                <span>/</span>
+                <span class="text-slate-200">Conceptos de Cobro</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Conceptos de Cobro Comercial
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Catálogo normativo de derechos, cánones y servicios prestados en mercados de la MDQ.</p>
+        </div>
+
+        <button type="button" onclick="abrirModalNuevoConcepto()"
+                sec:authorize="hasAuthority('MERCADOS_CONCEPTO_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nuevo Concepto
+        </button>
+    </div>
+
+    <!-- Tabla de Conceptos -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-5 py-3.5">Código</th>
+                        <th class="px-5 py-3.5">Nombre</th>
+                        <th class="px-5 py-3.5">Tipo</th>
+                        <th class="px-5 py-3.5">Periodicidad</th>
+                        <th class="px-5 py-3.5 text-center">Req. Asignación</th>
+                        <th class="px-5 py-3.5 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40 font-medium">
+                    <tr th:each="c : ${conceptos}" class="hover:bg-[#202c3d]/50 transition-colors">
+                        <td class="px-5 py-4 font-mono font-bold text-blue-400" th:text="${c.codigo}">USO_PUESTO</td>
+                        <td class="px-5 py-4">
+                            <span class="font-bold text-white block" th:text="${c.nombre}">Merced Conductiva</span>
+                            <span class="text-[11px] text-slate-400" th:text="${c.descripcion}">Uso comercial mensual</span>
+                        </td>
+                        <td class="px-5 py-4" th:text="${c.tipoConcepto}">USO_PUESTO_COMERCIAL</td>
+                        <td class="px-5 py-4">
+                            <span class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 border border-[#334155]" th:text="${c.periodicidad}">MENSUAL</span>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            <span th:if="${c.requiereAsignacion}" class="text-emerald-400 font-bold">Sí</span>
+                            <span th:unless="${c.requiereAsignacion}" class="text-slate-500">No</span>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            <span th:if="${c.estado == 'ACTIVO'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVO</span>
+                            <span th:unless="${c.estado == 'ACTIVO'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">INACTIVO</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(conceptos)}">
+                        <td colspan="6" class="px-5 py-12 text-center text-slate-400">
+                            No se encontraron conceptos de cobro registrados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Nuevo Concepto de Cobro -->
+    <div id="modalNuevoConcepto" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] border border-[#334155] rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-[#334155]/60 bg-[#101827]">
+                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    Registrar Nuevo Concepto de Cobro
+                </h2>
+                <button type="button" onclick="cerrarModalNuevoConcepto()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form id="formNuevoConcepto" class="p-6 space-y-4 text-xs">
+                <div id="alertaErrorConcepto" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium"></div>
+                <div id="alertaExitoConcepto" class="hidden p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Código Institucional *</label>
+                        <input type="text" id="conceptoCodigo" required maxlength="50" placeholder="Ej. CANON_LIMPIEZA"
+                               class="w-full bg-[#101827] text-white font-mono uppercase px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Estado</label>
+                        <select id="conceptoEstado"
+                                class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                            <option value="ACTIVO">ACTIVO</option>
+                            <option value="INACTIVO">INACTIVO</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Nombre del Concepto *</label>
+                        <input type="text" id="conceptoNombre" required maxlength="150" placeholder="Ej. Servicio de Seguridad y Vigilancia"
+                               class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Tipo de Concepto *</label>
+                        <select id="conceptoTipo" required
+                                class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                            <option value="USO_PUESTO_COMERCIAL">Uso de Puesto Comercial</option>
+                            <option value="SERVICIO_MERCADO">Servicio de Mercado</option>
+                            <option value="DERECHO_ADMINISTRATIVO">Derecho Administrativo</option>
+                            <option value="OBLIGACION_CONTRACTUAL">Obligación Contractual</option>
+                            <option value="OTRO">Otro Concepto Habilitado</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Periodicidad *</label>
+                        <select id="conceptoPeriodicidad" required
+                                class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                            <option value="MENSUAL">Mensual</option>
+                            <option value="PAGO_UNICO">Pago Único</option>
+                            <option value="TRIMESTRAL">Trimestral</option>
+                            <option value="SEMESTRAL">Semestral</option>
+                            <option value="ANUAL">Anual</option>
+                            <option value="PERSONALIZADA">Personalizada</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-300 mb-1">Descripción / Sustento</label>
+                        <textarea id="conceptoDescripcion" rows="2" placeholder="Detalle del alcance o aplicación del concepto..."
+                                  class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div class="sm:col-span-2 flex items-center gap-2 pt-1">
+                        <input type="checkbox" id="conceptoRequiereAsignacion" checked
+                               class="w-4 h-4 rounded border-[#334155] bg-[#101827] text-blue-600 focus:ring-blue-500">
+                        <label for="conceptoRequiereAsignacion" class="text-xs text-slate-300 font-medium cursor-pointer">
+                            Requiere estar asociado a un puesto o asignación comercial activa
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-[#334155]/60">
+                    <button type="button" onclick="cerrarModalNuevoConcepto()"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarConcepto"
+                            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg transition-colors">
+                        Guardar Concepto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalNuevoConcepto() {
+            const modal = document.getElementById('modalNuevoConcepto');
+            if (!modal) return;
+            document.getElementById('formNuevoConcepto')?.reset();
+            document.getElementById('alertaErrorConcepto')?.classList.add('hidden');
+            document.getElementById('alertaExitoConcepto')?.classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarModalNuevoConcepto() {
+            const modal = document.getElementById('modalNuevoConcepto');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('formNuevoConcepto');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const errDiv = document.getElementById('alertaErrorConcepto');
+                    const okDiv = document.getElementById('alertaExitoConcepto');
+                    const btn = document.getElementById('btnGuardarConcepto');
+                    errDiv.classList.add('hidden');
+                    okDiv.classList.add('hidden');
+
+                    const codigo = document.getElementById('conceptoCodigo').value.trim().toUpperCase();
+                    const nombre = document.getElementById('conceptoNombre').value.trim();
+                    const descripcion = document.getElementById('conceptoDescripcion').value.trim() || null;
+                    const tipoConcepto = document.getElementById('conceptoTipo').value;
+                    const periodicidad = document.getElementById('conceptoPeriodicidad').value;
+                    const estado = document.getElementById('conceptoEstado').value || 'ACTIVO';
+                    const requiereAsignacion = document.getElementById('conceptoRequiereAsignacion').checked;
+
+                    if (!codigo || !nombre) {
+                        errDiv.innerText = 'El código y el nombre del concepto son obligatorios.';
+                        errDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    const headers = { 'Content-Type': 'application/json' };
+                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+                    if (csrfToken) {
+                        headers[csrfHeader] = csrfToken;
+                    }
+
+                    btn.disabled = true;
+                    try {
+                        const resp = await fetch('/api/mercados/conceptos-cobro', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                codigo,
+                                nombre,
+                                descripcion,
+                                tipoConcepto,
+                                periodicidad,
+                                estado,
+                                requiereAsignacion
+                            })
+                        });
+
+                        if (!resp.ok) {
+                            const errData = await resp.json().catch(() => ({}));
+                            throw new Error(errData.message || 'Error al registrar el concepto de cobro.');
+                        }
+
+                        okDiv.innerText = '¡Concepto de cobro registrado exitosamente!';
+                        okDiv.classList.remove('hidden');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } catch (err) {
+                        errDiv.innerText = err.message;
+                        errDiv.classList.remove('hidden');
+                        btn.disabled = false;
+                    }
+                });
+            }
+        });
+
+        window.abrirModalNuevoConcepto = abrirModalNuevoConcepto;
+        window.cerrarModalNuevoConcepto = cerrarModalNuevoConcepto;
+    </script>
+
+</div>
+</body>
+</html>

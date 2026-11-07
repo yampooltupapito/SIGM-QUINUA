@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${(esEdicion != null and esEdicion) ? 'Editar Comerciante' : 'Nuevo Comerciante'} + ' | SIGM-QUINUA'"></title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/comerciantes}" class="hover:text-blue-400 transition-colors">Comerciantes</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${(esEdicion != null and esEdicion) ? 'Editar' : 'Nuevo Registro'}"></span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                <span th:text="${(esEdicion != null and esEdicion) ? 'Actualización de Comerciante: ' + (comerciante != null ? comerciante.codigoComerciante : '') : 'Empadronamiento de Nuevo Comerciante'}"></span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Formulario institucional para el registro y fiscalización de comerciantes en mercados municipales.</p>
+        </div>
+
+        <a th:href="@{/dashboard/mercados/comerciantes}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-[#334155] transition-colors">
+            Volver al Padrón
+        </a>
+    </div>
+
+    <!-- Formulario Principal -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formComerciante" onsubmit="guardarComerciante(event)">
+            <input type="hidden" id="esEdicion" th:value="${esEdicion != null && esEdicion}">
+            <input type="hidden" id="comercianteId" th:value="${comerciante != null ? comerciante.id : ''}">
+            <input type="hidden" id="version" th:value="${comerciante != null ? comerciante.version : 0}">
+
+            <!-- Selector de Modalidad (Solo en Creación) -->
+            <div th:if="${!esEdicion}" class="mb-6 pb-6 border-b border-[#334155]">
+                <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Modalidad Jurídica del Comerciante <span class="text-red-400">*</span></label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="relative flex items-center p-4 rounded-xl border border-[#334155] bg-[#101827] cursor-pointer hover:border-blue-500 transition-colors">
+                        <input type="radio" name="tipoComercianteRadio" value="PERSONA_NATURAL" checked onchange="alternarTipoComerciante('PERSONA_NATURAL')" class="text-blue-600 focus:ring-blue-500">
+                        <div class="ml-3">
+                            <span class="block text-sm font-semibold text-white">Persona Natural</span>
+                            <span class="block text-xs text-slate-400">Comerciante individual con DNI / CE (Titular directo)</span>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center p-4 rounded-xl border border-[#334155] bg-[#101827] cursor-pointer hover:border-blue-500 transition-colors">
+                        <input type="radio" name="tipoComercianteRadio" value="PERSONA_JURIDICA" onchange="alternarTipoComerciante('PERSONA_JURIDICA')" class="text-blue-600 focus:ring-blue-500">
+                        <div class="ml-3">
+                            <span class="block text-sm font-semibold text-white">Persona Jurídica</span>
+                            <span class="block text-xs text-slate-400">Empresa, Asociación o Cooperativa con RUC (Representada legalmente)</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Código Comerciante y Estado Inicial -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-[#334155]">
+                <div>
+                    <label for="codigoComerciante" class="block text-xs font-semibold text-slate-300 mb-1">Código de Comerciante (Opcional - Autogenerable)</label>
+                    <input type="text" id="codigoComerciante" name="codigoComerciante" th:value="${comerciante != null ? comerciante.codigoComerciante : ''}" placeholder="Ej. COM-2026-000001 (vacío para autogenerar)"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-400 mt-1">Si se deja vacío, el sistema asignará el siguiente correlativo seguro.</p>
+                </div>
+
+                <div th:if="${!esEdicion}">
+                    <label for="estadoInicial" class="block text-xs font-semibold text-slate-300 mb-1">Estado de Empadronamiento</label>
+                    <select id="estadoInicial" name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="ACTIVO" selected>Activo (Habilitado)</option>
+                        <option value="PENDIENTE_VERIFICACION">Pendiente de Verificación</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Inclusión de Formularios según Tipo -->
+            <div th:replace="~{admin/mercados/comerciantes/componentes/formulario-natural :: #seccionPersonaNatural}"></div>
+            <div th:replace="~{admin/mercados/comerciantes/componentes/formulario-juridico :: #seccionPersonaJuridica}"></div>
+
+            <!-- Actividades Comerciales Autorizadas -->
+            <div class="bg-[#202c3d] p-5 rounded-xl border border-[#334155] space-y-3 mt-6">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>Actividades Comerciales a Desarrollar</span>
+                </h3>
+                <p class="text-xs text-slate-400">Seleccione los rubros o giros comerciales autorizados:</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                    <div th:each="act : ${actividades}" class="flex items-center space-x-2 bg-[#101827] p-2.5 rounded-lg border border-[#334155]">
+                        <input type="checkbox" name="actividadIds" th:value="${act.id}" th:id="${'act_' + act.id}" class="rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-[#334155]">
+                        <label th:for="${'act_' + act.id}" class="text-xs text-slate-200 cursor-pointer" th:text="${act.nombre}"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="mt-6">
+                <label for="observaciones" class="block text-xs font-semibold text-slate-300 mb-1">Observaciones Generales</label>
+                <textarea id="observaciones" name="observaciones" rows="3" maxlength="1000" placeholder="Anotaciones administrativas, antecedentes o referencias..."
+                          class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          th:text="${comerciante != null ? comerciante.observaciones : ''}"></textarea>
+            </div>
+
+            <!-- Acciones -->
+            <div class="mt-6 pt-6 border-t border-[#334155] flex justify-end gap-3">
+                <a th:href="@{/dashboard/mercados/comerciantes}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-[#334155] transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" id="btnGuardar" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span th:text="${esEdicion ? 'Actualizar Comerciante' : 'Guardar y Empadronar'}"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Script Cliente -->
+    <script th:src="@{/js/mercados/comerciantes-formulario.js}"></script>
+</div>
+</body>
+</html>

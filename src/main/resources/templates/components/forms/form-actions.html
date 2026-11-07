@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     1. COMPONENTE BUTTON (Botón institucional reutilizable)
+     ========================================================================== -->
+<button th:fragment="button(type, variante, icono, texto)"
+        th:type="${!#strings.isEmpty(type) ? type : 'button'}"
+        class="sigm-btn"
+        th:classappend="${variante == 'secondary'} ? 'sigm-btn-secondary' :
+                        (${variante == 'success'} ? 'sigm-btn-success' :
+                        (${variante == 'warning'} ? 'sigm-btn-warning' :
+                        (${variante == 'danger'} ? 'sigm-btn-danger' :
+                        (${variante == 'ghost'} ? 'sigm-btn-ghost' : 'sigm-btn-primary'))))">
+    <i th:if="${!#strings.isEmpty(icono)}" th:attr="data-lucide=${icono}" class="w-4 h-4"></i>
+    <span th:text="${texto}">Acción</span>
+</button>
+
+<!-- ==========================================================================
+     2. COMPONENTE FORM ACTIONS (Pie de formulario con Cancelar + Guardar)
+     ========================================================================== -->
+<div th:fragment="formActions(cancelUrl, cancelText, submitText, submitIcon)"
+     class="pt-4 mt-4 border-t border-theme flex flex-wrap items-center justify-end gap-2.5">
+    <a th:if="${!#strings.isEmpty(cancelUrl)}" th:href="${cancelUrl}" class="sigm-btn sigm-btn-secondary">
+        <i data-lucide="x" class="w-4 h-4"></i>
+        <span th:text="${!#strings.isEmpty(cancelText) ? cancelText : 'Cancelar'}">Cancelar</span>
+    </a>
+    <button type="submit" class="sigm-btn sigm-btn-primary">
+        <i th:attr="data-lucide=${!#strings.isEmpty(submitIcon) ? submitIcon : 'save'}" class="w-4 h-4"></i>
+        <span th:text="${!#strings.isEmpty(submitText) ? submitText : 'Guardar Cambios'}">Guardar Cambios</span>
+    </button>
+</div>
+
+</body>
+</html>
+

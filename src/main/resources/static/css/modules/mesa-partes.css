@@ -1,0 +1,28 @@
+/* ==========================================================================
+   SIGM-QUINUA — ESTILOS ESPECÍFICOS DE MÓDULO: MESA DE PARTES VIRTUAL (MPV)
+   ========================================================================== */
+
+.mpv-timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+.mpv-timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background-color: var(--border-theme);
+}
+.mpv-timeline-dot {
+    position: absolute;
+    left: -1.35rem;
+    top: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background-color: var(--color-primary-light);
+    border: 2px solid var(--bg-card);
+}
+

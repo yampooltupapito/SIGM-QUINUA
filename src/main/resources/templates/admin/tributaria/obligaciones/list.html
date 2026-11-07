@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Obligaciones Tributarias — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Notificación -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación completada exitosamente</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Principal y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Obligaciones Tributarias</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="file-check" class="w-6 h-6 text-blue-500"></i>
+                Gestión de Obligaciones Tributarias
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-0.5">
+                Registro, control y seguimiento de obligaciones municipales individuales y por lotes.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a th:href="@{/dashboard/tributaria/obligaciones/exportar/excel(query=${filtro.query}, periodoId=${filtro.periodoId}, estado=${filtro.estado})}"
+               class="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-all">
+                <i data-lucide="sheet" class="w-4 h-4 mr-1.5 text-emerald-400"></i>
+                Exportar Excel
+            </a>
+            <a th:href="@{/dashboard/tributaria/obligaciones/exportar/pdf(query=${filtro.query}, periodoId=${filtro.periodoId}, estado=${filtro.estado})}"
+               target="_blank"
+               class="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-all">
+                <i data-lucide="file-text" class="w-4 h-4 mr-1.5 text-rose-400"></i>
+                Padrón PDF
+            </a>
+            <a th:href="@{/dashboard/tributaria/obligaciones/generar-lote}"
+               sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_GENERAR_LOTE') or hasRole('ADMIN')"
+               class="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/40 transition-all">
+                <i data-lucide="layers" class="w-4 h-4 mr-1.5 text-indigo-400"></i>
+                Generación por Lote
+            </a>
+            <a th:href="@{/dashboard/tributaria/obligaciones/generar}"
+               sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_GENERAR') or hasRole('ADMIN')"
+               class="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all">
+                <i data-lucide="plus-circle" class="w-4 h-4 mr-1.5"></i>
+                Generar Obligación
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Financieros Reales -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Total Obligaciones</span>
+                <i data-lucide="files" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <p class="text-xl font-bold text-white mt-1.5" th:text="${metricas.totalObligaciones}">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Registros tributarios</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Registradas</span>
+                <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <p class="text-xl font-bold text-amber-400 mt-1.5" th:text="${metricas.registradas}">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Pendientes de validar</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Validadas / Vigentes</span>
+                <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <p class="text-xl font-bold text-emerald-400 mt-1.5" th:text="${metricas.validadas}">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Exigibles formalmente</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Monto Determinado</span>
+                <i data-lucide="calculator" class="w-4 h-4 text-sky-400"></i>
+            </div>
+            <p class="text-xl font-bold text-sky-400 mt-1.5" th:text="'S/ ' + ${#numbers.formatDecimal(metricas.importeDeterminado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Cargos emitidos</p>
+        </div>
+
+        <div class="col-span-2 md:col-span-1 p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Saldo Deudor</span>
+                <i data-lucide="wallet" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <p class="text-xl font-bold text-rose-400 mt-1.5" th:text="'S/ ' + ${#numbers.formatDecimal(metricas.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Saldo pendiente total</p>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155]">
+        <form th:action="@{/dashboard/tributaria/obligaciones}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Buscar Contribuyente / Código</label>
+                <div class="relative">
+                    <input type="text" name="query" th:value="${filtro.query}"
+                           placeholder="DNI, RUC, nombre o código..."
+                           class="w-full pl-9 pr-3 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-500">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-2 text-slate-500"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Determinación</label>
+                <select name="tipoDeterminacion" class="w-full px-2.5 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los tipos</option>
+                    <option th:each="tipo : ${tiposDeterminacion}"
+                            th:value="${tipo}"
+                            th:text="${tipo.descripcion}"
+                            th:selected="${filtro.tipoDeterminacion == tipo}">Tipo</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Ejercicio / Período Fiscal</label>
+                <select name="periodoId" class="w-full px-2.5 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los ejercicios</option>
+                    <option th:each="p : ${periodos}"
+                            th:value="${p.id}"
+                            th:text="${p.anio}"
+                            th:selected="${filtro.periodoId == p.id}">2026</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Estado Administrativo</label>
+                <select name="estado" class="w-full px-2.5 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}"
+                            th:value="${est}"
+                            th:text="${est.descripcion}"
+                            th:selected="${filtro.estado == est}">Estado</option>
+                </select>
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/tributaria/obligaciones}" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Obligaciones -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] border-b border-[#334155] text-slate-400 uppercase tracking-wider text-[11px]">
+                <tr>
+                    <th class="py-3 px-3.5">Código</th>
+                    <th class="py-3 px-3.5">Contribuyente</th>
+                    <th class="py-3 px-3.5">Concepto</th>
+                    <th class="py-3 px-3.5">Ejercicio</th>
+                    <th class="py-3 px-3.5 text-right">Determinado</th>
+                    <th class="py-3 px-3.5 text-right">Saldo Deudor</th>
+                    <th class="py-3 px-3.5">Vencimiento</th>
+                    <th class="py-3 px-3.5 text-center">Estado</th>
+                    <th class="py-3 px-3.5 text-center">Exigibilidad</th>
+                    <th class="py-3 px-3.5 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60">
+                <tr th:if="${#lists.isEmpty(obligaciones.content)}" class="text-center text-slate-500 py-8">
+                    <td colspan="10" class="py-12 text-center">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                        <p class="text-sm font-medium text-slate-400">No se encontraron obligaciones tributarias</p>
+                        <p class="text-xs text-slate-500 mt-1">Utilice los botones superiores para generar obligaciones individuales o por lotes.</p>
+                    </td>
+                </tr>
+
+                <tr th:each="o : ${obligaciones.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-3.5 font-mono font-medium text-blue-400">
+                        <a th:href="@{'/dashboard/tributaria/obligaciones/' + ${o.id}}"
+                           th:text="${o.codigoObligacion}"
+                           class="hover:underline">OBL-PRED-2026-000001</a>
+                    </td>
+                    <td class="py-3 px-3.5">
+                        <div class="font-medium text-slate-200" th:text="${o.contribuyenteNombre}">Juan Pérez</div>
+                        <div class="text-[10px] text-slate-400" th:text="${o.contribuyenteDocumento}">DNI: 12345678</div>
+                    </td>
+                    <td class="py-3 px-3.5">
+                        <span class="font-medium text-slate-200" th:text="${o.conceptoNombre}">Impuesto Predial Anual</span>
+                        <span class="block text-[10px] text-slate-400" th:text="'Cuota ' + ${o.cuotaNumero} + ' de ' + ${o.totalCuotas}">Cuota 1 de 4</span>
+                    </td>
+                    <td class="py-3 px-3.5 font-medium" th:text="${o.periodoAnio}">2026</td>
+                    <td class="py-3 px-3.5 text-right font-mono font-medium text-slate-200"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(o.importeDeterminado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-right font-mono font-bold"
+                        th:classappend="${o.saldo.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-rose-400' : 'text-emerald-400'}"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(o.saldo, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-slate-400 text-[11px]"
+                        th:text="${o.fechaVencimiento != null ? #temporals.format(o.fechaVencimiento, 'dd/MM/yyyy') : 'N/A'}">28/02/2026</td>
+                    <td class="py-3 px-3.5 text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${o.badgeClass}"
+                              th:text="${o.estado.descripcion}">Registrada</span>
+                    </td>
+                    <td class="py-3 px-3.5 text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border"
+                              th:classappend="${o.exigibilidadBadgeClass}"
+                              th:text="${o.estadoExigibilidad.descripcion}">No Exigible</span>
+                    </td>
+                    <td class="py-3 px-3.5 text-right space-x-1">
+                        <a th:href="@{'/dashboard/tributaria/obligaciones/' + ${o.id}}"
+                           class="p-1.5 inline-flex text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded transition-colors"
+                           title="Ver Ficha Detallada">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <a th:href="@{'/dashboard/tributaria/obligaciones/' + ${o.id} + '/pdf'}"
+                           target="_blank"
+                           class="p-1.5 inline-flex text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded transition-colors"
+                           title="Ficha PDF">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${obligaciones.totalPages > 1}" class="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${obligaciones.number + 1}">1</span> de
+                <span class="font-bold text-white" th:text="${obligaciones.totalPages}">1</span>
+                (<span th:text="${obligaciones.totalElements}">0</span> obligaciones registradas)
+            </div>
+            <div class="flex gap-1">
+                <a th:if="${obligaciones.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/obligaciones(page=${obligaciones.number - 1}, query=${filtro.query}, periodoId=${filtro.periodoId}, estado=${filtro.estado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300">Anterior</a>
+                <a th:if="${obligaciones.hasNext()}"
+                   th:href="@{/dashboard/tributaria/obligaciones(page=${obligaciones.number + 1}, query=${filtro.query}, periodoId=${filtro.periodoId}, estado=${filtro.estado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

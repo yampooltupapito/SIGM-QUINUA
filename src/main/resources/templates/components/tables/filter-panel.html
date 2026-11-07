@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE FILTER PANEL (Panel estándar de filtros de bandeja)
+     ========================================================================== -->
+<form th:fragment="filterPanel(formId, actionUrl, clearUrl, fieldsFragment)"
+      th:id="${!#strings.isEmpty(formId) ? formId : 'formFiltrosBandeja'}"
+      th:action="${actionUrl}"
+      method="get"
+      class="sigm-filter-panel space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <th:block th:if="${fieldsFragment != null}">
+            <th:block th:replace="${fieldsFragment}"></th:block>
+        </th:block>
+    </div>
+    <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-700/50">
+        <a th:if="${!#strings.isEmpty(clearUrl)}" th:href="${clearUrl}" class="sigm-btn sigm-btn-secondary">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Limpiar Filtros</span>
+        </a>
+        <button type="submit" class="sigm-btn sigm-btn-primary">
+            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+            <span>Aplicar Filtros</span>
+        </button>
+    </div>
+</form>
+
+</body>
+</html>
+

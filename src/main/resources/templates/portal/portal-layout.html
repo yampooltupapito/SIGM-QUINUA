@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+    <title layout:title-pattern="$LAYOUT_TITLE — $CONTENT_TITLE">Municipalidad Distrital de Quinua — Portal Ciudadano</title>
+
+    <!-- Tailwind CSS Compilado Localmente y Sistema de Diseño -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+
+    <style>
+        /* Paleta Institucional Ciudadana */
+        :root {
+            --color-primary: #1d4ed8;
+            --color-dark: #101827;
+            --color-slate-dark: #1e293b;
+            --color-bg-light: #f8fafc;
+            --color-text-dark: #0f172a;
+            --color-text-muted: #64748b;
+            --color-border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--color-bg-light);
+            color: var(--color-text-dark);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .bg-gov-blue { background-color: #1d4ed8; }
+        .text-gov-blue { color: #1d4ed8; }
+        .border-gov-blue { border-color: #1d4ed8; }
+        .bg-gov-dark { background-color: #101827; }
+
+        /* Focus accesible WCAG AA */
+        a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid #1d4ed8;
+            outline-offset: 2px;
+        }
+
+        /* Estilo para acordeón FAQ */
+        .faq-item[open] .faq-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+    <th:block layout:fragment="page-css"></th:block>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Barra Superior de Estado y Canales Oficiales -->
+    <div class="bg-[#101827] text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3 text-[11px] sm:text-xs">
+                <span class="inline-flex items-center text-blue-400 font-semibold">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-emerald-400"></i>
+                    Portal Oficial del Estado Peruano
+                </span>
+                <span class="text-slate-600 hidden md:inline">|</span>
+                <span class="text-slate-400 hidden md:inline">Distrito Histórico de Quinua — Huamanga, Ayacucho</span>
+            </div>
+            <div class="flex items-center space-x-4 text-[11px] sm:text-xs">
+                <a th:href="@{/portal/seguridad/reportar}" class="text-amber-400 hover:text-amber-300 font-medium transition-colors flex items-center">
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 mr-1 text-amber-400"></i> Alerta Seguridad
+                </a>
+                <a th:href="@{/mesa-partes}" class="hover:text-white transition-colors flex items-center">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1 text-blue-400"></i> Mesa de Partes
+                </a>
+                <a th:href="@{/contacto}" class="hover:text-white transition-colors flex items-center">
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5 mr-1 text-emerald-400"></i> Orientación Vecinal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encabezado Principal Institucional -->
+    <header class="bg-white border-b border-[#e2e8f0] sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center min-h-[4.75rem] py-2 gap-2 xl:gap-4">
+                <!-- Identidad Municipal y Logo Oficial -->
+                <a th:href="@{/}" class="flex items-center space-x-3 group focus:outline-none flex-shrink-0" title="Ir al inicio del Portal Institucional de Quinua">
+                    <div class="w-12 h-12 sm:w-13 sm:h-13 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:border-blue-400 transition-all flex-shrink-0">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial de la Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <div class="flex items-center space-x-1.5 leading-none mb-1">
+                            <span class="text-xs font-black uppercase tracking-wider text-blue-700">SIGM-QUINUA</span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200 uppercase tracking-tight">Oficial</span>
+                        </div>
+                        <span class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight whitespace-nowrap">Municipalidad Distrital de Quinua</span>
+                        <span class="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-normal whitespace-nowrap">Huamanga — Ayacucho &bull; Cuna de la Libertad Americana</span>
+                    </div>
+                </a>
+
+                <!-- Navegación Principal en Escritorio -->
+                <nav class="hidden lg:flex items-center space-x-0.5 xl:space-x-1" aria-label="Navegación Principal">
+                    <a th:href="@{/}"
+                       th:classappend="${paginaActiva == 'inicio'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Inicio
+                    </a>
+                    <a th:href="@{/servicios}"
+                       th:classappend="${paginaActiva == 'servicios'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Servicios
+                    </a>
+                    <a th:href="@{/mesa-partes}"
+                       th:classappend="${paginaActiva == 'mesa-partes'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Mesa de Partes
+                    </a>
+                    <a th:href="@{/noticias}"
+                       th:classappend="${paginaActiva == 'noticias'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Noticias
+                    </a>
+                    <a th:href="@{/faq}"
+                       th:classappend="${paginaActiva == 'faq'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Preguntas Frecuentes
+                    </a>
+                    <a th:href="@{/nosotros}"
+                       th:classappend="${paginaActiva == 'nosotros'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Institucional
+                    </a>
+                    <a th:href="@{/portal/seguridad/reportar}"
+                       th:classappend="${paginaActiva == 'seguridad_reportar'} ? 'text-amber-800 bg-amber-50 font-semibold border-b-2 border-amber-600' : 'text-slate-700 hover:text-amber-700 hover:bg-slate-50'"
+                       class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors flex items-center gap-1">
+                        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span>Alerta</span>
+                    </a>
+                    <a th:href="@{/contacto}"
+                       th:classappend="${paginaActiva == 'contacto'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'"
+                       class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">
+                        Contacto
+                    </a>
+                </nav>
+
+                <!-- Botones de Acción Ciudadana e Ingreso -->
+                <div class="hidden sm:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
+                    <a th:href="@{/registro}"
+                       class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shadow-sm whitespace-nowrap">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i>
+                        <span>Registro Ciudadano</span>
+                    </a>
+                    <a th:href="@{/login}"
+                       class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-sm whitespace-nowrap">
+                        <i data-lucide="log-in" class="w-3.5 h-3.5 mr-1.5"></i>
+                        <span>Acceso Sistema</span>
+                    </a>
+                </div>
+
+                <!-- Botón de Menú Móvil (Hamburguesa accesible) -->
+                <div class="flex items-center lg:hidden">
+                    <button id="btnMenuMovil" type="button" aria-label="Abrir menú de navegación móvil" aria-expanded="false"
+                            class="p-2 rounded-lg text-slate-700 hover:text-blue-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menú Móvil Desplegable -->
+        <div id="menuMovilDesplegable" class="hidden lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-2 shadow-lg">
+            <nav class="space-y-1">
+                <a th:href="@{/}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Inicio</a>
+                <a th:href="@{/portal/seguridad/reportar}" class="block px-3 py-2 rounded-md text-sm font-medium text-amber-700 hover:text-amber-800 hover:bg-amber-50 flex items-center gap-2">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i>
+                    <span>Alerta Seguridad Ciudadana</span>
+                </a>
+                <a th:href="@{/servicios}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Servicios Municipales</a>
+                <a th:href="@{/mesa-partes}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Mesa de Partes Virtual</a>
+                <a th:href="@{/tramites/consulta}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Consulta de Trámites</a>
+                <a th:href="@{/noticias}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Noticias y Comunicados</a>
+                <a th:href="@{/faq}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Preguntas Frecuentes</a>
+                <a th:href="@{/nosotros}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Información Institucional</a>
+                <a th:href="@{/contacto}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50">Atención Ciudadana</a>
+            </nav>
+            <div class="pt-4 border-t border-slate-200 flex flex-col space-y-2">
+                <a th:href="@{/registro}" class="w-full text-center py-2 px-4 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200">
+                    Registro Ciudadano
+                </a>
+                <a th:href="@{/login}" class="w-full text-center py-2 px-4 rounded-lg text-xs font-semibold text-white bg-blue-700">
+                    Acceso al Sistema
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de Vista -->
+    <main class="flex-1" id="contenido-principal" role="main">
+        <div layout:fragment="content">
+            <!-- El contenido específico de cada página se inserta aquí -->
+        </div>
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <footer class="bg-[#101827] text-slate-300 border-t border-slate-800 pt-12 pb-8 mt-16" role="contentinfo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-slate-800">
+                <!-- Columna 1: Identidad Municipal -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shadow flex-shrink-0">
+                            <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Quinua" class="w-full h-full object-contain">
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Muni Quinua</h3>
+                            <p class="text-xs text-slate-400">Huamanga — Ayacucho</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Comprometidos con el desarrollo integral, la transparencia y la atención moderna y accesible para todos los vecinos del distrito de Quinua.
+                    </p>
+                    <div class="pt-2">
+                        <span class="inline-flex items-center text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                            <i data-lucide="award" class="w-3.5 h-3.5 mr-1.5 text-amber-400"></i>
+                            Cuna de la Libertad Americana
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Enlaces Rápidos -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-4 flex items-center">
+                        <i data-lucide="navigation" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Navegación Rápida
+                    </h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><a th:href="@{/servicios}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Catálogo de Servicios</a></li>
+                        <li><a th:href="@{/mesa-partes}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Mesa de Partes Virtual</a></li>
+                        <li><a th:href="@{/tramites/consulta}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Consulta de Trámites</a></li>
+                        <li><a th:href="@{/noticias}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Noticias y Comunicados</a></li>
+                        <li><a th:href="@{/faq}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Preguntas Frecuentes</a></li>
+                        <li><a th:href="@{/nosotros}" class="hover:text-white transition-colors flex items-center"><i data-lucide="chevron-right" class="w-3 h-3 mr-1 text-slate-500"></i> Oficinas Municipales</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Información de Contacto Real -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-4 flex items-center">
+                        <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-emerald-400"></i>
+                        Sede y Contacto
+                    </h4>
+                    <ul class="space-y-2.5 text-xs text-slate-400">
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="building" class="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5"></i>
+                            <span th:text="${config != null && config['institucion_direccion'] != null ? config['institucion_direccion'] : 'Plaza de Armas s/n, Quinua, Huamanga, Ayacucho'}">Plaza de Armas s/n, Quinua</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5"></i>
+                            <span th:text="${config != null && config['institucion_horario'] != null ? config['institucion_horario'] : 'Lunes a Viernes: 08:00 a 13:00 y 14:00 a 17:00'}">Lunes a Viernes: 08:00 - 17:00</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5"></i>
+                            <span th:text="${config != null && config['institucion_correo'] != null ? config['institucion_correo'] : 'mesadepartes@muniquinua.gob.pe'}">mesadepartes@muniquinua.gob.pe</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Columna 4: Portales del Estado y Acceso Interno -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-4 flex items-center">
+                        <i data-lucide="external-link" class="w-4 h-4 mr-2 text-indigo-400"></i>
+                        Portales del Estado
+                    </h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><a href="https://www.gob.pe" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3 mr-1 text-slate-500"></i> Plataforma Digital GOB.PE</a></li>
+                        <li><a href="https://www.reniec.gob.pe" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3 mr-1 text-slate-500"></i> RENIEC</a></li>
+                        <li><a href="https://www.sunat.gob.pe" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3 mr-1 text-slate-500"></i> SUNAT</a></li>
+                        <li><a href="https://www.contraloria.gob.pe" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors flex items-center"><i data-lucide="arrow-up-right" class="w-3 h-3 mr-1 text-slate-500"></i> Contraloría General</a></li>
+                    </ul>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800">
+                        <a th:href="@{/login}" class="inline-flex items-center text-[11px] text-slate-400 hover:text-blue-400 font-medium transition-colors">
+                            <i data-lucide="lock" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>
+                            Acceso a Administración SIGM
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Créditos y Derechos Legales -->
+            <div class="pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-3">
+                <p>&copy; 2026 Municipalidad Distrital de Quinua — Todos los derechos reservados.</p>
+                <p class="flex items-center">
+                    <span>SIGM-QUINUA v1.0.0</span>
+                    <span class="mx-2">•</span>
+                    <span>Ayacucho — Perú</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts Esenciales -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+            // Alternar Menú Móvil
+            const btnMenu = document.getElementById("btnMenuMovil");
+            const menuMovil = document.getElementById("menuMovilDesplegable");
+            if (btnMenu && menuMovil) {
+                btnMenu.addEventListener("click", function() {
+                    const expanded = btnMenu.getAttribute("aria-expanded") === "true";
+                    btnMenu.setAttribute("aria-expanded", !expanded);
+                    menuMovil.classList.toggle("hidden");
+                });
+            }
+        });
+    </script>
+    <th:block layout:fragment="page-scripts"></th:block>
+    <th:block layout:fragment="scripts"></th:block>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Puestos Comerciales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Mis Puestos Asignados</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Puestos comerciales que le han sido formalmente adjudicados en los mercados municipales.
+            </p>
+        </div>
+        <a th:href="@{/portal/comerciante/plano}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors">
+            <i data-lucide="map" class="w-4 h-4"></i> Ver en Plano
+        </a>
+    </div>
+
+    <!-- Lista de Puestos -->
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Puesto</th>
+                        <th class="px-6 py-3.5">Mercado / Pabellón</th>
+                        <th class="px-6 py-3.5">Giro Autorizado</th>
+                        <th class="px-6 py-3.5">Área (m²)</th>
+                        <th class="px-6 py-3.5">Estado Asignación</th>
+                        <th class="px-6 py-3.5">Vigencia</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="p : ${puestos}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${p.codigoPuesto}">P-01</td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-900 block" th:text="${p.mercadoNombre}">Mercado Central</span>
+                            <span class="text-xs text-slate-500" th:text="${(p.sectorNombre != null ? p.sectorNombre : '') + ' • ' + (p.pabellonNombre != null ? p.pabellonNombre : '')}">Sector A • Pabellón 1</span>
+                        </td>
+                        <td class="px-6 py-4" th:text="${p.giroComercial != null ? p.giroComercial : '-'}">Abarrotes</td>
+                        <td class="px-6 py-4 font-mono" th:text="${p.areaMetros != null ? p.areaMetros + ' m²' : '-'}">6.00 m²</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${p.asignacionEstado == 'ACTIVA' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}"
+                                  th:text="${p.asignacionEstado}">ACTIVA</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs">
+                            <span th:text="${#temporals.format(p.fechaInicioAsignacion, 'dd/MM/yyyy')}">01/01/2026</span>
+                            <span> al </span>
+                            <span th:text="${p.fechaFinAsignacion != null ? #temporals.format(p.fechaFinAsignacion, 'dd/MM/yyyy') : 'Indeterminado'}">31/12/2026</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a th:href="@{'/portal/comerciante/puestos/' + ${p.puestoId}}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver Ficha
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(puestos)}">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="store" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra puestos comerciales asignados actualmente.</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Si considera que esto es un error, acérquese a la Subgerencia de Mercados.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

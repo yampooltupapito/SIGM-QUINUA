@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Revisión de Propuestas de Decisión — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Despacho</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Revisión de Proyectos</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="file-check" class="w-6 h-6 text-indigo-400"></i>
+                Bandeja de Revisión de Propuestas
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control jerárquico y visado de proyectos de resolución y decisiones administrativas (Segregación de funciones).</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/atencion}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Bandeja de Atención
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Propuestas -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+        <form method="get" th:action="@{/dashboard/mesa-partes/propuestas}" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado de Propuesta</label>
+                <select name="estado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est}" th:selected="${est == estadoSel}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Dependencia</label>
+                <select name="oficinaId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las dependencias</option>
+                    <option th:each="of : ${oficinas}" th:value="${of.id}" th:text="${of.nombre}" th:selected="${of.id == oficinaSel}"></option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mesa-partes/propuestas}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs transition-colors border border-slate-700">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Propuestas -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700/60">
+                <tr>
+                    <th class="px-4 py-3">N° Exp.</th>
+                    <th class="px-4 py-3">Tipo Acto Propuesto</th>
+                    <th class="px-4 py-3">Sentido</th>
+                    <th class="px-4 py-3">Proyectista</th>
+                    <th class="px-4 py-3">Fecha Envío</th>
+                    <th class="px-4 py-3 text-center">Estado</th>
+                    <th class="px-4 py-3 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40">
+                <tr th:if="${#lists.isEmpty(propuestas.content)}">
+                    <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                            <i data-lucide="file-check" class="w-8 h-8 text-slate-500"></i>
+                            <span class="text-sm font-medium">No se registran propuestas de decisión pendientes en esta bandeja.</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:each="prop : ${propuestas.content}" class="hover:bg-slate-700/20 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <a th:href="@{'/dashboard/mesa-partes/atencion/' + ${prop.expedienteId}}"
+                           class="font-bold text-blue-400 hover:underline" th:text="${prop.numeroExpediente}">EXP-2026-0001</a>
+                    </td>
+                    <td class="px-4 py-3 font-semibold text-slate-200" th:text="${prop.tipoDecision}">RESOLUCION</td>
+                    <td class="px-4 py-3">
+                        <span th:class="${prop.resultadoPropuesto.name() == 'FAVORABLE'} ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                              th:text="${prop.resultadoPropuesto}">FAVORABLE</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-200" th:text="${prop.usuarioElaboradorNombre}">Ing. Carlos</div>
+                        <div class="text-[10px] text-slate-400" th:text="${prop.oficinaNombre}">Desarrollo Urbano</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-slate-400" th:text="${prop.fechaEnvioRevision != null} ? ${#temporals.format(prop.fechaEnvioRevision, 'dd/MM/yyyy HH:mm')} : '-'">16/01/2026</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span th:class="${prop.estado.name() == 'EN_REVISION'} ? 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : (${prop.estado.name() == 'APROBADA_INTERNAMENTE'} ? 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-300')"
+                              th:text="${prop.estado}">EN_REVISION</span>
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button th:if="${prop.estado.name() == 'EN_REVISION'}"
+                                    th:data-id="${prop.id}"
+                                    th:data-numero="${prop.numeroExpediente}"
+                                    th:data-elaborador="${prop.usuarioElaboradorNombre}"
+                                    th:data-resultado="${prop.resultadoPropuesto}"
+                                    onclick="abrirModalRevisar(this.getAttribute('data-id'), this.getAttribute('data-numero'), this.getAttribute('data-elaborador'), this.getAttribute('data-resultado'))"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition-colors flex items-center gap-1">
+                                <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                                Revisar
+                            </button>
+                            <a th:href="@{'/dashboard/mesa-partes/atencion/' + ${prop.expedienteId}}"
+                               class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="Ver Expediente">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Revisión de Propuesta -->
+    <div id="modalRevisarPropuesta" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full p-5 shadow-xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="file-check" class="w-4 h-4 text-indigo-400"></i>
+                Revisión y Visado de Proyecto
+            </h3>
+            <input type="hidden" id="hdnPropIdRevisar">
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
+                <div><span class="text-slate-400">Expediente:</span> <strong id="lblExpRev" class="text-slate-200"></strong></div>
+                <div><span class="text-slate-400">Proyectista:</span> <span id="lblProyRev" class="text-slate-200"></span></div>
+                <div><span class="text-slate-400">Sentido:</span> <span id="lblSentidoRev" class="text-indigo-400 font-bold"></span></div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Decisión de Revisión:</label>
+                <select id="selAccionRevision" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                    <option value="APROBADA_INTERNAMENTE">Aprobar Internamente (Dar Visado de Conformidad)</option>
+                    <option value="DEVUELTA_CON_OBSERVACIONES">Devolver con Observaciones para Corrección</option>
+                    <option value="RECHAZADA">Rechazar Propuesta</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Fundamento u Observaciones de Revisión (mínimo 10 caracteres):</label>
+                <textarea id="txtObsRevision" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Motivo de aprobación o correcciones solicitadas..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button onclick="cerrarModalRevisar()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button onclick="ejecutarRevision()" class="px-4 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">Guardar Decisión</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+
+        function abrirModalRevisar(propId, expNum, proy, sentido) {
+            document.getElementById('hdnPropIdRevisar').value = propId;
+            document.getElementById('lblExpRev').textContent = expNum;
+            document.getElementById('lblProyRev').textContent = proy;
+            document.getElementById('lblSentidoRev').textContent = sentido;
+            document.getElementById('txtObsRevision').value = '';
+            document.getElementById('modalRevisarPropuesta').classList.remove('hidden');
+        }
+
+        function cerrarModalRevisar() {
+            document.getElementById('modalRevisarPropuesta').classList.add('hidden');
+        }
+
+        function ejecutarRevision() {
+            const propId = document.getElementById('hdnPropIdRevisar').value;
+            const accion = document.getElementById('selAccionRevision').value;
+            const obs = document.getElementById('txtObsRevision').value;
+
+            if (!obs || obs.trim().length < 10) {
+                alert('Debe ingresar observaciones o fundamento de al menos 10 caracteres.');
+                return;
+            }
+
+            fetch('/api/mesa-partes/propuestas/' + propId + '/revisar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ accion: accion, observaciones: obs })
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(j => { throw new Error(j.message || 'Error en revisión'); });
+                return res.json();
+            })
+            .then(() => window.location.reload())
+            .catch(err => alert('No se pudo procesar la revisión: ' + err.message));
+        }
+    </script>
+</th:block>
+</body>
+</html>

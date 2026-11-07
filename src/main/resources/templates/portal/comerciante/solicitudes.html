@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Solicitudes de Gestión</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Mis Trámites y Solicitudes</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Seguimiento en línea de expedientes de renovación, formalización y autorizaciones de mercado.
+            </p>
+        </div>
+        <a th:href="@{/portal/comerciante/solicitudes/nueva}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Solicitud de Renovación
+        </a>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Trámite</th>
+                        <th class="px-6 py-3.5">Procedimiento</th>
+                        <th class="px-6 py-3.5">Puesto / Mercado</th>
+                        <th class="px-6 py-3.5">Fecha Presentación</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="s : ${solicitudesPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${s.codigoSolicitud}">SOL-2026-0001</td>
+                        <td class="px-6 py-4 font-semibold text-slate-900" th:text="${s.tipoSolicitudLabel}">RENOVACIÓN DE ASIGNACIÓN</td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-semibold block text-slate-800" th:text="${s.puestoCodigo}">P-01</span>
+                            <span class="text-xs text-slate-500" th:text="${s.mercadoNombre}">Mercado Central</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${#temporals.format(s.fechaPresentacion, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${s.estado == 'APROBADA' ? 'bg-emerald-100 text-emerald-800' : (s.tieneObservacionesPendientes ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800')}"
+                                  th:text="${s.estadoLabel}">PRESENTADA</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a th:if="${s.tokenVerificacionQr != null}" th:href="@{'/verificar-documento?codigo=' + ${s.tokenVerificacionQr}}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> QR
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${solicitudesPage.empty}">
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="send" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra solicitudes de ocupación activas o históricas.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

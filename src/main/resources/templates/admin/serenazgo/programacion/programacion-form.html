@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${servicioId != null ? 'Editar Programación de Servicio — SIGM-QUINUA' : 'Nueva Programación de Servicio — SIGM-QUINUA'}">Programación de Servicio</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/serenazgo/programacion}" class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span th:text="${servicioId != null ? 'Editar Programación: ' + codigoServicio : 'Nueva Programación de Servicio'}">Programar Servicio</span>
+                </h1>
+                <p class="text-xs text-slate-400">Asignación formal de personal, recursos y franjas horarias de guardia.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+        <i data-lucide="alert-octagon" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${mensajeError}">Error</span>
+    </div>
+
+    <!-- Formulario Multi-Sección -->
+    <form th:action="${servicioId != null} ? @{/dashboard/serenazgo/programacion/{id}/editar(id=${servicioId})} : @{/dashboard/serenazgo/programacion}"
+          th:object="${programacion}" method="post" class="space-y-6">
+
+        <!-- Sección 1: Datos Generales y Turno -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+                1. Franja Horaria y Tipo de Servicio
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fecha del Servicio *</label>
+                    <input type="date" th:field="*{fechaServicio}" required
+                           class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+                    <p th:if="${#fields.hasErrors('fechaServicio')}" th:errors="*{fechaServicio}" class="text-rose-400 text-[11px] mt-1"></p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Turno Operativo *</label>
+                    <select th:field="*{turnoId}" required
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">Seleccione turno</option>
+                        <option th:each="t : ${turnos}" th:value="${t.id}"
+                                th:text="${t.nombre + ' (' + t.horaInicio + ' - ' + t.horaFin + (t.cruzaMedianoche ? ' +1 día' : '') + ')'}"></option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('turnoId')}" th:errors="*{turnoId}" class="text-rose-400 text-[11px] mt-1"></p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Actividad / Servicio *</label>
+                    <select th:field="*{tipoServicio}" required
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option th:each="ts : ${tiposServicio}" th:value="${ts}" th:text="${ts.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Oficina Responsable</label>
+                    <select th:field="*{oficinaResponsableId}"
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">Oficina predeterminada (Seguridad Ciudadana)</option>
+                        <option th:each="o : ${oficinas}" th:value="${o.id}" th:text="${o.nombre}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: Ubicación Territorial -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+                2. Sector y Zona de Atención
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sector de Patrullaje</label>
+                    <select th:field="*{sectorId}" id="selectSectorForm" onchange="actualizarZonasSector()"
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">General / Todo el distrito</option>
+                        <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.codigo + ' - ' + s.nombre}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Zona Específica (Opcional)</label>
+                    <select th:field="*{zonaId}" id="selectZonaForm"
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">Todo el sector asignado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Efectivos y Personal Asignado -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+                    3. Personal Operativo de Guardia
+                </h2>
+                <button type="button" onclick="agregarFilaPersonal()"
+                        class="px-2.5 py-1 text-xs font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-500 flex items-center gap-1">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                    <span>Agregar Efectivo</span>
+                </button>
+            </div>
+
+            <div id="contenedorPersonal" class="space-y-3">
+                <!-- Se agregan filas dinámicas de personal -->
+            </div>
+            <p class="text-[11px] text-slate-400 italic">Debe designar al menos un sereno responsable o jefe de grupo para la cuadrilla.</p>
+        </div>
+
+        <!-- Sección 4: Unidades Móviles y Equipamiento -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                <i data-lucide="truck" class="w-4 h-4 text-cyan-400"></i>
+                4. Vehículos y Herramientas Operativas
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Unidad Vehicular Asignada</label>
+                    <select id="selectUnidad"
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">Sin vehículo asignado (Patrullaje a pie)</option>
+                        <option th:each="u : ${unidadesDisponibles}" th:value="${u.id}"
+                                th:text="${u.codigo + ' - ' + u.placa + ' (' + u.marca + ' ' + (u.modelo != null ? u.modelo : '') + ')'}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Equipamiento Transceptor / Seguridad</label>
+                    <select id="selectEquipamiento"
+                            class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="">Sin reserva previa de equipo</option>
+                        <option th:each="eq : ${equipamientoDisponible}" th:value="${eq.id}"
+                                th:text="${eq.codigo + ' - ' + eq.tipoEquipamientoDesc + ' (' + (eq.numeroSerie != null ? eq.numeroSerie : 'General') + ')'}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Observaciones y Descripción -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700 pb-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+                5. Instrucciones de Servicio y Observaciones
+            </h2>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Descripción de la Misión Operativa</label>
+                    <textarea th:field="*{descripcion}" rows="2" placeholder="Objetivo de vigilancia, puntos de control, itinerario sugerido..."
+                              class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones Administrativas</label>
+                    <textarea th:field="*{observaciones}" rows="2" placeholder="Recomendaciones, precauciones técnicas..."
+                              class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a th:href="@{/dashboard/serenazgo/programacion}"
+               class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-xs font-semibold shadow-md shadow-blue-900/30 transition-all flex items-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span th:text="${servicioId != null ? 'Guardar Cambios' : 'Confirmar Programación'}">Confirmar</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<!-- Script dinámico para filas de personal y zonas -->
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const personalDisponibles = /*[[${personalDisponible}]]*/ [];
+    let contadorPersonal = 0;
+
+    function agregarFilaPersonal() {
+        const contenedor = document.getElementById('contenedorPersonal');
+        const index = contadorPersonal++;
+
+        let opciones = '<option value="">Seleccione personal...</option>';
+        personalDisponibles.forEach(p => {
+            opciones += `<option value="${p.id}">${p.codigoInterno} - ${p.nombreCompleto} (${p.cargo})</option>`;
+        });
+
+        const fila = document.createElement('div');
+        fila.className = "p-3 rounded-lg bg-slate-800/80 border border-slate-700 flex flex-wrap items-center gap-3";
+        fila.id = `fila_personal_${index}`;
+        fila.innerHTML = `
+            <div class="flex-1 min-w-[200px]">
+                <select name="personalAsignado[${index}].personalId" required
+                        class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white">
+                    ${opciones}
+                </select>
+            </div>
+            <div class="w-40">
+                <select name="personalAsignado[${index}].funcionOperativa"
+                        class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white">
+                    <option value="JEFE_GRUPO">Jefe de Grupo</option>
+                    <option value="CONDUCTOR">Conductor</option>
+                    <option value="PATRULLERO" selected>Patrullero</option>
+                    <option value="OPERADOR_RADIO">Operador Radio</option>
+                    <option value="APOYO">Apoyo</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                <input type="checkbox" name="personalAsignado[${index}].esResponsable" value="true"
+                       id="resp_${index}" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0"/>
+                <label for="resp_${index}" class="text-[11px]">Responsable</label>
+            </div>
+            <button type="button" onclick="document.getElementById('fila_personal_${index}').remove()"
+                    class="p-1.5 text-rose-400 hover:text-white rounded hover:bg-rose-500/20">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        `;
+        contenedor.appendChild(fila);
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function actualizarZonasSector() {
+        const sectorId = document.getElementById('selectSectorForm').value;
+        const selZona = document.getElementById('selectZonaForm');
+        selZona.innerHTML = '<option value="">Todo el sector asignado</option>';
+
+        if (!sectorId) return;
+
+        fetch(`/api/serenazgo/sectores/${sectorId}/zonas`)
+            .then(res => res.json())
+            .then(zonas => {
+                zonas.forEach(z => {
+                    const opt = document.createElement('option');
+                    opt.value = z.id;
+                    opt.innerText = `${z.codigo} - ${z.nombre}`;
+                    selZona.appendChild(opt);
+                });
+            })
+            .catch(err => console.error("Error al cargar zonas:", err));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inicializar al menos una fila de personal si está vacío
+        if (document.getElementById('contenedorPersonal') && document.getElementById('contenedorPersonal').children.length === 0) {
+            agregarFilaPersonal();
+        }
+    });
+    /*]]>*/
+</script>
+</th:block>
+</body>
+</html>

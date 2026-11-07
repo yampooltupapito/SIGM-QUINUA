@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Padrón de Contribuyentes — Recaudación Tributaria | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium">Padrón de Contribuyentes</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
+                <span>Administración de Contribuyentes</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Registro y gestión de personas naturales y jurídicas vinculadas a la administración tributaria municipal.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Botón Exportar Excel -->
+            <a th:href="@{/dashboard/tributaria/contribuyentes/exportar/excel(query=${filtro.query},tipo=${filtro.tipo},estado=${filtro.estado})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700"
+               title="Exportar listado a Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Excel</span>
+            </a>
+
+            <!-- Botón Exportar PDF -->
+            <a th:href="@{/dashboard/tributaria/contribuyentes/exportar/pdf(query=${filtro.query},tipo=${filtro.tipo},estado=${filtro.estado})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700"
+               title="Exportar listado a PDF">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>PDF</span>
+            </a>
+
+            <!-- Botón Nuevo Contribuyente -->
+            <a th:href="@{/dashboard/tributaria/contribuyentes/nuevo}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md hover:shadow-blue-600/20 flex items-center space-x-2">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Registrar Contribuyente</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Estadísticos Reales de Base de Datos -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Total Registrados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-white" th:text="${stats.total}">0</span>
+                <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Personas Naturales</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-emerald-400" th:text="${stats.naturales}">0</span>
+                <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Personas Jurídicas</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-indigo-400" th:text="${stats.juridicas}">0</span>
+                <i data-lucide="building-2" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Contribuyentes Activos</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-teal-400" th:text="${stats.activos}">0</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-teal-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Observados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-amber-400" th:text="${stats.observados}">0</span>
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Inactivos / Bajas</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-slate-400" th:text="${stats.inactivos}">0</span>
+                <i data-lucide="user-x" class="w-4 h-4 text-slate-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda Avanzada -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+        <form th:action="@{/dashboard/tributaria/contribuyentes}" method="GET" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Búsqueda General -->
+                <div class="relative">
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Criterio de Búsqueda</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                        <input type="text" name="query" th:value="${filtro.query}" placeholder="Código, DNI, RUC o Nombre..."
+                               class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- Tipo de Contribuyente -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Tipo de Sujeto</label>
+                    <select name="tipo" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="">-- Todos los tipos --</option>
+                        <option th:each="t : ${tiposContribuyente}" th:value="${t}" th:text="${t.descripcion}" th:selected="${filtro.tipo == t}"></option>
+                    </select>
+                </div>
+
+                <!-- Estado Administrativo -->
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado Administrativo</label>
+                    <select name="estado" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="">-- Todos los estados --</option>
+                        <option th:each="e : ${estadosContribuyente}" th:value="${e}" th:text="${e.descripcion}" th:selected="${filtro.estado == e}"></option>
+                    </select>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center space-x-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Filtrar</span>
+                    </button>
+                    <a th:href="@{/dashboard/tributaria/contribuyentes}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs font-medium transition-colors flex items-center justify-center">
+                        Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Contribuyentes -->
+    <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+        <div th:if="${contribuyentes.isEmpty()}" class="p-12 text-center text-slate-400">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+            <p class="text-sm font-medium">Aún no existen registros disponibles.</p>
+            <p class="text-xs text-slate-500 mt-1">Haga clic en "Registrar Contribuyente" para incorporar un nuevo sujeto tributario.</p>
+        </div>
+
+        <div th:unless="${contribuyentes.isEmpty()}" class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 font-semibold border-b border-theme text-[11px] uppercase tracking-wider">
+                    <tr>
+                        <th class="py-3.5 px-4">Código</th>
+                        <th class="py-3.5 px-4">Documento</th>
+                        <th class="py-3.5 px-4">Nombre / Razón Social</th>
+                        <th class="py-3.5 px-4">Tipo</th>
+                        <th class="py-3.5 px-4">Fecha Registro</th>
+                        <th class="py-3.5 px-4">Estado</th>
+                        <th class="py-3.5 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    <tr th:each="c : ${contribuyentes.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3.5 px-4 font-mono font-semibold text-blue-400" th:text="${c.codigoContribuyente}">CT-000001</td>
+                        <td class="py-3.5 px-4">
+                            <span class="font-medium text-slate-200" th:text="${c.tipoDocumento}">DNI</span>:
+                            <span class="font-mono text-slate-400" th:text="${c.numeroDocumentoEnmascarado}">41****89</span>
+                        </td>
+                        <td class="py-3.5 px-4 font-medium text-slate-100">
+                            <div th:text="${c.nombreRazonSocial}">QUISPE FLORES, JUAN CARLOS</div>
+                            <div th:if="${c.domicilioFiscal != null}" class="text-[10px] text-slate-500 truncate max-w-xs" th:text="${c.domicilioFiscal}">Jr. Sucre S/N</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="text-slate-400" th:text="${c.tipoContribuyenteDesc}">Persona Natural</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-400" th:text="${c.fechaRegistro}">2026-03-15</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border"
+                                  th:classappend="${c.badgeClass}"
+                                  th:text="${c.estadoDesc}">Activo</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <div class="inline-flex items-center space-x-1">
+                                <a th:href="@{/dashboard/tributaria/contribuyentes/{id}(id=${c.id})}"
+                                   class="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1"
+                                   title="Ver Ficha Integral del Contribuyente">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                    <span>Ficha</span>
+                                </a>
+                                <a th:href="@{/dashboard/tributaria/contribuyentes/{id}/editar(id=${c.id})}"
+                                   sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                                   class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-medium transition-colors"
+                                   title="Editar Información">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${contribuyentes.totalPages > 1}" class="px-4 py-3 border-t border-theme flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+            <div>
+                Mostrando página <span class="font-semibold text-slate-200" th:text="${contribuyentes.number + 1}">1</span> de
+                <span class="font-semibold text-slate-200" th:text="${contribuyentes.totalPages}">5</span>
+                (<span th:text="${contribuyentes.totalElements}">50</span> registros)
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <a th:if="${contribuyentes.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/contribuyentes(page=${contribuyentes.number - 1},query=${filtro.query},tipo=${filtro.tipo},estado=${filtro.estado})}"
+                   class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                    Anterior
+                </a>
+                <a th:if="${contribuyentes.hasNext()}"
+                   th:href="@{/dashboard/tributaria/contribuyentes(page=${contribuyentes.number + 1},query=${filtro.query},tipo=${filtro.tipo},estado=${filtro.estado})}"
+                   class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

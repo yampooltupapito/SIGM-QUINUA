@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Sectores y Zonas de Patrullaje — SIGM-QUINUA</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .leaflet-container {
+            background-color: #0f172a !important;
+            font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-900/50 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 bg-rose-900/50 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${errorMessage}">Error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Header Principal -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="map" class="w-7 h-7 text-blue-500"></i>
+                Sectores y zonas de patrullaje
+            </h1>
+            <p class="text-sm text-slate-400 mt-1">
+                Organización territorial y administración de áreas operativas de seguridad ciudadana.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/api/serenazgo/territorio/exportar-excel}"
+               class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg border border-slate-700 flex items-center gap-2 transition">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+                Exportar Excel
+            </a>
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_ZONAS_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               th:href="@{/dashboard/serenazgo/zonas/nueva}"
+               class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition shadow">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                Nueva Zona
+            </a>
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_SECTORES_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               th:href="@{/dashboard/serenazgo/sectores/nuevo}"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition shadow">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Nuevo Sector
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Indicadores en tiempo real -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Sectores Registrados</span>
+            <span class="text-2xl font-bold text-slate-100 mt-1 block" th:text="${dashboard.totalSectores}">0</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Sectores Activos</span>
+            <span class="text-2xl font-bold text-emerald-400 mt-1 block" th:text="${dashboard.sectoresActivos}">0</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Zonas Registradas</span>
+            <span class="text-2xl font-bold text-slate-100 mt-1 block" th:text="${dashboard.totalZonas}">0</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Zonas Activas</span>
+            <span class="text-2xl font-bold text-blue-400 mt-1 block" th:text="${dashboard.zonasActivas}">0</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Sectores Delimitados</span>
+            <span class="text-2xl font-bold text-indigo-400 mt-1 block" th:text="${dashboard.sectoresConDelimitacion}">0</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <span class="text-xs text-slate-400 block font-medium">Zonas sin Delimitar</span>
+            <span class="text-2xl font-bold text-amber-400 mt-1 block" th:text="${dashboard.zonasSinDelimitacion}">0</span>
+        </div>
+    </div>
+
+    <!-- Navegación de Pestañas -->
+    <div class="border-b border-slate-700">
+        <nav class="flex space-x-6">
+            <a th:href="@{/dashboard/serenazgo/sectores(activeTab='sectores')}"
+               class="py-3 px-1 font-medium text-sm border-b-2 flex items-center gap-2 transition"
+               th:classappend="${activeTab == 'sectores' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                Sectores de Patrullaje (<span th:text="${sectores.totalElements}">0</span>)
+            </a>
+            <a th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas')}"
+               class="py-3 px-1 font-medium text-sm border-b-2 flex items-center gap-2 transition"
+               th:classappend="${activeTab == 'zonas' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                Zonas Operativas (<span th:text="${zonas.totalElements}">0</span>)
+            </a>
+            <a th:href="@{/dashboard/serenazgo/sectores(activeTab='mapa')}"
+               class="py-3 px-1 font-medium text-sm border-b-2 flex items-center gap-2 transition"
+               th:classappend="${activeTab == 'mapa' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'}">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                Mapa Territorial Interactivo
+            </a>
+        </nav>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PESTAÑA 1: SECTORES DE PATRULLAJE                                        -->
+    <!-- ========================================================================= -->
+    <div th:if="${activeTab == 'sectores'}" class="space-y-4">
+        <!-- Filtros Sectores -->
+        <form method="get" th:action="@{/dashboard/serenazgo/sectores}" class="bg-[#202c3d] p-4 rounded-xl border border-slate-700/60 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input type="hidden" name="activeTab" value="sectores"/>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Búsqueda rápida</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                    <input type="text" name="q" th:value="${sectorFilter.q}" placeholder="Código, nombre o descripción..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Oficina Responsable</label>
+                <select name="oficinaId" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las oficinas</option>
+                    <option th:each="o : ${oficinas}" th:value="${o.id}" th:text="${o.nombre}" th:selected="${sectorFilter.oficinaId == o.id}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Estado</label>
+                <select name="estado" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="e : ${estados}" th:value="${e}" th:text="${e.descripcion}" th:selected="${sectorFilter.estado == e}"></option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg border border-slate-700 transition flex items-center justify-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4"></i> Filtrar
+                </button>
+                <a th:href="@{/dashboard/serenazgo/sectores(activeTab='sectores')}" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-sm rounded-lg border border-slate-700 transition">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+
+        <!-- Tabla Sectores -->
+        <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 overflow-hidden shadow">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-slate-700">
+                    <tr>
+                        <th class="py-3.5 px-4 font-semibold">Código</th>
+                        <th class="py-3.5 px-4 font-semibold">Nombre del Sector</th>
+                        <th class="py-3.5 px-4 font-semibold">Oficina</th>
+                        <th class="py-3.5 px-4 font-semibold text-center">N° Zonas</th>
+                        <th class="py-3.5 px-4 font-semibold">Estado</th>
+                        <th class="py-3.5 px-4 font-semibold">Delimitación</th>
+                        <th class="py-3.5 px-4 font-semibold text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/60">
+                    <tr th:each="s : ${sectores.content}" class="hover:bg-slate-800/40 transition">
+                        <td class="py-3 px-4 font-mono font-medium text-blue-400">
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full inline-block border border-slate-600" th:style="'background-color: ' + ${s.colorHex}"></span>
+                                <span th:text="${s.codigo}">SEC-001</span>
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 font-semibold text-slate-100">
+                            <a th:href="@{/dashboard/serenazgo/sectores/{id}(id=${s.id})}" class="hover:underline text-white" th:text="${s.nombre}">Sector Urbano</a>
+                            <span th:if="${s.descripcion}" class="text-xs text-slate-400 block truncate max-w-xs" th:text="${s.descripcion}"></span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300 text-xs" th:text="${s.oficinaResponsableNombre}">Oficina Central</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/40"
+                                  th:text="${s.totalZonas} + ' zonas'">2 zonas</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${s.estado.name() == 'ACTIVO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">Activo</span>
+                            <span th:if="${s.estado.name() == 'INACTIVO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">Inactivo</span>
+                            <span th:if="${s.estado.name() == 'BORRADOR'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/50">Borrador</span>
+                            <span th:if="${s.estado.name() == 'ARCHIVADO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-rose-950/60 text-rose-300 border border-rose-800/50">Archivado</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${s.tieneDelimitacion}" class="inline-flex items-center gap-1 text-xs text-emerald-400">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> GeoJSON
+                            </span>
+                            <span th:unless="${s.tieneDelimitacion}" class="text-xs text-slate-500">Sin delimitar</span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <a th:href="@{/dashboard/serenazgo/sectores/{id}(id=${s.id})}" title="Ver Ficha y Mapa"
+                               class="p-1.5 text-slate-400 hover:text-blue-400 inline-block transition">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a sec:authorize="hasAnyAuthority('SERENAZGO_SECTORES_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                               th:href="@{/dashboard/serenazgo/sectores/{id}/editar(id=${s.id})}" title="Editar Sector"
+                               class="p-1.5 text-slate-400 hover:text-amber-400 inline-block transition">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/sectores/{id}/ficha-pdf(id=${s.id})}" title="Descargar Ficha PDF"
+                               class="p-1.5 text-slate-400 hover:text-rose-400 inline-block transition">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${sectores.empty}">
+                        <td colspan="7" class="py-12 text-center text-slate-500">
+                            <i data-lucide="map" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                            No se encontraron sectores de patrullaje registrados con los filtros aplicados.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación Sectores -->
+            <div th:if="${sectores.totalPages > 1}" class="p-4 bg-slate-900/60 border-t border-slate-700 flex items-center justify-between text-xs text-slate-400">
+                <span>Página <span th:text="${sectores.number + 1}">1</span> de <span th:text="${sectores.totalPages}">1</span> (<span th:text="${sectores.totalElements}">0</span> registros)</span>
+                <div class="flex gap-1">
+                    <a th:if="${sectores.hasPrevious()}"
+                       th:href="@{/dashboard/serenazgo/sectores(activeTab='sectores', pageSectores=${sectores.number - 1}, q=${sectorFilter.q}, estado=${sectorFilter.estado})}"
+                       class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Anterior</a>
+                    <a th:if="${sectores.hasNext()}"
+                       th:href="@{/dashboard/serenazgo/sectores(activeTab='sectores', pageSectores=${sectores.number + 1}, q=${sectorFilter.q}, estado=${sectorFilter.estado})}"
+                       class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Siguiente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PESTAÑA 2: ZONAS OPERATIVAS                                              -->
+    <!-- ========================================================================= -->
+    <div th:if="${activeTab == 'zonas'}" class="space-y-4">
+        <!-- Filtros Zonas -->
+        <form method="get" th:action="@{/dashboard/serenazgo/sectores}" class="bg-[#202c3d] p-4 rounded-xl border border-slate-700/60 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input type="hidden" name="activeTab" value="zonas"/>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Búsqueda rápida</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                    <input type="text" name="q" th:value="${zonaFilter.q}" placeholder="Código o nombre de zona..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Sector Asociado</label>
+                <select name="sectorId" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los sectores</option>
+                    <option th:each="s : ${listaSectoresActivos}" th:value="${s.id}" th:text="${s.codigo} + ' - ' + ${s.nombre}" th:selected="${zonaFilter.sectorId == s.id}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 font-medium block mb-1">Prioridad Operativa</label>
+                <select name="prioridad" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las prioridades</option>
+                    <option th:each="p : ${prioridades}" th:value="${p}" th:text="${p.descripcion}" th:selected="${zonaFilter.prioridad == p}"></option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg border border-slate-700 transition flex items-center justify-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4"></i> Filtrar
+                </button>
+                <a th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas')}" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-sm rounded-lg border border-slate-700 transition">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+
+        <!-- Tabla Zonas -->
+        <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 overflow-hidden shadow">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-slate-700">
+                    <tr>
+                        <th class="py-3.5 px-4 font-semibold">Código</th>
+                        <th class="py-3.5 px-4 font-semibold">Nombre de la Zona</th>
+                        <th class="py-3.5 px-4 font-semibold">Sector Asignado</th>
+                        <th class="py-3.5 px-4 font-semibold">Prioridad</th>
+                        <th class="py-3.5 px-4 font-semibold">Estado</th>
+                        <th class="py-3.5 px-4 font-semibold">Delimitación</th>
+                        <th class="py-3.5 px-4 font-semibold text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/60">
+                    <tr th:each="z : ${zonas.content}" class="hover:bg-slate-800/40 transition">
+                        <td class="py-3 px-4 font-mono font-medium text-emerald-400" th:text="${z.codigo}">ZON-001</td>
+                        <td class="py-3 px-4 font-semibold text-slate-100">
+                            <a th:href="@{/dashboard/serenazgo/zonas/{id}(id=${z.id})}" class="hover:underline text-white" th:text="${z.nombre}">Zona Plaza Principal</a>
+                            <span th:if="${z.descripcion}" class="text-xs text-slate-400 block truncate max-w-xs" th:text="${z.descripcion}"></span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <a th:href="@{/dashboard/serenazgo/sectores/{id}(id=${z.sectorId})}" class="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:underline">
+                                <span class="w-2 h-2 rounded-full inline-block" th:style="'background-color: ' + ${z.sectorColorHex}"></span>
+                                <span th:text="${z.sectorCodigo} + ' (' + ${z.sectorNombre} + ')'">SEC-001</span>
+                            </a>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${z.prioridadOperativa.name() == 'CRITICA'}" class="px-2 py-0.5 rounded text-xs font-semibold bg-rose-950/70 text-rose-300 border border-rose-800/50">Crítica</span>
+                            <span th:if="${z.prioridadOperativa.name() == 'ALTA'}" class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-950/70 text-amber-300 border border-amber-800/50">Alta</span>
+                            <span th:if="${z.prioridadOperativa.name() == 'MEDIA'}" class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-950/70 text-blue-300 border border-blue-800/50">Media</span>
+                            <span th:if="${z.prioridadOperativa.name() == 'BAJA'}" class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">Baja</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${z.estado.name() == 'ACTIVO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">Activa</span>
+                            <span th:if="${z.estado.name() == 'INACTIVO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">Inactiva</span>
+                            <span th:if="${z.estado.name() == 'BORRADOR'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/50">Borrador</span>
+                            <span th:if="${z.estado.name() == 'ARCHIVADO'}" class="px-2.5 py-1 rounded-md text-xs font-medium bg-rose-950/60 text-rose-300 border border-rose-800/50">Archivada</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${z.tieneDelimitacion}" class="inline-flex items-center gap-1 text-xs text-emerald-400">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> GeoJSON
+                            </span>
+                            <span th:unless="${z.tieneDelimitacion}" class="text-xs text-slate-500">Sin delimitar</span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <a th:href="@{/dashboard/serenazgo/zonas/{id}(id=${z.id})}" title="Ver Ficha y Delimitación"
+                               class="p-1.5 text-slate-400 hover:text-blue-400 inline-block transition">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a sec:authorize="hasAnyAuthority('SERENAZGO_ZONAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                               th:href="@{/dashboard/serenazgo/zonas/{id}/editar(id=${z.id})}" title="Editar Zona"
+                               class="p-1.5 text-slate-400 hover:text-amber-400 inline-block transition">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${zonas.empty}">
+                        <td colspan="7" class="py-12 text-center text-slate-500">
+                            <i data-lucide="map-pin" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                            No se encontraron zonas de patrullaje registradas.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación Zonas -->
+            <div th:if="${zonas.totalPages > 1}" class="p-4 bg-slate-900/60 border-t border-slate-700 flex items-center justify-between text-xs text-slate-400">
+                <span>Página <span th:text="${zonas.number + 1}">1</span> de <span th:text="${zonas.totalPages}">1</span> (<span th:text="${zonas.totalElements}">0</span> zonas)</span>
+                <div class="flex gap-1">
+                    <a th:if="${zonas.hasPrevious()}"
+                       th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas', pageZonas=${zonas.number - 1}, q=${zonaFilter.q}, sectorId=${zonaFilter.sectorId})}"
+                       class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Anterior</a>
+                    <a th:if="${zonas.hasNext()}"
+                       th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas', pageZonas=${zonas.number + 1}, q=${zonaFilter.q}, sectorId=${zonaFilter.sectorId})}"
+                       class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Siguiente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PESTAÑA 3: MAPA TERRITORIAL INTERACTIVO (LEAFLET)                         -->
+    <!-- ========================================================================= -->
+    <div th:if="${activeTab == 'mapa'}" class="space-y-4">
+        <div class="bg-[#202c3d] p-4 rounded-xl border border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-5 h-5 text-blue-400"></i>
+                    Visor Cartográfico de Cobertura de Patrullaje
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Visualización geográfica de sectores operativos y subdivisiones zonales con coordenadas WGS84.
+                </p>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 bg-blue-600 rounded"></span> Sectores</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-500 rounded"></span> Zonas</span>
+                <button id="btnRecargarMapa" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recargar
+                </button>
+            </div>
+        </div>
+
+        <div class="relative bg-slate-950 rounded-xl border border-slate-700/80 overflow-hidden shadow-lg h-[600px]">
+            <div id="mapaTerritorial" class="w-full h-full z-0"></div>
+
+            <!-- Overlay de Estado Vacío (si no hay capas) -->
+            <div id="mapaVacioOverlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center hidden">
+                <div class="w-16 h-16 bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center text-slate-500 mb-4">
+                    <i data-lucide="map-off" class="w-8 h-8"></i>
+                </div>
+                <h4 class="text-lg font-bold text-slate-200">Aún no hay delimitaciones geográficas registradas</h4>
+                <p class="text-sm text-slate-400 max-w-md mt-1 mb-4">
+                    Para visualizar la cartografía operativa, ingrese a la ficha de cada sector o zona y registre o importe las geometrías en formato GeoJSON autorizado.
+                </p>
+                <div class="flex gap-2">
+                    <a th:href="@{/dashboard/serenazgo/sectores(activeTab='sectores')}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition">
+                        Ver Sectores
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Mapa -->
+<th:block layout:fragment="scripts">
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+
+            const tabActiva = /*[[${activeTab}]]*/ 'sectores';
+            if (tabActiva === 'mapa') {
+                inicializarMapaTerritorial();
+            }
+
+            const btnRecargar = document.getElementById('btnRecargarMapa');
+            if (btnRecargar) {
+                btnRecargar.addEventListener('click', function() {
+                    inicializarMapaTerritorial();
+                });
+            }
+        });
+
+        let mapaInstancia = null;
+        let layerGroup = null;
+
+        function inicializarMapaTerritorial() {
+            const mapContainer = document.getElementById('mapaTerritorial');
+            if (!mapContainer) return;
+
+            // Coordenadas de Quinua (Plaza Principal): Lat -13.0456, Lon -74.1378
+            const quinuaLat = -13.0456;
+            const quinuaLon = -74.1378;
+
+            if (!mapaInstancia) {
+                mapaInstancia = L.map('mapaTerritorial', {
+                    zoomControl: true,
+                    attributionControl: true
+                }).setView([quinuaLat, quinuaLon], 14);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap | Municipalidad Distrital de Quinua'
+                }).addTo(mapaInstancia);
+
+                layerGroup = L.featureGroup().addTo(mapaInstancia);
+            } else {
+                layerGroup.clearLayers();
+            }
+
+            // Cargar datos GeoJSON desde la API REST
+            fetch('/api/serenazgo/territorio/mapa')
+                .then(res => res.json())
+                .then(data => {
+                    const emptyOverlay = document.getElementById('mapaVacioOverlay');
+                    if (!data.features || data.features.length === 0) {
+                        if (emptyOverlay) emptyOverlay.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (emptyOverlay) emptyOverlay.classList.add('hidden');
+
+                    L.geoJSON(data, {
+                        style: function(feature) {
+                            const isSector = feature.properties.tipo === 'SECTOR';
+                            const color = feature.properties.colorHex || (isSector ? '#1d4ed8' : '#10b981');
+                            return {
+                                color: color,
+                                weight: isSector ? 3 : 2,
+                                opacity: 0.9,
+                                fillColor: color,
+                                fillOpacity: isSector ? 0.25 : 0.45,
+                                dashArray: isSector ? null : '4, 4'
+                            };
+                        },
+                        onEachFeature: function(feature, layer) {
+                            const p = feature.properties;
+                            const popupHtml = `
+                                <div class="text-xs space-y-1">
+                                    <div class="font-bold text-sm text-blue-400">${p.codigo}: ${p.nombre}</div>
+                                    <div class="text-slate-300"><strong>Tipo:</strong> ${p.tipo}</div>
+                                    <div class="text-slate-300"><strong>Estado:</strong> ${p.estadoDesc}</div>
+                                    ${p.oficina ? `<div class="text-slate-300"><strong>Oficina:</strong> ${p.oficina}</div>` : ''}
+                                    ${p.prioridadDesc ? `<div class="text-slate-300"><strong>Prioridad:</strong> ${p.prioridadDesc}</div>` : ''}
+                                    ${p.sectorNombre ? `<div class="text-slate-300"><strong>Sector:</strong> ${p.sectorNombre}</div>` : ''}
+                                    <div class="pt-1 mt-1 border-t border-slate-700">
+                                        <a href="/dashboard/serenazgo/${p.tipo.toLowerCase()}es/${feature.id}" class="text-blue-400 hover:underline font-semibold">Ver Ficha Detallada &rarr;</a>
+                                    </div>
+                                </div>
+                            `;
+                            layer.bindPopup(popupHtml);
+                            layerGroup.addLayer(layer);
+                        }
+                    });
+
+                    // Centrar encuadre si hay capas
+                    if (layerGroup.getLayers().length > 0) {
+                        mapaInstancia.fitBounds(layerGroup.getBounds(), { padding: [30, 30] });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error cargando geometrías territoriales:', err);
+                });
+        }
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     BARRA DE NAVEGACIÓN PÚBLICA INSTITUCIONAL (Navbar)
+     ========================================================================== -->
+<div th:fragment="navbar(paginaActiva)">
+    <!-- Barra Superior de Estado y Canales Oficiales -->
+    <div class="bg-[#101827] text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3 text-[11px] sm:text-xs">
+                <span class="inline-flex items-center text-blue-400 font-semibold">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-emerald-400"></i>
+                    Portal Oficial del Estado Peruano
+                </span>
+                <span class="text-slate-600 hidden md:inline">|</span>
+                <span class="text-slate-400 hidden md:inline">Distrito Histórico de Quinua — Huamanga, Ayacucho</span>
+            </div>
+            <div class="flex items-center space-x-4 text-[11px] sm:text-xs">
+                <a th:href="@{/portal/seguridad/reportar}" class="text-amber-400 hover:text-amber-300 font-medium transition-colors flex items-center">
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 mr-1 text-amber-400"></i> Alerta Seguridad
+                </a>
+                <a th:href="@{/mesa-partes}" class="hover:text-white transition-colors flex items-center">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 mr-1 text-blue-400"></i> Mesa de Partes
+                </a>
+                <a th:href="@{/contacto}" class="hover:text-white transition-colors flex items-center">
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5 mr-1 text-emerald-400"></i> Orientación Vecinal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encabezado Principal Institucional -->
+    <header class="bg-white border-b border-[#e2e8f0] sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center min-h-[4.75rem] py-2 gap-2 xl:gap-4">
+                <a th:href="@{/}" class="flex items-center space-x-3 group focus:outline-none flex-shrink-0" title="Ir al inicio del Portal Institucional de Quinua">
+                    <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:border-blue-400 transition-all flex-shrink-0">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial de la Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <div class="flex items-center space-x-1.5 leading-none mb-1">
+                            <span class="text-xs font-black uppercase tracking-wider text-blue-700">SIGM-QUINUA</span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-200 uppercase tracking-tight">Oficial</span>
+                        </div>
+                        <span class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight whitespace-nowrap">Municipalidad Distrital de Quinua</span>
+                        <span class="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-normal whitespace-nowrap">Huamanga — Ayacucho &bull; Cuna de la Libertad Americana</span>
+                    </div>
+                </a>
+
+                <nav class="hidden lg:flex items-center space-x-0.5 xl:space-x-1" aria-label="Navegación Principal">
+                    <a th:href="@{/}" th:classappend="${paginaActiva == 'inicio'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Inicio</a>
+                    <a th:href="@{/servicios}" th:classappend="${paginaActiva == 'servicios'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Servicios</a>
+                    <a th:href="@{/mesa-partes}" th:classappend="${paginaActiva == 'mesa-partes'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Mesa de Partes</a>
+                    <a th:href="@{/noticias}" th:classappend="${paginaActiva == 'noticias'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Noticias</a>
+                    <a th:href="@{/faq}" th:classappend="${paginaActiva == 'faq'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Preguntas Frecuentes</a>
+                    <a th:href="@{/nosotros}" th:classappend="${paginaActiva == 'nosotros'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Institucional</a>
+                    <a th:href="@{/portal/seguridad/reportar}" th:classappend="${paginaActiva == 'seguridad_reportar'} ? 'text-amber-800 bg-amber-50 font-semibold border-b-2 border-amber-600' : 'text-slate-700 hover:text-amber-700 hover:bg-slate-50'" class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors flex items-center gap-1">
+                        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span>Alerta</span>
+                    </a>
+                    <a th:href="@{/contacto}" th:classappend="${paginaActiva == 'contacto'} ? 'text-blue-700 bg-blue-50 font-semibold border-b-2 border-blue-600' : 'text-slate-700 hover:text-blue-700 hover:bg-slate-50'" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm whitespace-nowrap transition-colors">Contacto</a>
+                </nav>
+
+                <div class="hidden sm:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
+                    <a th:href="@{/registro}" class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shadow-sm whitespace-nowrap">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i>
+                        <span>Registro Ciudadano</span>
+                    </a>
+                    <a th:href="@{/login}" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-sm whitespace-nowrap">
+                        <i data-lucide="log-in" class="w-3.5 h-3.5 mr-1.5"></i>
+                        <span>Acceso Sistema</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+</div>
+
+</body>
+</html>
+

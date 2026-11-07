@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Mi Perfil y Configuración de Cuenta | SIGM-QUINUA</title>
+</head>
+<body>
+
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- BANNER DE IDENTIDAD Y PERFIL -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-slate-900 via-[#1e293b] to-slate-900 border border-theme rounded-2xl p-6 shadow-xl">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
+            <!-- AVATAR CON ACCIÓN DE CAMBIO -->
+            <div class="relative group flex-shrink-0">
+                <div class="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-blue-500/60 shadow-2xl bg-blue-900/40 flex items-center justify-center">
+                    <img id="imgAvatarPrincipal" th:if="${perfil.fotoUrl != null}" th:src="${perfil.fotoUrl}"
+                         alt="Foto de Perfil" class="w-full h-full object-cover">
+                    <div id="divAvatarPlaceholder" th:if="${perfil.fotoUrl == null}"
+                         class="w-full h-full flex items-center justify-center font-extrabold text-3xl text-blue-300 bg-blue-950/60"
+                         th:text="${userProfile != null ? userProfile.iniciales : 'MQ'}">
+                        MQ
+                    </div>
+                </div>
+
+                <!-- Botón de cambio de foto superpuesto -->
+                <button onclick="abrirModalFoto()"
+                        class="absolute -bottom-2 -right-2 p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg border border-slate-700 transition-transform active:scale-95"
+                        title="Cambiar fotografía de perfil">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- DETALLES BÁSICOS DEL PERFIL -->
+            <div class="flex-1 text-center md:text-left space-y-2">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center justify-center md:justify-start space-x-2">
+                            <h1 class="text-xl md:text-2xl font-extrabold text-white tracking-tight"
+                                th:text="${perfil.nombreCompleto}">Nombre del Usuario</h1>
+                            <span th:if="${perfil.enabled && !perfil.accountLocked}"
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+                                Cuenta Activa
+                            </span>
+                            <span th:if="${perfil.accountLocked}"
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                                Bloqueada
+                            </span>
+                        </div>
+                        <p class="text-xs font-mono text-slate-400 mt-0.5">
+                            <span class="text-blue-400">@</span><span th:text="${perfil.username}">usuario</span>
+                            <span class="mx-2 text-slate-600">•</span>
+                            <span th:text="${perfil.tipoDocumento} + ': ' + ${perfil.numeroDocumentoEnmascarado}">DNI: 47****11</span>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-center space-x-2">
+                        <button onclick="abrirModalEditarDatos()"
+                                class="inline-flex items-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-theme text-xs font-medium transition-colors shadow-sm">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5 text-blue-400"></i>
+                            Editar Datos
+                        </button>
+                        <button onclick="activarTab('seguridad')"
+                                class="inline-flex items-center px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-md">
+                            <i data-lucide="key" class="w-3.5 h-3.5 mr-1.5"></i>
+                            Seguridad
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2">
+                    <span th:each="r : ${perfil.roles}"
+                          class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                          th:text="${r.nombre}">
+                        Administrador
+                    </span>
+                    <span th:if="${perfil.oficinaPrincipal != null}"
+                          class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 flex items-center">
+                        <i data-lucide="building-2" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                        <span th:text="${perfil.oficinaPrincipal.nombre}">Sede Central</span>
+                    </span>
+                    <span th:if="${perfil.cargoPrincipal != null}"
+                          class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700 flex items-center">
+                        <i data-lucide="briefcase" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                        <span th:text="${perfil.cargoPrincipal.nombre}">Gestión Municipal</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN POR PESTAÑAS -->
+    <div class="border-b border-theme">
+        <nav class="flex space-x-2 overflow-x-auto pb-px" aria-label="Pestañas de Perfil">
+            <button onclick="activarTab('personal')" id="tab-btn-personal"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-blue-500 text-blue-400 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                <span>Información Personal</span>
+            </button>
+            <button onclick="activarTab('seguridad')" id="tab-btn-seguridad"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+                <span>Seguridad & Acceso</span>
+            </button>
+            <button onclick="activarTab('permisos')" id="tab-btn-permisos"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>Roles & Permisos</span>
+            </button>
+            <button onclick="activarTab('asignaciones')" id="tab-btn-asignaciones"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Oficinas & Cargos</span>
+            </button>
+            <button onclick="activarTab('preferencias')" id="tab-btn-preferencias"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="sliders" class="w-4 h-4"></i>
+                <span>Preferencias</span>
+            </button>
+            <button onclick="activarTab('sesiones')" id="tab-btn-sesiones"
+                    class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap transition-colors">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+                <span>Sesiones & Actividad</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- CONTENIDOS DE LAS PESTAÑAS -->
+
+    <!-- TAB 1: INFORMACIÓN PERSONAL -->
+    <div id="tab-personal" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Datos de Identidad Legal -->
+            <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-theme">
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="id-card" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Identidad y Documentación
+                    </h2>
+                    <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-theme">Oficial</span>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">Nombres Completos</span>
+                        <p class="font-semibold text-slate-200 text-sm" th:text="${perfil.nombres}">Carlos</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Apellido Paterno</span>
+                            <p class="font-semibold text-slate-200" th:text="${perfil.apellidoPaterno}">Mendoza</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Apellido Materno</span>
+                            <p class="font-semibold text-slate-200" th:text="${perfil.apellidoMaterno != null ? perfil.apellidoMaterno : '-'}">Quispe</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Tipo de Documento</span>
+                            <p class="font-semibold text-slate-200" th:text="${perfil.tipoDocumento}">DNI</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Número de Documento</span>
+                            <p class="font-mono font-semibold text-slate-200" th:text="${perfil.numeroDocumentoEnmascarado}">47****11</p>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">Tipos de Actor Vinculados</span>
+                        <div class="flex flex-wrap gap-1.5 mt-1">
+                            <span th:each="a : ${perfil.tiposActores}"
+                                  class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                                  th:text="${a}">
+                                Servidor Municipal
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de Contacto y Cuenta -->
+            <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+                <div class="flex items-center justify-between pb-3 border-b border-theme">
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="mail" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Contacto y Credenciales
+                    </h2>
+                    <button onclick="abrirModalEditarDatos()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold">
+                        Modificar
+                    </button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">Correo Electrónico Institucional</span>
+                        <p class="font-semibold text-slate-200" id="txtCorreoPerfil" th:text="${perfil.correo}">usuario@quinua.gob.pe</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">Teléfono / Celular</span>
+                        <p class="font-semibold text-slate-200" id="txtTelefonoPerfil" th:text="${perfil.telefono != null ? perfil.telefono : 'No registrado'}">966123456</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">Dirección / Domicilio</span>
+                        <p class="font-semibold text-slate-200" id="txtDireccionPerfil" th:text="${perfil.direccion != null ? perfil.direccion : 'No registrada'}">Plaza Mayor de Quinua s/n</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-theme">
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Nombre de Usuario</span>
+                            <p class="font-mono text-slate-300 font-medium" th:text="${perfil.username}">admin</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">Fecha de Alta</span>
+                            <p class="text-slate-300 font-medium" th:text="${#temporals.format(perfil.fechaRegistro, 'dd/MM/yyyy')}">15/10/2026</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: SEGURIDAD Y CONTRASEÑA -->
+    <div id="tab-seguridad" class="tab-content hidden space-y-6">
+        <div class="max-w-2xl bg-card border border-theme rounded-2xl p-6 space-y-6 shadow-sm">
+            <div>
+                <h2 class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="key-round" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Actualización de Contraseña
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">
+                    Para proteger la seguridad de los trámites y datos municipales, utilice una contraseña robusta. Al cambiarla, se cerrarán automáticamente las demás sesiones activas.
+                </p>
+            </div>
+
+            <form id="formPassword" onsubmit="event.preventDefault(); guardarNuevoPassword();" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Contraseña Actual *</label>
+                    <div class="relative">
+                        <input type="password" id="pwdActual" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 pr-10">
+                        <button type="button" onclick="alternarVisibilidad('pwdActual')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nueva Contraseña *</label>
+                    <div class="relative">
+                        <input type="password" id="pwdNuevo" required oninput="evaluarFortalezaPassword(this.value)"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 pr-10">
+                        <button type="button" onclick="alternarVisibilidad('pwdNuevo')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Indicador de requisitos -->
+                    <div class="grid grid-cols-2 gap-2 mt-3 p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-[11px]">
+                        <div id="chk-len" class="text-slate-500 flex items-center">
+                            <i data-lucide="circle" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0"></i>
+                            <span>Mínimo 8 caracteres</span>
+                        </div>
+                        <div id="chk-upper" class="text-slate-500 flex items-center">
+                            <i data-lucide="circle" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0"></i>
+                            <span>Al menos una mayúscula</span>
+                        </div>
+                        <div id="chk-num" class="text-slate-500 flex items-center">
+                            <i data-lucide="circle" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0"></i>
+                            <span>Al menos un número</span>
+                        </div>
+                        <div id="chk-spec" class="text-slate-500 flex items-center">
+                            <i data-lucide="circle" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0"></i>
+                            <span>Carácter especial (@$!%*?&._-#)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Confirmar Nueva Contraseña *</label>
+                    <input type="password" id="pwdConfirmacion" required
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="pt-2 flex justify-end">
+                    <button type="submit" id="btnGuardarPwd"
+                            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md transition-colors flex items-center">
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                        Actualizar Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB 3: ROLES Y PERMISOS -->
+    <div id="tab-permisos" class="tab-content hidden space-y-6">
+        <!-- Roles -->
+        <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+            <h2 class="text-sm font-bold text-white flex items-center">
+                <i data-lucide="shield-alert" class="w-4 h-4 mr-2 text-blue-400"></i>
+                Roles Institucionales Asignados
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div th:each="r : ${permisos.roles}" class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-200 text-xs" th:text="${r.nombre}">Administrador General</span>
+                        <span class="font-mono text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20" th:text="${r.codigo}">ROLE_ADMIN</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400" th:text="${r.descripcion}">Descripción del rol institucional.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Módulos y Permisos Efectivos -->
+        <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-theme">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-400"></i>
+                        Permisos Efectivos Consolidados
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Lista de privilegios y acciones operativas autorizadas para su cuenta.</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30"
+                      th:text="${permisos.permisosEfectivos.size()} + ' permisos activos'">
+                    10 permisos activos
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/80 border-b border-theme font-semibold">
+                        <tr>
+                            <th class="py-3 px-4">Módulo</th>
+                            <th class="py-3 px-4">Acción</th>
+                            <th class="py-3 px-4">Código Técnico</th>
+                            <th class="py-3 px-4">Descripción Funcional</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr th:each="p : ${permisos.permisosEfectivos}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-4 font-semibold text-slate-200" th:text="${p.modulo}">ADMINISTRACION</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"
+                                      th:text="${p.accion}">MANAGE</span>
+                            </td>
+                            <td class="py-3 px-4 font-mono text-[11px] text-blue-400" th:text="${p.codigo}">ADMINISTRACION_MANAGE</td>
+                            <td class="py-3 px-4 text-slate-400" th:text="${p.descripcion}">Permite gestionar usuarios y configuraciones.</td>
+                        </tr>
+                        <tr th:if="${permisos.permisosEfectivos.isEmpty()}">
+                            <td colspan="4" class="py-8 text-center text-slate-500">
+                                No cuenta con permisos administrativos específicos asignados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: OFICINAS Y CARGOS -->
+    <div id="tab-asignaciones" class="tab-content hidden space-y-6">
+        <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-theme">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="building" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Asignaciones Orgánicas e Historial Institucional
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Dependencias municipales, unidades orgánicas y cargos asignados.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/80 border-b border-theme font-semibold">
+                        <tr>
+                            <th class="py-3 px-4">Oficina / Unidad</th>
+                            <th class="py-3 px-4">Cargo</th>
+                            <th class="py-3 px-4">Tipo de Actor</th>
+                            <th class="py-3 px-4">Fecha Inicio</th>
+                            <th class="py-3 px-4">Fecha Fin</th>
+                            <th class="py-3 px-4">Ámbito Principal</th>
+                            <th class="py-3 px-4">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr th:each="a : ${asignaciones}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-4 font-semibold text-slate-200">
+                                <span th:text="${a.oficinaNombre}">Sede Central</span>
+                                <span class="block text-[10px] font-mono text-slate-400" th:text="${a.oficinaCodigo}">SEC-01</span>
+                            </td>
+                            <td class="py-3 px-4 text-slate-300" th:text="${a.cargoNombre}">Alcalde / Gerente</td>
+                            <td class="py-3 px-4" th:text="${a.tipoActorNombre}">Servidor Municipal</td>
+                            <td class="py-3 px-4 font-mono text-slate-400" th:text="${a.fechaInicio != null ? a.fechaInicio : '-'}">01/01/2026</td>
+                            <td class="py-3 px-4 font-mono text-slate-400" th:text="${a.fechaFin != null ? a.fechaFin : 'Vigente'}">Vigente</td>
+                            <td class="py-3 px-4">
+                                <span th:if="${a.principal}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                    Principal
+                                </span>
+                                <span th:if="${!a.principal}" class="text-slate-500 italic">Secundaria</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span th:if="${a.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    Activo
+                                </span>
+                                <span th:if="${a.estado != 'ACTIVO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-400 border border-slate-500/30">
+                                    Concluido
+                                </span>
+                            </td>
+                        </tr>
+                        <tr th:if="${asignaciones.isEmpty()}">
+                            <td colspan="7" class="py-8 text-center text-slate-500">
+                                No cuenta con asignaciones orgánicas registradas actualmente.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: PREFERENCIAS PERSONALES -->
+    <div id="tab-preferencias" class="tab-content hidden space-y-6">
+        <div class="max-w-2xl bg-card border border-theme rounded-2xl p-6 space-y-6 shadow-sm">
+            <div>
+                <h2 class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="sliders" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Preferencias de Visualización y Sistema
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">
+                    Personalice su experiencia dentro del sistema institucional SIGM-QUINUA.
+                </p>
+            </div>
+
+            <form id="formPreferencias" onsubmit="event.preventDefault(); guardarPreferencias();" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Tema Visual</label>
+                    <select id="prefTema" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="OSCURO" th:selected="${preferencias.tema == 'OSCURO'}">Tema Oscuro Empresarial (Predeterminado)</option>
+                        <option value="CLARO" th:selected="${preferencias.tema == 'CLARO'}">Tema Claro</option>
+                        <option value="SISTEMA" th:selected="${preferencias.tema == 'SISTEMA'}">Ajustar según preferencias del sistema operativo</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Idioma del Portal</label>
+                        <select id="prefIdioma" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="es" selected>Español (Perú)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Elementos por Página en Tablas</label>
+                        <select id="prefPageSize" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="10" th:selected="${preferencias.pageSize == 10}">10 registros por página</option>
+                            <option value="20" th:selected="${preferencias.pageSize == 20}">20 registros por página</option>
+                            <option value="50" th:selected="${preferencias.pageSize == 50}">50 registros por página</option>
+                            <option value="100" th:selected="${preferencias.pageSize == 100}">100 registros por página</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-theme space-y-3">
+                    <span class="block text-slate-300 font-semibold">Notificaciones</span>
+
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="prefNotifEmail" th:checked="${preferencias.notifEmail}"
+                               class="w-4 h-4 rounded bg-slate-900 border-theme text-blue-600 focus:ring-0">
+                        <span class="text-slate-300">Recibir avisos de trámites por correo electrónico institucional</span>
+                    </label>
+
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="prefNotifSistema" th:checked="${preferencias.notifSistema}"
+                               class="w-4 h-4 rounded bg-slate-900 border-theme text-blue-600 focus:ring-0">
+                        <span class="text-slate-300">Mostrar notificaciones emergentes en la campana de alertas del sistema</span>
+                    </label>
+                </div>
+
+                <div class="pt-3 flex justify-end">
+                    <button type="submit" id="btnGuardarPref"
+                            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md transition-colors flex items-center">
+                        <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+                        Guardar Preferencias
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB 6: SESIONES ACTIVAS Y BITÁCORA -->
+    <div id="tab-sesiones" class="tab-content hidden space-y-6">
+        <!-- Sesiones Activas -->
+        <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-theme">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="laptop" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Sesiones Activas y Dispositivos
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Control de accesos simultáneos y revocación de sesiones remotas.</p>
+                </div>
+
+                <button onclick="revocarOtrasSesiones()"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors flex items-center">
+                    <i data-lucide="shield-x" class="w-3.5 h-3.5 mr-1.5"></i>
+                    Cerrar las demás sesiones
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div th:each="s : ${sesiones}" class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+                            <i data-lucide="monitor" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-xs text-slate-200" th:text="${s.dispositivoAproximado}">Windows PC</span>
+                                <span class="font-mono text-[10px] text-slate-400" th:text="'IP: ' + ${s.ip}">IP: 127.0.0.1</span>
+                            </div>
+                            <span class="text-[11px] text-slate-400 block"
+                                  th:text="'Iniciada: ' + ${#temporals.format(s.fechaInicio, 'dd/MM/yyyy HH:mm')}">Iniciada hoy</span>
+                        </div>
+                    </div>
+
+                    <button th:data-id="${s.id}" onclick="revocarSesion(this.getAttribute('data-id'))"
+                            class="px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="Cerrar esta sesión">
+                        Revocar
+                    </button>
+                </div>
+
+                <div th:if="${sesiones.isEmpty()}" class="p-6 text-center text-slate-500 text-xs">
+                    No hay otras sesiones activas registradas para este usuario.
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="bg-card border border-theme rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-theme">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center">
+                        <i data-lucide="history" class="w-4 h-4 mr-2 text-blue-400"></i>
+                        Bitácora de Actividad Personal
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Registro de eventos de seguridad y modificaciones realizadas con su cuenta.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/80 border-b border-theme font-semibold">
+                        <tr>
+                            <th class="py-3 px-4">Fecha / Hora</th>
+                            <th class="py-3 px-4">Acción</th>
+                            <th class="py-3 px-4">Entidad Afectada</th>
+                            <th class="py-3 px-4">Resultado</th>
+                            <th class="py-3 px-4">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr th:each="act : ${actividad.content}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-4 font-mono text-[11px] text-slate-400"
+                                th:text="${#temporals.format(act.createdAt, 'dd/MM/yyyy HH:mm:ss')}">15/10/2026</td>
+                            <td class="py-3 px-4 font-semibold text-slate-200" th:text="${act.accion}">ACTUALIZAR_DATOS</td>
+                            <td class="py-3 px-4 text-slate-400" th:text="${act.entidadAfectada}">Persona</td>
+                            <td class="py-3 px-4">
+                                <span th:if="${act.resultado == 'EXITO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    Éxito
+                                </span>
+                                <span th:if="${act.resultado != 'EXITO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                      th:text="${act.resultado}">
+                                    Fallo
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-slate-400" th:text="${act.detalle}">Detalle de la acción</td>
+                        </tr>
+                        <tr th:if="${actividad.content.isEmpty()}">
+                            <td colspan="5" class="py-8 text-center text-slate-500">
+                                No hay registros de actividad personal recientes.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDICIÓN DATOS PERSONALES -->
+    <div id="modalEditarDatos" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-theme flex justify-between items-center">
+                <h3 class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="user-check" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Modificar Datos de Contacto
+                </h3>
+                <button onclick="cerrarModalEditarDatos()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formDatosPersonales" onsubmit="event.preventDefault(); guardarDatosPersonales();" class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Correo Electrónico *</label>
+                    <input type="email" id="editCorreo" required th:value="${perfil.correo}"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Teléfono / Celular</label>
+                    <input type="tel" id="editTelefono" th:value="${perfil.telefono}" maxlength="20"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Dirección Residencial</label>
+                    <input type="text" id="editDireccion" th:value="${perfil.direccion}" maxlength="255"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="pt-3 border-t border-theme flex justify-end space-x-3">
+                    <button type="button" onclick="cerrarModalEditarDatos()"
+                            class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-theme">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarDatos"
+                            class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-semibold shadow-md">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FOTOGRAFÍA DE PERFIL -->
+    <div id="modalFoto" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-theme flex justify-between items-center">
+                <h3 class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="image" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Fotografía de Perfil
+                </h3>
+                <button onclick="cerrarModalFoto()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 text-xs text-center">
+                <div class="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-2 border-blue-500/60 shadow-lg bg-slate-900 flex items-center justify-center">
+                    <img id="previewAvatar" th:if="${perfil.fotoUrl != null}" th:src="${perfil.fotoUrl}"
+                         alt="Preview" class="w-full h-full object-cover">
+                    <div id="previewPlaceholder" th:if="${perfil.fotoUrl == null}"
+                         class="text-slate-500 flex flex-col items-center">
+                        <i data-lucide="user" class="w-8 h-8"></i>
+                    </div>
+                </div>
+
+                <input type="file" id="inputArchivoFoto" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewArchivoFoto(this)">
+
+                <div class="space-y-2">
+                    <button type="button" onclick="document.getElementById('inputArchivoFoto').click()"
+                            class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors flex items-center justify-center shadow-md">
+                        <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                        Seleccionar Imagen (JPG, PNG, WebP)
+                    </button>
+
+                    <button th:if="${perfil.fotoUrl != null}" type="button" onclick="eliminarFoto()"
+                            class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-medium transition-colors">
+                        Eliminar Foto Actual
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-slate-500">Tamaño máximo permitido: 2 MB.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+        // GESTIÓN DE PESTAÑAS
+        function activarTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const contentEl = document.getElementById('tab-' + tabName);
+            const btnEl = document.getElementById('tab-btn-' + tabName);
+
+            if (contentEl && btnEl) {
+                contentEl.classList.remove('hidden');
+                btnEl.classList.add('border-blue-500', 'text-blue-400');
+                btnEl.classList.remove('border-transparent', 'text-slate-400');
+            }
+
+            // Actualizar URL sin recargar
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+        }
+
+        // Leer parámetro tab de la URL al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab');
+            if (tab && ['personal', 'seguridad', 'permisos', 'asignaciones', 'preferencias', 'sesiones'].includes(tab)) {
+                activarTab(tab);
+            }
+        });
+
+        // MODAL EDITAR DATOS
+        function abrirModalEditarDatos() {
+            document.getElementById('modalEditarDatos').classList.remove('hidden');
+        }
+
+        function cerrarModalEditarDatos() {
+            document.getElementById('modalEditarDatos').classList.add('hidden');
+        }
+
+        async function guardarDatosPersonales() {
+            const btn = document.getElementById('btnGuardarDatos');
+            btn.disabled = true;
+
+            const payload = {
+                correo: document.getElementById('editCorreo').value.trim(),
+                telefono: document.getElementById('editTelefono').value.trim(),
+                direccion: document.getElementById('editDireccion').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/perfil', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert(data.message || "Datos actualizados exitosamente.");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + (data.message || "No se pudo actualizar la información."));
+                }
+            } catch (err) {
+                alert("Error de conexión: " + err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // CAMBIO DE CONTRASEÑA
+        function alternarVisibilidad(idInput) {
+            const input = document.getElementById(idInput);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function evaluarFortalezaPassword(pwd) {
+            const len = pwd.length >= 8;
+            const upper = /[A-Z]/.test(pwd);
+            const num = /\d/.test(pwd);
+            const spec = /[@$!%*?&._\-#]/.test(pwd);
+
+            actualizarCheckRequisito('chk-len', len);
+            actualizarCheckRequisito('chk-upper', upper);
+            actualizarCheckRequisito('chk-num', num);
+            actualizarCheckRequisito('chk-spec', spec);
+        }
+
+        function actualizarCheckRequisito(idElemento, cumple) {
+            const el = document.getElementById(idElemento);
+            if (cumple) {
+                el.classList.remove('text-slate-500');
+                el.classList.add('text-emerald-400');
+            } else {
+                el.classList.remove('text-emerald-400');
+                el.classList.add('text-slate-500');
+            }
+        }
+
+        async function guardarNuevoPassword() {
+            const pwdActual = document.getElementById('pwdActual').value;
+            const pwdNuevo = document.getElementById('pwdNuevo').value;
+            const pwdConf = document.getElementById('pwdConfirmacion').value;
+
+            if (pwdNuevo !== pwdConf) {
+                alert("La nueva contraseña y su confirmación no coinciden.");
+                return;
+            }
+
+            const btn = document.getElementById('btnGuardarPwd');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/perfil/cambiar-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        passwordActual: pwdActual,
+                        passwordNuevo: pwdNuevo,
+                        confirmacionPasswordNuevo: pwdConf
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert(data.message || "Contraseña actualizada exitosamente.");
+                    document.getElementById('formPassword').reset();
+                    evaluarFortalezaPassword('');
+                } else {
+                    alert("Error: " + (data.message || "No se pudo actualizar la contraseña."));
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // PREFERENCIAS
+        async function guardarPreferencias() {
+            const btn = document.getElementById('btnGuardarPref');
+            btn.disabled = true;
+
+            const payload = {
+                tema: document.getElementById('prefTema').value,
+                idioma: document.getElementById('prefIdioma').value,
+                pageSize: parseInt(document.getElementById('prefPageSize').value, 10),
+                notifEmail: document.getElementById('prefNotifEmail').checked,
+                notifSistema: document.getElementById('prefNotifSistema').checked
+            };
+
+            try {
+                const res = await fetch('/api/perfil/preferencias', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert("Preferencias guardadas exitosamente.");
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // FOTOGRAFÍA DE PERFIL
+        function abrirModalFoto() {
+            document.getElementById('modalFoto').classList.remove('hidden');
+        }
+
+        function cerrarModalFoto() {
+            document.getElementById('modalFoto').classList.add('hidden');
+        }
+
+        function previewArchivoFoto(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 2 * 1024 * 1024) {
+                    alert("El archivo supera el límite de 2 MB.");
+                    input.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('previewAvatar');
+                    const placeholder = document.getElementById('previewPlaceholder');
+                    if (preview) {
+                        preview.src = e.target.result;
+                    } else if (placeholder) {
+                        placeholder.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+
+                // Subir inmediatamente al seleccionar
+                subirFotoServidor(file);
+            }
+        }
+
+        async function subirFotoServidor(file) {
+            const formData = new FormData();
+            formData.append('archivo', file);
+
+            try {
+                const res = await fetch('/api/perfil/fotografia', {
+                    method: 'POST',
+                    headers: { [csrfHeader]: csrfToken },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert("Fotografía actualizada exitosamente.");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + (data.message || "No se pudo subir la fotografía."));
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        async function eliminarFoto() {
+            if (!confirm("¿Desea eliminar su fotografía de perfil actual?")) return;
+
+            try {
+                const res = await fetch('/api/perfil/fotografia', {
+                    method: 'DELETE',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert("Fotografía eliminada correctamente.");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        // SESIONES
+        async function revocarOtrasSesiones() {
+            if (!confirm("¿Desea cerrar todas las demás sesiones activas en otros navegadores o dispositivos?")) return;
+
+            try {
+                const res = await fetch('/api/perfil/sesiones/revocar-otras', {
+                    method: 'POST',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert("Las demás sesiones han sido cerradas.");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        async function revocarSesion(id) {
+            if (!confirm("¿Desea cerrar esta sesión remota?")) return;
+
+            try {
+                const res = await fetch('/api/perfil/sesiones/' + id, {
+                    method: 'DELETE',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert("Sesión revocada correctamente.");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        // Cierre con Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                cerrarModalEditarDatos();
+                cerrarModalFoto();
+            }
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

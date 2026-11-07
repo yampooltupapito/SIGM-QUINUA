@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Registro Ciudadano Seguro — Municipalidad Distrital de Quinua</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE SECCIÓN -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3 justify-center sm:justify-start">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Registro Ciudadano</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Alta de Cuenta Ciudadana</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                Cree su cuenta oficial de vecino o administrado para realizar trámites, formular consultas y dar seguimiento a expedientes en la Municipalidad Distrital de Quinua.
+            </p>
+        </div>
+    </section>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center space-x-2 text-blue-700 text-xs font-bold uppercase tracking-wider mb-1">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Portal Vecinal</span>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900">Datos de Identificación y Acceso</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Sus datos están resguardados por la Ley N° 29733 de Protección de Datos Personales.
+                </p>
+            </div>
+
+            <!-- ALERTA DE ERROR -->
+            <div th:if="${errorAlerta != null}"
+                 class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start space-x-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <strong class="font-bold text-sm text-rose-950">No se pudo completar el registro</strong>
+                    <p th:text="${errorAlerta}">Mensaje de error.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/registro}" th:object="${registroRequest}" method="post" class="space-y-5">
+                <!-- Honeypot antispam -->
+                <div style="display: none !important;">
+                    <label for="reg_website">No completar</label>
+                    <input type="text" id="reg_website" name="website" th:field="*{website}" autocomplete="off" tabindex="-1">
+                </div>
+
+                <!-- Datos de Identidad -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="tipoDocumento" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Tipo de Documento *
+                        </label>
+                        <select id="tipoDocumento" th:field="*{tipoDocumento}" required
+                                class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors">
+                            <option value="DNI">DNI (Doc. Nacional de Identidad)</option>
+                            <option value="CARNET_EXTRANJERIA">Carné de Extranjería</option>
+                            <option value="PASAPORTE">Pasaporte</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="numeroDocumento" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Número de Documento *
+                        </label>
+                        <input type="text" id="numeroDocumento" th:field="*{numeroDocumento}" required
+                               placeholder="Ej: 45678901" maxlength="15"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors font-mono"
+                               th:classappend="${#fields.hasErrors('numeroDocumento')} ? 'border-rose-400 bg-rose-50' : ''">
+                        <p th:if="${#fields.hasErrors('numeroDocumento')}" th:errors="*{numeroDocumento}" class="text-[11px] text-rose-600 mt-1"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-1">
+                        <label for="nombres" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Nombres *
+                        </label>
+                        <input type="text" id="nombres" th:field="*{nombres}" required
+                               placeholder="Nombres"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                               th:classappend="${#fields.hasErrors('nombres')} ? 'border-rose-400 bg-rose-50' : ''">
+                        <p th:if="${#fields.hasErrors('nombres')}" th:errors="*{nombres}" class="text-[11px] text-rose-600 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="apellidoPaterno" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Apellido Paterno *
+                        </label>
+                        <input type="text" id="apellidoPaterno" th:field="*{apellidoPaterno}" required
+                               placeholder="Paterno"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                               th:classappend="${#fields.hasErrors('apellidoPaterno')} ? 'border-rose-400 bg-rose-50' : ''">
+                        <p th:if="${#fields.hasErrors('apellidoPaterno')}" th:errors="*{apellidoPaterno}" class="text-[11px] text-rose-600 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="apellidoMaterno" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Apellido Materno
+                        </label>
+                        <input type="text" id="apellidoMaterno" th:field="*{apellidoMaterno}"
+                               placeholder="Materno"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors">
+                    </div>
+                </div>
+
+                <!-- Datos de Contacto -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="correo" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Correo Electrónico *
+                        </label>
+                        <input type="email" id="correo" th:field="*{correo}" required
+                               placeholder="correo@ejemplo.com"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                               th:classappend="${#fields.hasErrors('correo')} ? 'border-rose-400 bg-rose-50' : ''">
+                        <p th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}" class="text-[11px] text-rose-600 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="telefono" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Teléfono Celular
+                        </label>
+                        <input type="tel" id="telefono" th:field="*{telefono}"
+                               placeholder="Ej: 966123456"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="direccion" class="block text-xs font-semibold text-slate-700 mb-1">
+                        Dirección Domiciliaria en Quinua / Ayacucho
+                    </label>
+                    <input type="text" id="direccion" th:field="*{direccion}"
+                           placeholder="Jr. Sucre / Comunidad / Anexo..."
+                           class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors">
+                </div>
+
+                <!-- Credenciales de Inicio de Sesión -->
+                <div class="border-t border-slate-100 pt-4 space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Credenciales de Usuario</h3>
+
+                    <div>
+                        <label for="username" class="block text-xs font-semibold text-slate-700 mb-1">
+                            Nombre de Usuario * (letras, números, puntos o guiones)
+                        </label>
+                        <input type="text" id="username" th:field="*{username}" required
+                               placeholder="Ej: juan.quispe"
+                               class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors font-mono"
+                               th:classappend="${#fields.hasErrors('username')} ? 'border-rose-400 bg-rose-50' : ''">
+                        <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="text-[11px] text-rose-600 mt-1"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="password" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Contraseña * (mínimo 8 caracteres)
+                            </label>
+                            <input type="password" id="password" th:field="*{password}" required
+                                   placeholder="••••••••" minlength="8"
+                                   class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                                   th:classappend="${#fields.hasErrors('password')} ? 'border-rose-400 bg-rose-50' : ''">
+                            <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="text-[11px] text-rose-600 mt-1"></p>
+                        </div>
+
+                        <div>
+                            <label for="confirmPassword" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Confirmar Contraseña *
+                            </label>
+                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}" required
+                                   placeholder="••••••••" minlength="8"
+                                   class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                                   th:classappend="${#fields.hasErrors('confirmPassword')} ? 'border-rose-400 bg-rose-50' : ''">
+                            <p th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="text-[11px] text-rose-600 mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Términos y Condiciones -->
+                <div class="pt-2">
+                    <label class="flex items-start space-x-2.5 cursor-pointer">
+                        <input type="checkbox" th:field="*{terminosAceptados}" required
+                               class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 mt-0.5">
+                        <span class="text-xs text-slate-600 leading-snug">
+                            Declaro bajo juramento que los datos consignados son verdaderos y acepto los términos de uso y la política de privacidad institucional de la Municipalidad Distrital de Quinua.
+                        </span>
+                    </label>
+                    <p th:if="${#fields.hasErrors('terminosAceptados')}" th:errors="*{terminosAceptados}" class="text-[11px] text-rose-600 mt-1"></p>
+                </div>
+
+                <div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
+                    <a th:href="@{/login}" class="text-xs font-semibold text-blue-700 hover:text-blue-900">
+                        ¿Ya tiene cuenta? Iniciar Sesión
+                    </a>
+
+                    <button type="submit"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-sm">
+                        <i data-lucide="check" class="w-4 h-4 mr-1.5"></i>
+                        Completar Registro
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

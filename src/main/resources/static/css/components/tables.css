@@ -1,0 +1,81 @@
+/* ==========================================================================
+   SIGM-QUINUA — TABLAS PROFESIONALES, FILTROS Y PAGINACIÓN (500+ REGISTROS)
+   ========================================================================== */
+
+.table-responsive-wrapper,
+.sigm-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sigm-table-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.sigm-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.sigm-table thead {
+    background-color: rgba(15, 23, 42, 0.85);
+    color: var(--text-theme-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-theme);
+}
+
+.sigm-table th {
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+}
+
+.sigm-table tbody tr {
+    border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+    transition: background-color var(--transition-fast);
+}
+
+.sigm-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.sigm-table tbody tr:hover {
+    background-color: rgba(30, 41, 59, 0.65);
+}
+
+.sigm-table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Panel de Filtros */
+.sigm-filter-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-card);
+}
+
+/* Barra de Paginación */
+.sigm-pagination-bar {
+    background-color: rgba(15, 23, 42, 0.55);
+    border-top: 1px solid var(--border-theme);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+}
+

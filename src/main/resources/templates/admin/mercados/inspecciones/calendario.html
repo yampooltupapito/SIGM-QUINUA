@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Calendario de Inspecciones | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/inspecciones}" class="hover:text-blue-400 transition-colors">Inspecciones</a>
+                <span>/</span>
+                <span class="text-slate-200">Calendario</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Cronograma y Calendario de Inspecciones
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Visitas programadas, distribución por fechas e inspectores asignados.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/inspecciones/programar}"
+               sec:authorize="hasAuthority('MERCADOS_INSPECCION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Programar Visita
+            </a>
+            <a th:href="@{/dashboard/mercados/inspecciones}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                Ver Bandeja
+            </a>
+        </div>
+    </div>
+
+    <!-- Lista Cronológica de Visitas -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center justify-between">
+            <span>Inspecciones Calendarizadas (<span th:text="${inspecciones.size()}">0</span>)</span>
+            <span class="text-xs font-normal text-slate-400" th:text="${'Periodo: ' + desde + ' al ' + hasta}"></span>
+        </h3>
+
+        <div class="divide-y divide-[#334155]/60">
+            <div th:if="${inspecciones.empty}" class="py-10 text-center text-slate-400 text-xs">
+                No hay inspecciones programadas en el rango de fechas seleccionado.
+            </div>
+            <div th:each="i : ${inspecciones}" class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-[#202c3d]/40 p-3 rounded-xl transition-colors">
+                <div class="flex items-start gap-3">
+                    <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-center min-w-[70px]">
+                        <span class="block text-xs font-bold text-white" th:text="${#temporals.format(i.fechaProgramada, 'dd MMM')}">20 Oct</span>
+                        <span class="block text-[10px] text-slate-400" th:text="${i.horaProgramada != null ? i.horaProgramada : 'Flexible'}">09:00</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs font-bold text-indigo-400" th:text="${i.codigoInspeccion}">INS-001</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300" th:text="${i.tipoInspeccionDescripcion}">Programada</span>
+                            <span th:class="${'px-2 py-0.5 rounded text-[10px] font-bold border ' +
+                                    (i.estado != null and i.estado.name() == 'FINALIZADA' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                                    (i.estado != null and i.estado.name() == 'EN_PROCESO' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'))}"
+                                  th:text="${i.estadoDescripcion != null ? i.estadoDescripcion : (i.estado != null ? i.estado.name() : 'Programada')}">Programada</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-white mt-1" th:text="${i.mercadoNombre}">Mercado Central</h4>
+                        <p class="text-xs text-slate-400 mt-0.5" th:text="${i.motivo}">Motivo...</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-right text-xs">
+                        <span class="text-slate-400 block text-[10px]">Inspector:</span>
+                        <span class="text-white font-medium" th:text="${i.inspectorResponsableNombre != null ? i.inspectorResponsableNombre : 'No asignado'}">Juan</span>
+                    </div>
+                    <a th:href="@{'/dashboard/mercados/inspecciones/' + ${i.id}}"
+                       class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs font-semibold rounded-lg border border-[#334155]">
+                        Detalle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

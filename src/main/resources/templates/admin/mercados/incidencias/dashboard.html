@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Incidencias y Supervisión de Mercados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones rápidas -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Incidencias y Presuntas Infracciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Gestión de Incidencias en Mercados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control operativo, atención de reportes internos y ciudadanos, y evaluación técnica preliminar de presuntas infracciones.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/incidencias/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Registrar Incidencia
+            </a>
+            <a th:href="@{/dashboard/mercados/incidencias}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                Ver Bandeja
+            </a>
+            <a th:href="@{/dashboard/mercados/infracciones}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Presuntas Infracciones
+            </a>
+            <a th:href="@{/dashboard/mercados/incidencias/seguimiento}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Seguimiento Operativo
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Métricas Clave -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Incidencias -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Incidencias</p>
+                <h3 class="text-2xl font-bold text-white mt-1" th:text="${stats.totalIncidencias}">0</h3>
+                <span class="inline-block mt-2 text-[10px] text-slate-400">Histórico acumulado</span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+        </div>
+
+        <!-- Incidencias Abiertas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-blue-400 uppercase tracking-wider">Abiertas / En Gestión</p>
+                <h3 class="text-2xl font-bold text-blue-400 mt-1" th:text="${stats.abiertas}">0</h3>
+                <span class="inline-block mt-2 text-[10px] text-slate-400" th:text="${stats.enAtencion + ' con diligencia en campo'}">0 con diligencia</span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+
+        <!-- Críticas Abiertas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-rose-400 uppercase tracking-wider">Críticas Pendientes</p>
+                <h3 class="text-2xl font-bold text-rose-400 mt-1" th:text="${stats.criticasAbiertas}">0</h3>
+                <span class="inline-block mt-2 text-[10px] text-rose-300/80">Atención inmediata requerida</span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+        </div>
+
+        <!-- Presuntas Infracciones en Evaluación -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-purple-400 uppercase tracking-wider">Infracciones en Evaluación</p>
+                <h3 class="text-2xl font-bold text-purple-400 mt-1" th:text="${stats.infraccionesEnEvaluacion}">0</h3>
+                <span class="inline-block mt-2 text-[10px] text-slate-400" th:text="${stats.infraccionesDerivadas + ' derivadas formalmente'}">0 derivadas</span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Informativo de Principios Administrativos -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <h2 class="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Garantías del Debido Procedimiento Administrativo (TUO Ley N° 27444)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-400">
+            <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/50">
+                <span class="font-bold text-slate-200 block mb-1">1. Distinción Incidencia vs. Infracción</span>
+                Un hecho o reporte operativo no constituye automáticamente infracción ni determina culpabilidad sin evaluación motivada previa.
+            </div>
+            <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/50">
+                <span class="font-bold text-slate-200 block mb-1">2. Derecho a Descargo y Defensa</span>
+                Toda presunta infracción admitida permite el registro formal de descargos y medios probatorios del comerciante o administrado.
+            </div>
+            <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/50">
+                <span class="font-bold text-slate-200 block mb-1">3. Separación de Funciones y Sin Automatismos</span>
+                No se imponen sanciones ni se crean deudas de manera automática. Solo resoluciones de autoridad competente tienen efectos punitivos.
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

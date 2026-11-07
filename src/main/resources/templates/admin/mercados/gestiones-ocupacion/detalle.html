@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Expediente ' + ${solicitud.codigoSolicitud} + ' | SIGM-QUINUA'">Expediente de Gestión de Ocupación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de Expediente -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/gestiones-ocupacion/dashboard}" class="hover:text-blue-400">Gestiones de Ocupación</a>
+                <span>/</span>
+                <span class="text-slate-200 font-mono" th:text="${solicitud.codigoSolicitud}">SOL-MER-2026-000001</span>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span th:text="${solicitud.tipoSolicitudLabel}">Renovación de Asignación</span>
+                </h1>
+                <span class="px-3 py-1 rounded-full text-xs font-bold border"
+                      th:classappend="${solicitud.estadoBadgeClass}"
+                      th:text="${solicitud.estadoLabel}">PRESENTADA</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="'Mercado ' + ${solicitud.mercadoNombre} + ' | Puesto ' + ${solicitud.puestoNumero} + ' | Presentada el ' + ${#temporals.format(solicitud.fechaPresentacion, 'dd/MM/yyyy')}">
+                Mercado Central | Puesto 04 | 17/10/2026
+            </p>
+        </div>
+
+        <!-- Botones de Acción según Estado y Permisos -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Botón Observar -->
+            <button type="button" onclick="abrirModal('modalObservar')"
+                    th:if="${solicitud.estado.name() == 'PRESENTADA' or solicitud.estado.name() == 'EN_REVISION' or solicitud.estado.name() == 'EN_EVALUACION'}"
+                    sec:authorize="hasAnyAuthority('MERCADOS_RENOVACION_EVALUAR', 'MERCADOS_CAMBIO_TITULAR_EVALUAR', 'MERCADOS_TRANSFERENCIA_EVALUAR')"
+                    class="px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span>Observar</span>
+            </button>
+
+            <!-- Botón Evaluar -->
+            <button type="button" onclick="abrirModal('modalEvaluar')"
+                    th:if="${solicitud.estado.name() == 'PRESENTADA' or solicitud.estado.name() == 'EN_REVISION' or solicitud.estado.name() == 'EN_EVALUACION'}"
+                    sec:authorize="hasAnyAuthority('MERCADOS_RENOVACION_EVALUAR', 'MERCADOS_CAMBIO_TITULAR_EVALUAR', 'MERCADOS_TRANSFERENCIA_EVALUAR')"
+                    class="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                <span>Evaluar</span>
+            </button>
+
+            <!-- Botón Aprobar -->
+            <button type="button" onclick="abrirModal('modalAprobar')"
+                    th:if="${solicitud.estado.name() == 'EN_EVALUACION' or solicitud.estado.name() == 'PRESENTADA'}"
+                    sec:authorize="hasAnyAuthority('MERCADOS_RENOVACION_APROBAR', 'MERCADOS_CAMBIO_TITULAR_APROBAR', 'MERCADOS_TRANSFERENCIA_APROBAR')"
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Aprobar</span>
+            </button>
+
+            <!-- Botón Rechazar -->
+            <button type="button" onclick="abrirModal('modalRechazar')"
+                    th:if="${solicitud.estado.name() == 'EN_EVALUACION' or solicitud.estado.name() == 'PRESENTADA' or solicitud.estado.name() == 'OBSERVADA'}"
+                    sec:authorize="hasAnyAuthority('MERCADOS_RENOVACION_APROBAR', 'MERCADOS_CAMBIO_TITULAR_APROBAR', 'MERCADOS_TRANSFERENCIA_APROBAR')"
+                    class="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <span>Rechazar</span>
+            </button>
+
+            <!-- Botón Formalizar -->
+            <button type="button" onclick="abrirModal('modalFormalizar')"
+                    th:if="${solicitud.estado.name() == 'APROBADA' or solicitud.estado.name() == 'PENDIENTE_FORMALIZACION'}"
+                    sec:authorize="hasAuthority('MERCADOS_GESTION_OCUPACION_FORMALIZAR')"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Formalizar Efectos</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas de Contenido del Expediente -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Columna Izquierda: Información Central -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Ficha Resumen -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <h2 class="text-sm font-semibold text-white border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Datos de la Solicitud y Fundamentación
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Procedimiento</span>
+                        <span class="font-semibold text-white" th:text="${solicitud.procedimientoNombre != null ? solicitud.procedimientoNombre : 'Procedimiento Estándar'}">Renovación de Asignación</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Expediente MPV</span>
+                        <span class="font-mono text-blue-400 font-semibold" th:text="${solicitud.expedienteId != null ? 'EXP-' + solicitud.expedienteId : 'Sin vincular'}">EXP-1045</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Vigencia Solicitada</span>
+                        <span class="text-slate-200" th:text="${(solicitud.fechaInicioSolicitada != null ? #temporals.format(solicitud.fechaInicioSolicitada, 'dd/MM/yyyy') : 'Aprobación') + ' al ' + (solicitud.fechaFinSolicitada != null ? #temporals.format(solicitud.fechaFinSolicitada, 'dd/MM/yyyy') : '1 año')}">01/01/2027 al 31/12/2027</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Registrado por</span>
+                        <span class="text-slate-200" th:text="${solicitud.usuarioRegistro != null ? solicitud.usuarioRegistro : 'SISTEMA'}">operador_mercado</span>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <span class="text-slate-400 block text-[11px] mb-1">Motivo / Justificación</span>
+                    <p class="text-xs text-slate-300 bg-[#101827] p-3.5 rounded-xl border border-slate-700/60 leading-relaxed" th:text="${solicitud.motivo}">
+                        Detalle del sustento presentado para la prórroga o modificación reglamentaria de ocupación.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Titulares Involucrados -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <h2 class="text-sm font-semibold text-white border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    Comerciantes Titulares Involucrados
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="p-4 rounded-xl bg-[#101827] border border-slate-700/60">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Titular Actual (Cedente)</span>
+                        <h3 class="text-sm font-bold text-white" th:text="${solicitud.comercianteActualNombre}">Juan Pérez</h3>
+                        <p class="text-slate-400 font-mono mt-0.5" th:text="${solicitud.comercianteActualDocumento}">DNI 12345678</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#101827] border border-slate-700/60" th:if="${solicitud.comerciantePropuestoNombre != null}">
+                        <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">Titular Propuesto (Adquirente)</span>
+                        <h3 class="text-sm font-bold text-emerald-300" th:text="${solicitud.comerciantePropuestoNombre}">Carlos Quispe</h3>
+                        <p class="text-slate-400 font-mono mt-0.5" th:text="${solicitud.comerciantePropuestoDocumento}">DNI 45678912</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observaciones y Subsanaciones -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                    <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Observaciones y Subsanaciones (<span th:text="${solicitud.observaciones.size()}">0</span>)
+                    </h2>
+                </div>
+                <div th:if="${solicitud.observaciones.isEmpty()}" class="py-6 text-center text-xs text-slate-400">
+                    No se registran observaciones técnicas para este expediente.
+                </div>
+                <div class="space-y-3" th:unless="${solicitud.observaciones.isEmpty()}">
+                    <div th:each="obs : ${solicitud.observaciones}" class="p-4 rounded-xl bg-[#101827] border border-slate-700/60 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-amber-400" th:text="${obs.requisitoRelacionado != null ? obs.requisitoRelacionado : 'Observación Técnica'}">Requisito</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${obs.estado.name() == 'PENDIENTE' ? 'bg-amber-900/60 text-amber-300' : 'bg-emerald-900/60 text-emerald-300'}"
+                                  th:text="${obs.estadoLabel}">PENDIENTE</span>
+                        </div>
+                        <p class="text-xs text-slate-300" th:text="${obs.descripcion}">Descripción de la observación</p>
+                        <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-800 flex justify-between items-center">
+                            <span th:text="'Por: ' + ${obs.usuarioObservador} + ' | ' + ${#temporals.format(obs.fechaObservacion, 'dd/MM/yyyy HH:mm')}">admin | 17/10/2026</span>
+                            <button type="button" th:if="${obs.estado.name() == 'PENDIENTE'}"
+                                    th:onclick="'abrirModalSubsanar(' + ${obs.id} + ')'"
+                                    class="text-blue-400 hover:text-blue-300 font-semibold">
+                                + Subsanar
+                            </button>
+                        </div>
+                        <!-- Subsanaciones registradas -->
+                        <div th:if="${!obs.subsanaciones.isEmpty()}" class="mt-2 pl-3 border-l-2 border-emerald-500/40 space-y-1.5">
+                            <div th:each="sub : ${obs.subsanaciones}" class="text-[11px] text-emerald-300">
+                                <span class="font-semibold" th:text="${#temporals.format(sub.fechaSubsanacion, 'dd/MM/yyyy')} + ': '"></span>
+                                <span th:text="${sub.descripcion}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluaciones Administrativas -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <h2 class="text-sm font-semibold text-white border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    Informes de Evaluación Técnica (<span th:text="${solicitud.evaluaciones.size()}">0</span>)
+                </h2>
+                <div th:if="${solicitud.evaluaciones.isEmpty()}" class="py-6 text-center text-xs text-slate-400">
+                    Aún no se han emitido evaluaciones técnicas para esta solicitud.
+                </div>
+                <div class="space-y-3" th:unless="${solicitud.evaluaciones.isEmpty()}">
+                    <div th:each="ev : ${solicitud.evaluaciones}" class="p-4 rounded-xl bg-[#101827] border border-slate-700/60 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-white" th:text="'Dictamen: ' + ${ev.sentidoEvaluacionLabel}">Sentido</span>
+                            <span class="text-[10px] text-slate-400" th:text="${#temporals.format(ev.fechaEvaluacion, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                        </div>
+                        <p class="text-xs text-slate-300" th:text="${ev.informeTecnico}">Informe técnico</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha: Trazabilidad, Puesto e Historial -->
+        <div class="space-y-6">
+
+            <!-- Ficha del Puesto -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-3">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Ubicación del Puesto
+                </h3>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Mercado</span>
+                        <span class="font-bold text-white" th:text="${solicitud.mercadoNombre}">Mercado Central</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Número de Puesto</span>
+                        <span class="font-bold text-blue-400" th:text="'Puesto ' + ${solicitud.puestoNumero}">Puesto 04</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Asignación Actual</span>
+                        <span class="font-mono text-slate-200" th:text="${solicitud.asignacionOrigenCodigo}">ASIG-MER-2026-000001</span>
+                    </div>
+                    <div th:if="${solicitud.asignacionNuevaCodigo != null}">
+                        <span class="text-slate-400 block text-[10px]">Nueva Asignación Formalizada</span>
+                        <span class="font-mono text-emerald-400 font-bold" th:text="${solicitud.asignacionNuevaCodigo}">ASIG-MER-2026-000002</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verificación QR -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-3 text-center">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-700/60 pb-2">
+                    Verificación de Autenticidad QR
+                </h3>
+                <div class="p-3 bg-white rounded-xl inline-block mx-auto shadow">
+                    <!-- Código QR ilustrativo con token oficial -->
+                    <div class="w-32 h-32 bg-slate-900 flex items-center justify-center text-[10px] text-white p-2 rounded text-center">
+                        <span class="font-mono text-[9px]" th:text="${#strings.substring(solicitud.tokenVerificacionQr, 0, 18)} + '...'">TOKEN-QR</span>
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-400">
+                    Token institucional: <span class="font-mono text-slate-300 block mt-0.5" th:text="${solicitud.tokenVerificacionQr}">UUID</span>
+                </p>
+                <a th:href="@{'/publico/verificar/gestion-ocupacion/' + ${solicitud.tokenVerificacionQr}}" target="_blank"
+                   class="text-xs text-blue-400 hover:text-blue-300 font-semibold block transition-colors">
+                    Verificar públicamente &rarr;
+                </a>
+            </div>
+
+            <!-- Historial de Titularidad del Puesto -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-3">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-700/60 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Historial de Titulares
+                </h3>
+                <div th:if="${solicitud.historialPuesto.isEmpty()}" class="py-4 text-center text-xs text-slate-400">
+                    Sin cambios previos de titularidad.
+                </div>
+                <div class="space-y-2.5 text-xs" th:unless="${solicitud.historialPuesto.isEmpty()}">
+                    <div th:each="h : ${solicitud.historialPuesto}" class="p-3 rounded-xl bg-[#101827] border border-slate-700/60">
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+                            <span class="font-bold text-purple-400" th:text="${h.tipoOperacionLabel}">Cambio de Titular</span>
+                            <span th:text="${#temporals.format(h.fechaEfectiva, 'dd/MM/yyyy')}">17/10/2026</span>
+                        </div>
+                        <p class="font-semibold text-white" th:text="${h.titularNuevoNombre}">Nuevo Titular</p>
+                        <p class="text-[10px] text-slate-400" th:text="'Anterior: ' + ${h.titularAnteriorNombre}">Anterior</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Modales Interactivos -->
+
+    <!-- Modal Observar -->
+    <div id="modalObservar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white">Registrar Observación Técnica</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Requisito Observado</label>
+                <input type="text" id="obsRequisito" placeholder="Ej. Certificado de Salud / Pago de Cuota" class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Descripción de la Observación <span class="text-rose-500">*</span></label>
+                <textarea id="obsDescripcion" rows="3" required placeholder="Indique claramente la inconsistencia detectada..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalObservar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarObservacion()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold">Guardar Observación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Subsanar -->
+    <div id="modalSubsanar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white">Registrar Subsanación de Observación</h3>
+            <input type="hidden" id="subObsId">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Detalle de la Subsanación <span class="text-rose-500">*</span></label>
+                <textarea id="subDescripcion" rows="3" required placeholder="Describa los documentos o descargos adjuntados..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalSubsanar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarSubsanacion()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold">Enviar Subsanación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Evaluar -->
+    <div id="modalEvaluar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white">Emitir Evaluación Técnica</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Sentido de la Evaluación <span class="text-rose-500">*</span></label>
+                <select id="evalSentido" class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                    <option value="FAVORABLE">Favorable</option>
+                    <option value="DESFAVORABLE">Desfavorable</option>
+                    <option value="OBSERVAR">Observar (Requiere Subsanación)</option>
+                    <option value="REQUIERE_INFORMACION">Requiere Información Adicional</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Informe Técnico de Evaluación <span class="text-rose-500">*</span></label>
+                <textarea id="evalInforme" rows="4" required placeholder="Fundamente el cumplimiento de requisitos y estado de obligaciones..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalEvaluar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarEvaluacion()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold">Guardar Evaluación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Aprobar -->
+    <div id="modalAprobar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-emerald-400">Aprobar Solicitud de Ocupación</h3>
+            <p class="text-xs text-slate-300">
+                La aprobación administrativa habilita la posterior formalización del trámite sin ejecutar el cambio efectivo de inmediato.
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo / Sustento de Aprobación <span class="text-rose-500">*</span></label>
+                <textarea id="aprobMotivo" rows="3" required placeholder="Fundamente la decisión de aprobación conforme a la evaluación técnica favorable..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalAprobar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarAprobacion()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold">Confirmar Aprobación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Rechazar -->
+    <div id="modalRechazar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-rose-400">Rechazar Solicitud</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo Fundado del Rechazo <span class="text-rose-500">*</span></label>
+                <textarea id="rechMotivo" rows="3" required placeholder="Especifique la causal de improcedencia o incumplimiento normativo insubsanable..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalRechazar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarRechazo()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold">Confirmar Rechazo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formalizar -->
+    <div id="modalFormalizar" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-purple-400">Formalizar Decisión de Ocupación</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Esta operación ejecuta el cambio efectivo en los registros municipales: cierra la asignación anterior, emite el nuevo código de asignación o amplía la vigencia, y asienta el movimiento en el historial inmutable.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Efectiva</label>
+                    <input type="date" id="formFechaEfectiva" class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nueva Fecha Fin</label>
+                    <input type="date" id="formNuevaFechaFin" class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Resolución o Documento de Sustento <span class="text-rose-500">*</span></label>
+                <textarea id="formMotivo" rows="3" required placeholder="Indique el número de resolución administrativa, acta de entrega o acuerdo de formalización..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="cerrarModal('modalFormalizar')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancelar</button>
+                <button type="button" onclick="enviarFormalizacion()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold">Ejecutar Formalización</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token CSRF oculto -->
+    <input type="hidden" id="csrfTokenHidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <!-- Script de funciones y modales embebido en content -->
+    <script th:inline="javascript">
+    const solicitudId = /*[[${solicitud.id}]]*/ '';
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+
+    function getCsrf() {
+        if (csrfToken) return csrfToken;
+        const input = document.getElementById('csrfTokenHidden') || document.querySelector('input[name="_csrf"]');
+        return input ? input.value : '';
+    }
+
+    function abrirModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('hidden');
+        }
+    }
+
+    function cerrarModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+        }
+    }
+
+    function abrirModalSubsanar(obsId) {
+        const input = document.getElementById('subObsId');
+        if (input) input.value = obsId;
+        abrirModal('modalSubsanar');
+    }
+
+    async function enviarObservacion() {
+        const desc = document.getElementById('obsDescripcion').value;
+        if (!desc || desc.trim() === '') return alert('Ingrese la descripción de la observación.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/observar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({
+                    descripcion: desc.trim(),
+                    requisitoRelacionado: document.getElementById('obsRequisito').value
+                })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al guardar la observación: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al guardar la observación.');
+        }
+    }
+
+    async function enviarSubsanacion() {
+        const obsId = document.getElementById('subObsId').value;
+        const desc = document.getElementById('subDescripcion').value;
+        if (!desc || desc.trim() === '') return alert('Ingrese la descripción de subsanación.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/subsanar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({ observacionId: parseInt(obsId), descripcion: desc.trim() })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al registrar la subsanación: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al registrar la subsanación.');
+        }
+    }
+
+    async function enviarEvaluacion() {
+        const informe = document.getElementById('evalInforme').value;
+        if (!informe || informe.trim() === '') return alert('Ingrese el informe técnico de evaluación.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/evaluar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({
+                    sentidoEvaluacion: document.getElementById('evalSentido').value,
+                    informeTecnico: informe.trim()
+                })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al registrar la evaluación: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al registrar la evaluación.');
+        }
+    }
+
+    async function enviarAprobacion() {
+        const motivo = document.getElementById('aprobMotivo').value;
+        if (!motivo || motivo.trim() === '') return alert('Ingrese el motivo o sustento de aprobación.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/aprobar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({ motivo: motivo.trim() })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al aprobar la solicitud: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al aprobar la solicitud.');
+        }
+    }
+
+    async function enviarRechazo() {
+        const motivo = document.getElementById('rechMotivo').value;
+        if (!motivo || motivo.trim() === '') return alert('Ingrese el motivo fundado del rechazo.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/rechazar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({ motivo: motivo.trim() })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al rechazar la solicitud: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al rechazar la solicitud.');
+        }
+    }
+
+    async function enviarFormalizacion() {
+        const motivo = document.getElementById('formMotivo').value;
+        if (!motivo || motivo.trim() === '') return alert('Ingrese la resolución o sustento de formalización.');
+
+        try {
+            const res = await fetch(`/api/mercados/gestiones-ocupacion/${solicitudId}/formalizar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+                body: JSON.stringify({
+                    motivo: motivo.trim(),
+                    fechaEfectiva: document.getElementById('formFechaEfectiva').value || null,
+                    nuevaFechaFin: document.getElementById('formNuevaFechaFin').value || null
+                })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al formalizar la solicitud: ' + (err.message || 'Verifique los datos'));
+            }
+        } catch (e) {
+            alert('Error de conexión al formalizar la solicitud.');
+        }
+    }
+
+    window.abrirModal = abrirModal;
+    window.cerrarModal = cerrarModal;
+    window.abrirModalSubsanar = abrirModalSubsanar;
+    window.enviarObservacion = enviarObservacion;
+    window.enviarSubsanacion = enviarSubsanacion;
+    window.enviarEvaluacion = enviarEvaluacion;
+    window.enviarAprobacion = enviarAprobacion;
+    window.enviarRechazo = enviarRechazo;
+    window.enviarFormalizacion = enviarFormalizacion;
+    </script>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+    // Enlace de seguridad en fragmento scripts
+    if (typeof window.abrirModal !== 'function') {
+        console.warn('abrirModal initialized via layout scripts block');
+    }
+    </script>
+</th:block>
+</body>
+</html>

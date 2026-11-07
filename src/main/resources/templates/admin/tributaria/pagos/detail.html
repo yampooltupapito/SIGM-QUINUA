@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Pago ' + ${pago.codigoPago} + ' — SIGM-QUINUA'">Detalle del Pago — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Notificaciones -->
+    <div th:if="${success}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center space-x-3">
+        <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${success}" class="text-sm font-medium">Operación realizada con éxito</span>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}" class="text-sm font-medium">Ocurrió un error</span>
+    </div>
+
+    <!-- Cabecera y Barra de Acciones -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria/pagos}" class="hover:text-blue-400 transition-colors">Pagos Tributarios</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200" th:text="${pago.codigoPago}">PAG-2026-00001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <i data-lucide="receipt" class="w-6 h-6 text-emerald-400"></i>
+                    Operación de Pago: <span th:text="${pago.codigoPago}" class="font-mono text-blue-400">PAG-2026-00001</span>
+                </h1>
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold border"
+                      th:classappend="${pago.estadoBadgeClass}"
+                      th:text="${pago.estadoDescripcion}">CONFIRMADO</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+                Registrado el <span th:text="${#temporals.format(pago.fechaHoraPago, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026</span>
+                por <span class="text-white font-medium" th:text="${pago.cajeroNombre}">Juan Cajero</span>
+            </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Botón Confirmar si está pendiente -->
+            <form th:if="${pago.estado.name() == 'BORRADOR' or pago.estado.name() == 'PENDIENTE_VERIFICACION'}"
+                  th:action="@{'/dashboard/tributaria/pagos/' + ${pago.id} + '/confirmar'}" method="post"
+                  sec:authorize="hasAuthority('TRIBUTARIA_PAGOS_CONFIRMAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')">
+                <button type="submit" onclick="return confirm('¿Confirma la verificación y aplicación contable de este pago?')"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Confirmar Pago</span>
+                </button>
+            </form>
+
+            <!-- Botón Revertir si está confirmado -->
+            <button th:if="${pago.estado.name() == 'CONFIRMADO' or pago.estado.name() == 'PROCESADO'}"
+                    onclick="document.getElementById('modalRevertir').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_PAGOS_REVERTIR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <span>Revertir Pago</span>
+            </button>
+
+            <a th:href="@{/dashboard/tributaria/pagos}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen Rápido -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <span class="text-xs font-medium text-slate-400 block mb-1">Importe Total Recaudado</span>
+            <div class="text-2xl font-bold font-mono text-emerald-400">
+                S/ <span th:text="${#numbers.formatDecimal(pago.importe, 1, 'POINT', 2, 'COMMA')}">150.00</span>
+            </div>
+            <span class="text-[10px] text-slate-500" th:text="${pago.moneda} + ' — Soles'">PEN — Soles</span>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <span class="text-xs font-medium text-slate-400 block mb-1">Medio de Pago</span>
+            <div class="text-sm font-semibold text-white" th:text="${pago.medioPagoDescripcion}">Efectivo en Ventanilla</div>
+            <span class="text-[10px] text-slate-400" th:text="${pago.numeroOperacionBancaria != null ? 'Op: ' + pago.numeroOperacionBancaria : 'En caja municipal'}"></span>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <span class="text-xs font-medium text-slate-400 block mb-1">Contribuyente</span>
+            <div class="text-sm font-semibold text-white truncate" th:text="${pago.contribuyenteNombre}">Juan Pérez</div>
+            <span class="text-[10px] text-slate-400 font-mono" th:text="${pago.contribuyenteDocumento}">DNI 12345678</span>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <span class="text-xs font-medium text-slate-400 block mb-1">Caja / Ventanilla</span>
+            <div class="text-sm font-semibold text-white" th:text="${pago.cajaNombre}">Ventanilla Principal</div>
+            <span class="text-[10px] text-slate-400" th:text="${pago.sesionCajaCodigo != null ? 'Sesión: ' + pago.sesionCajaCodigo : 'Cobro Directo'}"></span>
+        </div>
+    </div>
+
+    <!-- Pestañas de Detalle -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm overflow-hidden">
+        <div class="border-b border-[#334155] bg-[#1e293b] px-4">
+            <div class="flex space-x-4">
+                <button class="py-3 text-xs font-semibold text-blue-400 border-b-2 border-blue-500 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                    <span>Aplicaciones a Obligaciones (<span th:text="${#lists.size(pago.aplicaciones)}">1</span>)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Aplicaciones -->
+        <div class="p-4 overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                    <tr>
+                        <th class="py-2.5 px-3">Código Obligación</th>
+                        <th class="py-2.5 px-3">Concepto Tributario</th>
+                        <th class="py-2.5 px-3">Período / Cuota</th>
+                        <th class="py-2.5 px-3 text-right">Importe Aplicado</th>
+                        <th class="py-2.5 px-3 text-center">Estado Imputación</th>
+                        <th class="py-2.5 px-3 text-center">Mov. Contable</th>
+                        <th class="py-2.5 px-3">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]">
+                    <tr th:each="a : ${pago.aplicaciones}" class="hover:bg-slate-800/40">
+                        <td class="py-2.5 px-3 font-mono font-bold text-blue-400">
+                            <a th:href="@{'/dashboard/tributaria/obligaciones/' + ${a.obligacionId}}" th:text="${a.obligacionCodigo}" class="hover:underline">OBL-2026-00001</a>
+                        </td>
+                        <td class="py-2.5 px-3 text-white font-medium" th:text="${a.conceptoNombre}">Impuesto Predial Anual</td>
+                        <td class="py-2.5 px-3 text-slate-300" th:text="'Año ' + ${a.periodoAnio} + ' (Cuota ' + ${a.cuotaNumero} + ')'">Año 2026</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-400">
+                            S/ <span th:text="${#numbers.formatDecimal(a.importeAplicado, 1, 'POINT', 2, 'COMMA')}">150.00</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${a.estadoBadgeClass}"
+                                  th:text="${a.estadoDescripcion}">ACTIVA</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400">
+                            <span th:if="${a.movimientoCuentaId != null}" class="text-teal-400 font-semibold">Generado</span>
+                            <span th:if="${a.movimientoCuentaId == null}" class="text-slate-600">Pendiente</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-slate-400" th:text="${a.observaciones != null ? a.observaciones : '-'}">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Trazabilidad y Datos de Auditoría -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm space-y-3">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5 border-b border-[#334155] pb-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-blue-400"></i>
+                Datos Bancarios y Trazabilidad de Origen
+            </h4>
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Clave de Idempotencia:</span>
+                    <span class="font-mono text-slate-200" th:text="${pago.idempotencyKey != null ? pago.idempotencyKey : 'N/A'}"></span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">N° Operación Bancaria:</span>
+                    <span class="font-mono text-slate-200" th:text="${pago.numeroOperacionBancaria != null ? pago.numeroOperacionBancaria : 'No aplica'}"></span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Banco de Origen:</span>
+                    <span class="text-slate-200" th:text="${pago.bancoOrigen != null ? pago.bancoOrigen : 'Caja Municipal'}"></span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Referencia Externa:</span>
+                    <span class="text-slate-200" th:text="${pago.referenciaExterna != null ? pago.referenciaExterna : 'Sin referencia'}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm space-y-3">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5 border-b border-[#334155] pb-2">
+                <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i>
+                Bitácora de Auditoría del Pago
+            </h4>
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Confirmado por:</span>
+                    <span class="text-slate-200" th:text="${pago.usuarioConfirmacionNombre != null ? pago.usuarioConfirmacionNombre : 'Pendiente'}"></span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Fecha de Confirmación:</span>
+                    <span class="text-slate-200" th:text="${pago.fechaConfirmacion != null ? #temporals.format(pago.fechaConfirmacion, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}"></span>
+                </div>
+                <div th:if="${pago.fechaReversion != null}" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300">
+                    <div class="font-bold">Revertido formalmente el:</div>
+                    <div th:text="${#temporals.format(pago.fechaReversion, 'dd/MM/yyyy HH:mm:ss')}"></div>
+                    <div class="mt-1 text-[11px]" th:text="'Motivo: ' + ${pago.motivoReversion}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Reversión de Pago -->
+    <div id="modalRevertir" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-[#334155] rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-[#334155] pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+                    Revertir Pago Recaudado
+                </h3>
+                <button type="button" onclick="document.getElementById('modalRevertir').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form th:action="@{'/dashboard/tributaria/pagos/' + ${pago.id} + '/revertir'}" method="post" class="space-y-4">
+                <div class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 leading-relaxed">
+                    <strong>Advertencia:</strong> Esta acción anulará las imputaciones del pago y generará un <em>contraasiento contable</em> (cargo) en la cuenta corriente del contribuyente, restaurando su saldo exigible.
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo Justificado de Reversión *</label>
+                    <textarea name="motivoReversion" rows="3" required placeholder="Indique la causal (voucher duplicado, error de ventanilla, resolución de devolución...)"
+                              class="w-full bg-[#101827] border border-[#334155] rounded-lg p-2.5 text-xs text-white placeholder-slate-500 focus:ring-1 focus:ring-rose-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-[#334155]">
+                    <button type="button" onclick="document.getElementById('modalRevertir').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg hover:bg-slate-700">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition-colors">
+                        Confirmar Reversión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

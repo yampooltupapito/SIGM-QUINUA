@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Registrar Nueva Incidencia | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/incidencias}" class="hover:text-blue-400">Incidencias</a>
+                <span>/</span>
+                <span class="text-slate-200">Nuevo Registro</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Registro de Nueva Incidencia
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Reporte formal u operativo de hechos, desperfectos o situaciones que ameritan atención administrativa.</p>
+        </div>
+        <div>
+            <a th:href="@{/dashboard/mercados/incidencias}" class="text-xs text-slate-400 hover:text-white transition-colors">
+                &larr; Volver a la bandeja
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de Registro -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formIncidencia" class="space-y-6">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <!-- Sección 1: Ubicación y Alcance -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    1. Ubicación y Ámbito Territorial
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Mercado Municipal <span class="text-rose-500">*</span></label>
+                        <select id="mercadoId" name="mercadoId" required
+                                class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                            <option value="">-- Seleccionar Mercado --</option>
+                            <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Puesto Comercial (Opcional)</label>
+                        <input type="text" id="puestoInput" placeholder="ID o número de puesto (si aplica)"
+                               class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                        <span class="text-[10px] text-slate-500 block mt-1">Dejar vacío si la incidencia afecta a áreas comunes o a todo el mercado.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 2: Clasificación y Origen -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                    2. Clasificación del Hecho
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Incidencia <span class="text-rose-500">*</span></label>
+                        <select id="tipoIncidenciaId" name="tipoIncidenciaId" required
+                                class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                            <option value="">-- Seleccionar Tipo --</option>
+                            <option th:each="t : ${tipos}" th:value="${t.id}" th:text="${t.nombre}" th:data-prioridad="${t.prioridadSugerida}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Origen del Reporte <span class="text-rose-500">*</span></label>
+                        <select id="origen" name="origen" required
+                                class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                            <option th:each="o : ${origenes}" th:value="${o}" th:text="${o.label}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Prioridad Operativa <span class="text-rose-500">*</span></label>
+                        <select id="prioridad" name="prioridad" required
+                                class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                            <option th:each="p : ${prioridades}" th:value="${p}" th:text="${p.label}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 3: Descripción de los Hechos -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                    3. Descripción Pormenorizada de los Hechos
+                </h2>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Detalle de la Incidencia <span class="text-rose-500">*</span></label>
+                    <textarea id="descripcion" name="descripcion" rows="4" required minlength="10" maxlength="2000"
+                              placeholder="Describa con precisión los hechos observados, circunstancias, personas involucradas y medidas inmediatas tomadas si las hubiera..."
+                              class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-3 focus:ring-1 focus:ring-blue-500"></textarea>
+                    <span class="text-[10px] text-slate-500 block mt-1">Mínimo 10 caracteres, máximo 2000 caracteres.</span>
+                </div>
+            </div>
+
+            <!-- Sección 4: Datos del Reportante (Con Reserva de Identidad) -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    4. Datos del Reportante (Protección de Datos Personales)
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Nombre Completo del Reportante</label>
+                        <input type="text" id="reportanteNombre" name="reportanteNombre" placeholder="Nombre o ciudadano..."
+                               class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Teléfono o Correo de Contacto</label>
+                        <input type="text" id="reportanteContacto" name="reportanteContacto" placeholder="Para seguimiento..."
+                               class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                    <input type="checkbox" id="esAnonimo" name="esAnonimo" class="rounded bg-[#101827] border-slate-700 text-blue-600 focus:ring-0">
+                    <label for="esAnonimo" class="text-xs text-slate-300">Marcar como reporte anónimo / reserva de identidad institucional</label>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="pt-4 border-t border-slate-700/60 flex justify-end gap-3">
+                <a th:href="@{/dashboard/mercados/incidencias}" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                    Cancelar
+                </a>
+                <button type="button" id="btnGuardar" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Registrar Incidencia
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<script layout:fragment="page-scripts">
+document.addEventListener('DOMContentLoaded', () => {
+    const btnGuardar = document.getElementById('btnGuardar');
+    const form = document.getElementById('formIncidencia');
+
+    btnGuardar.addEventListener('click', async () => {
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const payload = {
+            mercadoId: document.getElementById('mercadoId').value,
+            tipoIncidenciaId: document.getElementById('tipoIncidenciaId').value,
+            origen: document.getElementById('origen').value,
+            prioridad: document.getElementById('prioridad').value,
+            descripcion: document.getElementById('descripcion').value,
+            reportanteNombre: document.getElementById('reportanteNombre').value,
+            reportanteContacto: document.getElementById('reportanteContacto').value,
+            esAnonimo: document.getElementById('esAnonimo').checked
+        };
+
+        btnGuardar.disabled = true;
+        btnGuardar.textContent = 'Registrando...';
+
+        try {
+            const csrfToken = document.querySelector('input[name="_csrf"]').value;
+            const resp = await fetch('/api/mercados/incidencias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json();
+                throw new Error(err.message || 'Error al registrar la incidencia');
+            }
+
+            const data = await resp.json();
+            alert('Incidencia registrada exitosamente: ' + data.codigoIncidencia);
+            window.location.href = '/dashboard/mercados/incidencias/' + data.id;
+        } catch (ex) {
+            alert('Error: ' + ex.message);
+            btnGuardar.disabled = false;
+            btnGuardar.textContent = 'Registrar Incidencia';
+        }
+    });
+});
+</script>
+</body>
+</html>

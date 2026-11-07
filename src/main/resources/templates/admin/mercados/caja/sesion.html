@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Control de Caja y Arqueo | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+            <span>/</span>
+            <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+            <span>/</span>
+            <a th:href="@{/dashboard/mercados/finanzas}" class="hover:text-blue-400 transition-colors">Finanzas</a>
+            <span>/</span>
+            <span class="text-slate-200">Caja y Arqueo</span>
+        </div>
+        <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            Administración de Cajas y Sesiones de Cobro
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Apertura diaria de caja recaudadora, monitoreo de ingresos en tiempo real y cierre con arqueo.</p>
+    </div>
+
+    <!-- Panel de Estado de Caja Activa -->
+    <div id="panelSesionActiva" class="hidden bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-5">
+        <div class="flex justify-between items-start">
+            <div>
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Sesión Activa de Cobro</span>
+                <h3 id="txtCajaNombre" class="text-lg font-bold text-white mt-0.5">Caja Principal</h3>
+                <p id="txtCajaApertura" class="text-xs text-slate-400">Abierta a las ...</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                ABIERTA
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Monto Inicial en Efectivo</span>
+                <span id="txtMontoInicial" class="font-mono font-bold text-white text-base">S/ 0.00</span>
+            </div>
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Total Ingresos Recaudados</span>
+                <span id="txtTotalIngresos" class="font-mono font-bold text-emerald-400 text-base">S/ 0.00</span>
+            </div>
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Total Esperado en Caja</span>
+                <span id="txtMontoEsperado" class="font-mono font-bold text-amber-400 text-base">S/ 0.00</span>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-[#334155]/60 flex justify-between items-center">
+            <a th:href="@{/dashboard/mercados/pagos/nuevo}"
+               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow transition-colors">
+                Ir a Cobrar en Ventanilla
+            </a>
+            <button onclick="abrirModalCierre()"
+                    class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow transition-colors">
+                Cerrar Caja y Arqueo
+            </button>
+        </div>
+    </div>
+
+    <!-- Panel de Apertura de Caja (si no hay sesión activa) -->
+    <div id="panelApertura" class="hidden bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Aperturar Nueva Sesión de Caja
+        </h3>
+        <p class="text-xs text-slate-400">No cuenta con una sesión abierta en este momento. Seleccione la caja y declare el saldo inicial en efectivo para iniciar la recaudación.</p>
+
+        <form id="formAperturaCaja" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Caja Recaudadora *</label>
+                    <select id="selCajaId" required class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                        <option th:each="c : ${cajas}" th:value="${c.id}" th:text="${c.nombre} + ' (' + ${c.codigo} + ')'"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Monto Inicial en Efectivo (S/) *</label>
+                    <input type="number" step="0.01" min="0.00" id="inpMontoInicial" required value="0.00"
+                           class="w-full bg-[#101827] text-white font-mono font-bold px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Observaciones de Apertura</label>
+                <input type="text" id="inpObsApertura" placeholder="Turno mañana, fondo para cambio..."
+                       class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex justify-end">
+                <button type="submit"
+                        class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg transition-colors">
+                    Aperturar Caja
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de Cierre y Arqueo -->
+    <div id="modalCierreCaja" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Arqueo y Cierre de Sesión de Caja
+            </h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Ingrese el monto total en efectivo físicamente contado en ventanilla para realizar el cuadre contra el sistema.
+            </p>
+
+            <form id="formCierreCaja" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Monto en Efectivo Contado (S/) *</label>
+                    <input type="number" step="0.01" min="0.00" id="inpMontoDeclarado" required placeholder="0.00"
+                           class="w-full bg-[#101827] text-white font-mono font-bold text-sm px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Observaciones de Cierre</label>
+                    <textarea id="inpObsCierre" rows="2" placeholder="Observaciones de arqueo, justificación de sobrante/faltante..."
+                              class="w-full bg-[#101827] text-white p-3 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="cerrarModalCierre()"
+                            class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow transition-colors">
+                        Finalizar y Cerrar Caja
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    let sesionActivaId = null;
+
+    async function cargarSesionActiva() {
+        try {
+            const resp = await fetch('/api/mercados/cajas/sesion-activa');
+            if (resp.status === 200) {
+                const sesion = await resp.json();
+                sesionActivaId = sesion.id;
+                document.getElementById('txtCajaNombre').innerText = `${sesion.cajaNombre} (${sesion.cajaCodigo})`;
+                document.getElementById('txtCajaApertura').innerText = `Abierta el ${new Date(sesion.fechaApertura).toLocaleString('es-PE')} por ${sesion.cajeroUsername}`;
+                document.getElementById('txtMontoInicial').innerText = `S/ ${Number(sesion.montoInicial).toFixed(2)}`;
+                document.getElementById('txtTotalIngresos').innerText = `S/ ${Number(sesion.totalIngresos).toFixed(2)}`;
+                document.getElementById('txtMontoEsperado').innerText = `S/ ${Number(sesion.montoFinalEsperado).toFixed(2)}`;
+
+                document.getElementById('panelSesionActiva').classList.remove('hidden');
+                document.getElementById('panelApertura').classList.add('hidden');
+            } else {
+                sesionActivaId = null;
+                document.getElementById('panelSesionActiva').classList.add('hidden');
+                document.getElementById('panelApertura').classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error('Error cargando sesión activa:', err);
+            sesionActivaId = null;
+            document.getElementById('panelSesionActiva').classList.add('hidden');
+            document.getElementById('panelApertura').classList.remove('hidden');
+        }
+    }
+
+    function abrirModalCierre() {
+        document.getElementById('modalCierreCaja')?.classList.remove('hidden');
+    }
+
+    function cerrarModalCierre() {
+        document.getElementById('modalCierreCaja')?.classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarSesionActiva();
+
+        document.getElementById('formAperturaCaja')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                cajaId: document.getElementById('selCajaId').value,
+                montoInicial: parseFloat(document.getElementById('inpMontoInicial').value) || 0,
+                observaciones: document.getElementById('inpObsApertura').value
+            };
+
+            try {
+                const resp = await fetch('/api/mercados/cajas/abrir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.message || 'Error al abrir caja');
+                }
+
+                alert('Caja aperturada exitosamente.');
+                cargarSesionActiva();
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        document.getElementById('formCierreCaja')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!sesionActivaId) return;
+
+            const payload = {
+                montoFinalDeclarado: parseFloat(document.getElementById('inpMontoDeclarado').value) || 0,
+                observaciones: document.getElementById('inpObsCierre').value
+            };
+
+            try {
+                const resp = await fetch(`/api/mercados/cajas/sesiones/${sesionActivaId}/cerrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.message || 'Error al cerrar caja');
+                }
+
+                const data = await resp.json();
+                alert(`Caja cerrada exitosamente.\nEsperado: S/ ${Number(data.montoFinalEsperado).toFixed(2)}\nDeclarado: S/ ${Number(data.montoFinalDeclarado).toFixed(2)}\nDiferencia: S/ ${Number(data.diferencia).toFixed(2)}`);
+                cerrarModalCierre();
+                cargarSesionActiva();
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+    });
+
+    window.abrirModalCierre = abrirModalCierre;
+    window.cerrarModalCierre = cerrarModalCierre;
+    window.cargarSesionActiva = cargarSesionActiva;
+    </script>
+</div>
+
+<th:block layout:fragment="scripts">
+</th:block>
+</body>
+</html>

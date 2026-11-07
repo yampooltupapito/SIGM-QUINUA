@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Finanzas y Recaudación de Mercados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones rápidas -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Finanzas y Recaudación</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Gestión Financiera y Recaudación de Mercados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de merced conductiva, emisión de obligaciones, cronogramas de cuotas, arqueos de caja y cobranza.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/pagos/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_PAGO_REGISTRAR') or hasAuthority('MERCADOS_FINANZAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Registrar Cobro / Pago
+            </a>
+            <a th:href="@{/dashboard/mercados/obligaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_OBLIGACION_CREAR') or hasAuthority('MERCADOS_FINANZAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Emitir Obligación
+            </a>
+            <a th:href="@{/dashboard/mercados/caja}"
+               sec:authorize="hasAuthority('MERCADOS_CAJA_ABRIR') or hasAuthority('MERCADOS_CAJA_CERRAR') or hasAuthority('MERCADOS_PAGO_REGISTRAR') or hasAuthority('MERCADOS_FINANZAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                Control de Caja
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Métricas Financieras (KPI) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Recaudación Total -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Recaudación del Año</p>
+                    <h3 class="text-2xl font-bold text-white mt-1" th:text="'S/ ' + ${#numbers.formatDecimal(estadisticas.montoTotalRecaudado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-400 flex items-center gap-1">
+                <span class="text-emerald-400 font-semibold" th:text="'Hoy: S/ ' + ${#numbers.formatDecimal(estadisticas.recaudacionHoy, 1, 'COMMA', 2, 'POINT')}">Hoy: S/ 0.00</span>
+                <span>ingresados a caja</span>
+            </div>
+        </div>
+
+        <!-- Obligaciones Emitidas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Obligaciones Registradas</p>
+                    <h3 class="text-2xl font-bold text-white mt-1" th:text="${estadisticas.totalObligacionesEmitidas}">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-400">
+                Padrón de deudas y cánones emitidos
+            </div>
+        </div>
+
+        <!-- Deudas Vencidas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Obligaciones Vencidas</p>
+                    <h3 class="text-2xl font-bold text-amber-400 mt-1" th:text="${estadisticas.totalObligacionesVencidas}">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-400">
+                Pendientes de cobro con plazo cumplido
+            </div>
+        </div>
+
+        <!-- Cajas Abiertas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Cajas Operativas</p>
+                    <h3 class="text-2xl font-bold text-white mt-1" th:text="${estadisticas.cajasAbiertasCount}">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-400">
+                Sesiones de cobro abiertas hoy
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú de Accesos Rápidos del Módulo Financiero -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Padrón de Obligaciones -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div class="space-y-3">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-white">Obligaciones y Deudas</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Consulta padrones de merced conductiva, fechas de vencimiento, saldos exigibles y cronogramas de cuotas.</p>
+            </div>
+            <div class="pt-6">
+                <a th:href="@{/dashboard/mercados/obligaciones}" class="inline-flex items-center gap-2 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                    Ver Padrón de Obligaciones &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Registro y Cobro de Pagos -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div class="space-y-3">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-white">Pagos y Recaudación</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Registro de pagos en ventanilla, transferencias, depósitos y emisión de recibos oficiales con código QR y firma SHA-256.</p>
+            </div>
+            <div class="pt-6">
+                <a th:href="@{/dashboard/mercados/pagos}" class="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
+                    Consultar Historial de Pagos &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Tarifario y Catálogo de Conceptos -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div class="space-y-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-white">Tarifas y Conceptos</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Administración de conceptos autorizados y tarifas aprobadas con versionamiento y sustento normativo.</p>
+            </div>
+            <div class="pt-6 flex gap-4">
+                <a th:href="@{/dashboard/mercados/tarifas}" class="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors">
+                    Tarifas &rarr;
+                </a>
+                <a th:href="@{/dashboard/mercados/conceptos}" class="inline-flex items-center gap-1 text-xs font-semibold text-slate-300 hover:text-white transition-colors">
+                    Conceptos &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

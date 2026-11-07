@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Modal de Cambio de Estado Operativo de Mercado -->
+<div th:fragment="modalEstado" id="modalCambioEstado"
+     class="modal-container sigm-modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+     aria-labelledby="modal-title" role="dialog" aria-modal="true">
+
+    <!-- Backdrop Click Listener / Overlay -->
+    <div id="modalEstadoBackdrop" class="fixed inset-0 -z-10" aria-hidden="true"></div>
+
+    <!-- Contenedor del Modal -->
+    <div class="sigm-modal-dialog w-full max-w-lg p-6 my-auto overflow-hidden text-left bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl relative z-10 animate-fade-in">
+        <!-- Header del Modal -->
+        <div class="flex items-center justify-between border-b border-theme pb-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white tracking-tight" id="modal-title">
+                        Cambiar Estado Operativo
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Gestión administrativa de disponibilidad del mercado
+                    </p>
+                </div>
+            </div>
+            <button type="button" id="btnCerrarModalEstado" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Formulario del Modal -->
+        <form id="formCambioEstado" class="mt-5 space-y-4">
+            <input type="hidden" id="modalMercadoId" name="mercadoId" />
+
+            <!-- Datos del Mercado Seleccionado -->
+            <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Mercado:</span>
+                    <span id="modalMercadoCodigo" class="text-xs font-mono font-bold text-blue-400">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Nombre:</span>
+                    <span id="modalMercadoNombre" class="text-xs font-semibold text-slate-200 truncate max-w-[280px]">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Estado Actual:</span>
+                    <span id="modalMercadoEstadoActual" class="text-xs font-semibold text-slate-300">-</span>
+                </div>
+            </div>
+
+            <!-- Selección de Nuevo Estado -->
+            <div>
+                <label for="modalNuevoEstado" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Nuevo Estado <span class="text-rose-400">*</span>
+                </label>
+                <select id="modalNuevoEstado" name="nuevoEstado" required
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-theme text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                    <option value="">-- Seleccionar estado --</option>
+                    <option value="ACTIVO">ACTIVO — En funcionamiento regular</option>
+                    <option value="EN_MANTENIMIENTO">EN_MANTENIMIENTO — Mantenimiento o refacción</option>
+                    <option value="SUSPENDIDO">SUSPENDIDO — Suspensión administrativa temporal</option>
+                    <option value="INACTIVO">INACTIVO — Clausurado o deshabilitado</option>
+                </select>
+            </div>
+
+            <!-- Motivo del Cambio -->
+            <div>
+                <label for="modalMotivoEstado" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Motivo Administrativo del Cambio <span class="text-rose-400">*</span>
+                </label>
+                <textarea id="modalMotivoEstado" name="motivo" rows="3" required maxlength="500"
+                          placeholder="Indique la resolución, informe técnico o causa del cambio de estado operativo..."
+                          class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-theme text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"></textarea>
+                <p class="text-[11px] text-slate-500 mt-1 flex justify-between">
+                    <span>Requerido para el registro inmutable de auditoría.</span>
+                    <span id="contadorCaracteresMotivo">0 / 500</span>
+                </p>
+            </div>
+
+            <!-- Alerta Informativa si se pasa a Inactivo o Suspendido -->
+            <div id="alertaSuspensionMercado" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start space-x-2.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <span class="font-bold">Advertencia Institucional:</span>
+                    <p class="mt-0.5 text-[11px] text-amber-200/90 leading-relaxed">
+                        Al suspender o inactivar este mercado municipal no se permitirán nuevas asignaciones comerciales. Los contratos y registros históricos vigentes se conservan intactos.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Mensaje de Error en Modal -->
+            <div id="modalEstadoError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs"></div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-theme">
+                <button type="button" id="btnCancelarModalEstado"
+                        class="px-4 py-2.5 rounded-xl border border-theme text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" id="btnGuardarModalEstado"
+                        class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white shadow-sm transition-colors">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Confirmar Cambio</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Detalle del Contrato</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+        <a th:href="@{/portal/comerciante/contratos}" class="hover:text-blue-600">Mis Contratos</a>
+        <span>/</span>
+        <span class="text-slate-800 font-semibold" th:text="${contrato.codigoContrato}">CON-2026-0001</span>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 mb-2">
+                Instrumento Contractual Municipal
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight" th:text="${contrato.codigoContrato}">CON-2026-0001</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Puesto: <span class="font-bold text-slate-800" th:text="${contrato.puestoCodigo}">P-01</span>
+                • Mercado: <span class="text-slate-700" th:text="${contrato.mercadoNombre}">Mercado Central</span>
+            </p>
+        </div>
+
+        <div>
+            <a th:href="@{'/api/portal/comerciante/contratos/' + ${contrato.contratoId} + '/descargar'}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> Descargar Documento Oficial PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Información General del Contrato -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i> Términos y Condiciones Administrativas
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
+            <div>
+                <span class="text-slate-500 block mb-1">Modalidad Contractual</span>
+                <span class="text-sm font-semibold text-slate-800" th:text="${contrato.tipoContratoCodigo}">ESTÁNDAR</span>
+            </div>
+            <div>
+                <span class="text-slate-500 block mb-1">Código de Seguridad</span>
+                <span class="text-sm font-mono font-bold text-slate-700" th:text="${contrato.codigoSeguro != null ? contrato.codigoSeguro : '-'}">-</span>
+            </div>
+            <div>
+                <span class="text-slate-500 block mb-1">Estado Contractual</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800" th:text="${contrato.estadoLabel}">VIGENTE</span>
+            </div>
+            <div>
+                <span class="text-slate-500 block mb-1">Fecha de Elaboración</span>
+                <span class="text-sm font-mono text-slate-800" th:text="${contrato.fechaElaboracion != null ? #temporals.format(contrato.fechaElaboracion, 'dd/MM/yyyy') : '-'}">-</span>
+            </div>
+            <div>
+                <span class="text-slate-500 block mb-1">Fecha de Inicio de Vigencia</span>
+                <span class="text-sm font-mono text-slate-800" th:text="${#temporals.format(contrato.fechaInicio, 'dd/MM/yyyy')}">-</span>
+            </div>
+            <div>
+                <span class="text-slate-500 block mb-1">Fecha de Conclusión / Vencimiento</span>
+                <span class="text-sm font-mono text-slate-800" th:text="${contrato.fechaFin != null ? #temporals.format(contrato.fechaFin, 'dd/MM/yyyy') : 'Indeterminado'}">-</span>
+            </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500">
+            <p class="font-bold text-slate-700 mb-1">Cláusulas de Conducción</p>
+            <p>La conducción del puesto comercial se rige por la Ley Orgánica de Municipalidades y el Reglamento Interno de Mercados de la Municipalidad Distrital de Quinua. El comerciante titular está obligado a mantener el giro autorizado, cumplir normas de higiene y abonar puntualmente las tarifas correspondientes.</p>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

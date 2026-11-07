@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Noticias y Comunicados</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de Gestión -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-white flex items-center">
+                <i data-lucide="newspaper" class="w-6 h-6 mr-2.5 text-blue-400"></i>
+                Gestión de Noticias y Comunicados
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Administre las notas de prensa, comunicados oficiales y convocatorias del portal ciudadano de Quinua.
+            </p>
+        </div>
+
+        <button onclick="abrirModalCrearNoticia()"
+                class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-md transition-colors self-start sm:self-auto">
+            <i data-lucide="plus-circle" class="w-4 h-4 mr-1.5"></i>
+            Nueva Publicación
+        </button>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-card border border-theme rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <span class="text-xs text-slate-400 font-semibold mr-1">Filtrar:</span>
+            <a th:href="@{/admin/portal/noticias(tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               th:classappend="${filtroEstado == 'TODOS'} ? 'bg-blue-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+               class="px-3 py-1.5 rounded-lg text-xs transition-colors">
+                Todos los estados
+            </a>
+            <a th:href="@{/admin/portal/noticias(estado='PUBLICADO', tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               th:classappend="${filtroEstado == 'PUBLICADO'} ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+               class="px-3 py-1.5 rounded-lg text-xs transition-colors">
+                Publicados
+            </a>
+            <a th:href="@{/admin/portal/noticias(estado='BORRADOR', tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               th:classappend="${filtroEstado == 'BORRADOR'} ? 'bg-amber-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+               class="px-3 py-1.5 rounded-lg text-xs transition-colors">
+                Borradores
+            </a>
+            <a th:href="@{/admin/portal/noticias(estado='ARCHIVADO', tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               th:classappend="${filtroEstado == 'ARCHIVADO'} ? 'bg-slate-600 text-white font-bold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'"
+               class="px-3 py-1.5 rounded-lg text-xs transition-colors">
+                Archivados
+            </a>
+        </div>
+
+        <form th:action="@{/admin/portal/noticias}" method="get" class="w-full md:w-72 relative">
+            <input type="hidden" name="estado" th:if="${filtroEstado != 'TODOS'}" th:value="${filtroEstado}">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" name="q" th:value="${busquedaQ}" placeholder="Buscar publicaciones..."
+                   class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-900 border border-theme rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+        </form>
+    </div>
+
+    <!-- Tabla de Publicaciones -->
+    <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="border-b border-theme bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                        <th class="py-3 px-4">Título y Resumen</th>
+                        <th class="py-3 px-4">Tipo</th>
+                        <th class="py-3 px-4">Autor / Categoría</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4">Fecha Pub.</th>
+                        <th class="py-3 px-4 text-center">Visitas</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50 text-slate-300">
+                    <tr th:each="n : ${noticias.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 max-w-xs sm:max-w-md">
+                            <div class="font-bold text-slate-100 truncate" th:text="${n.titulo}">Título</div>
+                            <div class="text-[11px] text-slate-400 truncate mt-0.5" th:text="${n.resumen}">Resumen</div>
+                            <div class="text-[10px] text-blue-400 font-mono mt-0.5" th:text="'slug: /' + ${n.slug}">slug</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                                  th:classappend="${n.tipo == 'COMUNICADO'} ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (${n.tipo == 'CONVOCATORIA'} ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30')"
+                                  th:text="${n.tipo}">
+                                NOTICIA
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="text-slate-200" th:text="${n.autor}">Autor</div>
+                            <div class="text-[10px] text-slate-500 uppercase" th:text="${n.categoria}">INSTITUCIONAL</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span th:if="${n.estado == 'PUBLICADO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                Publicado
+                            </span>
+                            <span th:if="${n.estado == 'BORRADOR'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Borrador
+                            </span>
+                            <span th:if="${n.estado == 'ARCHIVADO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">
+                                Archivado
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 font-mono text-[11px] text-slate-400">
+                            <span th:if="${n.fechaPublicacion != null}" th:text="${#temporals.format(n.fechaPublicacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                            <span th:if="${n.fechaPublicacion == null}" class="italic text-slate-600">Sin publicar</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-mono" th:text="${n.visitas}">0</td>
+                        <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                            <a th:href="@{/noticias/{slug}(slug=${n.slug})}" target="_blank"
+                               class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors inline-block"
+                               title="Ver en Portal Público">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </a>
+                            <button th:data-id="${n.id}"
+                                    onclick="abrirModalEditarNoticia(this.getAttribute('data-id'))"
+                                    class="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-slate-700 transition-colors"
+                                    title="Editar">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button th:if="${n.estado == 'BORRADOR'}"
+                                    th:data-id="${n.id}"
+                                    onclick="cambiarEstado(this.getAttribute('data-id'), 'PUBLICADO')"
+                                    class="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-slate-700 transition-colors"
+                                    title="Publicar Ahora">
+                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                            </button>
+                            <button th:if="${n.estado == 'PUBLICADO'}"
+                                    th:data-id="${n.id}"
+                                    onclick="cambiarEstado(this.getAttribute('data-id'), 'BORRADOR')"
+                                    class="p-1.5 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-slate-700 transition-colors"
+                                    title="Despublicar / Borrador">
+                                <i data-lucide="eye-off" class="w-4 h-4"></i>
+                            </button>
+                            <button th:data-id="${n.id}"
+                                    onclick="eliminarNoticia(this.getAttribute('data-id'))"
+                                    class="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-slate-700 transition-colors"
+                                    title="Eliminar">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${noticias.content == null || noticias.content.isEmpty()}">
+                        <td colspan="7" class="py-8 text-center text-slate-500">
+                            No se encontraron noticias ni publicaciones en este criterio.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Admin -->
+        <div th:if="${noticias.totalPages > 1}" class="p-4 border-t border-theme flex justify-between items-center text-xs text-slate-400">
+            <span>Página <strong th:text="${noticias.number + 1}">1</strong> de <strong th:text="${noticias.totalPages}">1</strong></span>
+            <div class="space-x-2">
+                <a th:if="${noticias.hasPrevious()}"
+                   th:href="@{/admin/portal/noticias(page=${noticias.number - 1}, estado=${filtroEstado != 'TODOS' ? filtroEstado : null}, tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+                   class="px-3 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 border border-theme">
+                    Anterior
+                </a>
+                <a th:if="${noticias.hasNext()}"
+                   th:href="@{/admin/portal/noticias(page=${noticias.number + 1}, estado=${filtroEstado != 'TODOS' ? filtroEstado : null}, tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+                   class="px-3 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 border border-theme">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CREACIÓN / EDICIÓN -->
+    <div id="modalNoticia" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-theme flex justify-between items-center">
+                <h3 id="modalNoticiaTitulo" class="text-sm font-bold text-white flex items-center">
+                    <i data-lucide="newspaper" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Nueva Publicación Oficial
+                </h3>
+                <button onclick="cerrarModalNoticia()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formNoticia" onsubmit="event.preventDefault(); guardarNoticia();" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="noticiaId">
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Título de la Publicación *</label>
+                    <input type="text" id="noticiaTitulo" required maxlength="255"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Tipo de Publicación *</label>
+                        <select id="noticiaTipo" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="NOTICIA">Noticia Institucional</option>
+                            <option value="COMUNICADO">Comunicado Oficial</option>
+                            <option value="CONVOCATORIA">Convocatoria</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Categoría *</label>
+                        <input type="text" id="noticiaCategoria" required value="INSTITUCIONAL"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Autor / Unidad Emisora *</label>
+                    <input type="text" id="noticiaAutor" required value="Municipalidad Distrital de Quinua"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Resumen Breve * (hasta 500 caracteres)</label>
+                    <textarea id="noticiaResumen" required rows="2" maxlength="500"
+                              class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Contenido Completo *</label>
+                    <textarea id="noticiaContenido" required rows="6"
+                              class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center space-x-4 pt-2">
+                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="noticiaPublicarInmediatamente" checked
+                               class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-theme">
+                        <span>Publicar de inmediato en el portal</span>
+                    </label>
+
+                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="noticiaDestacada"
+                               class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-theme">
+                        <span>Fijar como destacada</span>
+                    </label>
+                </div>
+
+                <div class="pt-4 border-t border-theme flex justify-end space-x-3">
+                    <button type="button" onclick="cerrarModalNoticia()"
+                            class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-theme">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-semibold shadow-md">
+                        Guardar Publicación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+        function abrirModalCrearNoticia() {
+            document.getElementById("noticiaId").value = "";
+            document.getElementById("formNoticia").reset();
+            document.getElementById("noticiaAutor").value = "Municipalidad Distrital de Quinua";
+            document.getElementById("noticiaCategoria").value = "INSTITUCIONAL";
+            document.getElementById("noticiaPublicarInmediatamente").checked = true;
+            document.getElementById("modalNoticiaTitulo").textContent = "Nueva Publicación Oficial";
+            document.getElementById("modalNoticia").classList.remove("hidden");
+        }
+
+        function cerrarModalNoticia() {
+            document.getElementById("modalNoticia").classList.add("hidden");
+        }
+
+        async function abrirModalEditarNoticia(id) {
+            try {
+                const res = await fetch('/api/admin/portal/noticias/' + id);
+                const data = await res.json();
+                if (data.success) {
+                    const n = data.data;
+                    document.getElementById("noticiaId").value = n.id;
+                    document.getElementById("noticiaTitulo").value = n.titulo;
+                    document.getElementById("noticiaTipo").value = n.tipo;
+                    document.getElementById("noticiaCategoria").value = n.categoria;
+                    document.getElementById("noticiaAutor").value = n.autor;
+                    document.getElementById("noticiaResumen").value = n.resumen;
+                    document.getElementById("noticiaContenido").value = n.contenido;
+                    document.getElementById("noticiaDestacada").checked = !!n.destacada;
+                    document.getElementById("noticiaPublicarInmediatamente").checked = (n.estado === 'PUBLICADO');
+                    document.getElementById("modalNoticiaTitulo").textContent = "Editar Publicación Oficial";
+                    document.getElementById("modalNoticia").classList.remove("hidden");
+                }
+            } catch (err) {
+                alert("Error al cargar publicación: " + err);
+            }
+        }
+
+        async function guardarNoticia() {
+            const id = document.getElementById("noticiaId").value;
+            const esCreacion = !id;
+
+            const payload = {
+                titulo: document.getElementById("noticiaTitulo").value,
+                tipo: document.getElementById("noticiaTipo").value,
+                categoria: document.getElementById("noticiaCategoria").value,
+                autor: document.getElementById("noticiaAutor").value,
+                resumen: document.getElementById("noticiaResumen").value,
+                contenido: document.getElementById("noticiaContenido").value,
+                destacada: document.getElementById("noticiaDestacada").checked,
+                publicarInmediatamente: document.getElementById("noticiaPublicarInmediatamente").checked,
+                estado: document.getElementById("noticiaPublicarInmediatamente").checked ? "PUBLICADO" : "BORRADOR"
+            };
+
+            const url = esCreacion ? '/api/admin/portal/noticias' : ('/api/admin/portal/noticias/' + id);
+            const method = esCreacion ? 'POST' : 'PUT';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    window.location.reload();
+                } else {
+                    alert("Error: " + (data.message || "No se pudo guardar la publicación"));
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        async function cambiarEstado(id, nuevoEstado) {
+            if (!confirm(`¿Desea cambiar el estado de la publicación a ${nuevoEstado}?`)) return;
+            try {
+                const res = await fetch(`/api/admin/portal/noticias/${id}/estado?estado=${nuevoEstado}`, {
+                    method: 'PATCH',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+
+        async function eliminarNoticia(id) {
+            if (!confirm("¿Está seguro de eliminar esta publicación institucional?")) return;
+            try {
+                const res = await fetch(`/api/admin/portal/noticias/${id}`, {
+                    method: 'DELETE',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Error de red: " + err);
+            }
+        }
+    </script>
+</th:block>
+</body>
+</html>

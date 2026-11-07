@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+    <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE"
+           th:text="${titulo != null ? titulo : (title != null ? title : 'SIGM-QUINUA — Panel Institucional')}">
+        SIGM-QUINUA — Panel Institucional
+    </title>
+    <!-- Hojas de Estilo Locales y Sistema de Diseño Centralizado -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <!-- Iconografía Lucide disponible desde el inicio del documento -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <!-- Estilos específicos de página opcionales -->
+    <th:block layout:fragment="page-css"></th:block>
+</head>
+<body class="admin-body bg-main text-[#e2e8f0] font-sans antialiased min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- Topbar Superior Institucional Modular -->
+    <div th:replace="~{components/navigation/topbar :: topbar}"></div>
+
+    <div class="admin-shell flex-1 flex overflow-hidden relative">
+        <!-- Backdrop móvil para cerrar sidebar en pantallas pequeñas -->
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-950/70 z-30 hidden lg:hidden"></div>
+
+        <!-- Sidebar Izquierdo Modular y Colapsable -->
+        <div th:replace="~{components/navigation/sidebar :: sidebar}"></div>
+
+        <!-- Contenedor Principal de la Página -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-main" id="mainContentArea">
+            <!-- Contenido dinámico inyectado por Thymeleaf (soporta layout:decorate y th:replace con contenido/content) -->
+            <div layout:fragment="content">
+                <th:block th:if="${contenido != null}">
+                    <th:block th:replace="${contenido}"></th:block>
+                </th:block>
+                <th:block th:if="${content != null}">
+                    <th:block th:replace="${content}"></th:block>
+                </th:block>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Informativo Accesible: Mi Perfil Institucional -->
+    <div th:replace="~{components/navigation/user-menu :: userProfileModal}"></div>
+
+    <!-- Modal Global de Confirmación para Operaciones Críticas -->
+    <div th:replace="~{components/modals/confirmation-modal :: confirmationModal('modalConfirmacionGlobal', 'Confirmar Operación', '¿Está seguro de ejecutar esta operación?', '#', 'Confirmar')}"></div>
+
+    <!-- Contenedor accesible de notificaciones flotantes Toast (siempre por encima de modales) -->
+    <div th:replace="~{components/feedback/toast :: toastContainer}"></div>
+
+    <!-- Scripts Esenciales: Chart.js, Core UI y Gestores de Componentes -->
+    <script th:src="@{/js/chart.min.js}"></script>
+    <script th:src="@{/js/core/admin-ui.js}"></script>
+    <script th:src="@{/js/core/validators.js}"></script>
+    <script th:src="@{/js/components/modal-manager.js}"></script>
+    <script th:src="@{/js/components/toast-manager.js}"></script>
+    <script th:src="@{/js/components/table-manager.js}"></script>
+
+    <!-- Fragmentos opcionales de scripts específicos de cada vista -->
+    <th:block layout:fragment="scripts">
+        <th:block th:if="${scripts != null}">
+            <th:block th:replace="${scripts}"></th:block>
+        </th:block>
+    </th:block>
+    <th:block layout:fragment="page-scripts"></th:block>
+</body>
+</html>

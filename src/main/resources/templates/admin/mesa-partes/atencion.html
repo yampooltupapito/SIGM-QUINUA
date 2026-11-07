@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja de Atención de Expedientes — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">Mesa de Partes</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Atención y Trámite</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="briefcase" class="w-6 h-6 text-blue-500"></i>
+                Bandeja de Atención de Expedientes
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Sustanciación técnica, evaluaciones, propuestas de resolución y emisión administrativa de actos.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/propuestas}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 transition-colors">
+                <i data-lucide="file-check" class="w-4 h-4"></i>
+                Revisión de Propuestas
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/mis-expedientes}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                Mis Asignaciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Reales de Atención -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">En Atención</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i data-lucide="play" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.expedientesEnAtencion}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">En curso de evaluación</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Evaluaciones</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.evaluacionesPendientes}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Borradores pendientes</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">En Revisión</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <i data-lucide="file-search" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.propuestasEnRevision}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Esperando visado jefe</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Resueltos</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.expedientesResueltos}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Acto formal emitido</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Por Notificar</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.notificacionesPendientes}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Pendiente práctica legal</span>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+        <form method="get" th:action="@{/dashboard/mesa-partes/atencion}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Buscar expediente o administrado</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-500"></i>
+                    <input type="text" name="termino" th:value="${terminoSel}" placeholder="N° exp, asunto, DNI..."
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est}" th:selected="${est == estadoSel}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Unidad Orgánica</label>
+                <select name="oficinaId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las dependencias</option>
+                    <option th:each="of : ${oficinas}" th:value="${of.id}" th:text="${of.nombre}" th:selected="${of.id == oficinaSel}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Tipo de Trámite</label>
+                <select name="tipoTramiteId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los trámites</option>
+                    <option th:each="tt : ${tiposTramite}" th:value="${tt.id}" th:text="${tt.nombre}" th:selected="${tt.id == tipoTramiteSel}"></option>
+                </select>
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mesa-partes/atencion}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs transition-colors border border-slate-700">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Expedientes en Atención -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700/60">
+                <tr>
+                    <th class="px-4 py-3">N° Expediente</th>
+                    <th class="px-4 py-3">Administrado</th>
+                    <th class="px-4 py-3">Asunto / Trámite</th>
+                    <th class="px-4 py-3">Responsable Asignado</th>
+                    <th class="px-4 py-3">Plazo Legal</th>
+                    <th class="px-4 py-3 text-center">Estado</th>
+                    <th class="px-4 py-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40">
+                <tr th:if="${#lists.isEmpty(expedientes.content)}">
+                    <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                            <i data-lucide="inbox" class="w-8 h-8 text-slate-500"></i>
+                            <span class="text-sm font-medium">No se encontraron expedientes en atención con los criterios seleccionados.</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:each="exp : ${expedientes.content}" class="hover:bg-slate-700/20 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="font-bold text-blue-400" th:text="${exp.numeroExpediente}">EXP-2026-0001</div>
+                        <div class="text-[10px] text-slate-500" th:text="${#temporals.format(exp.fechaPresentacion, 'dd/MM/yyyy HH:mm')}">15/01/2026</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-200" th:text="${exp.solicitanteNombre}">Juan Pérez</div>
+                        <div class="text-[10px] text-slate-400" th:text="'Doc: ' + ${exp.solicitanteDocumento}">DNI 12345678</div>
+                    </td>
+                    <td class="px-4 py-3 max-w-xs">
+                        <div class="font-medium text-slate-200 truncate" th:text="${exp.asunto}">Solicitud de Licencia de Funcionamiento</div>
+                        <div class="text-[10px] text-slate-400 truncate" th:text="${exp.tipoTramite}">Licencia de Comercio</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="font-medium text-slate-200 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span th:text="${exp.responsableNombre}">Ing. Carlos Mendoza</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400" th:text="${exp.oficinaNombre}">Gerencia de Desarrollo Urbano</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div th:if="${exp.diasRestantes != null}">
+                            <span th:class="${exp.vencido} ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-400 border border-red-500/30' : (${exp.diasRestantes <= 5} ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30')"
+                                  th:text="${exp.vencido} ? 'Vencido' : ${exp.diasRestantes} + ' días restantes'">
+                                12 días
+                            </span>
+                        </div>
+                        <div th:unless="${exp.diasRestantes != null}" class="text-[10px] text-slate-500">Plazo ordinario</div>
+                    </td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span th:class="${exp.estado.name() == 'EN_ATENCION'} ? 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30' : (${exp.estado.name() == 'RESUELTO'} ? 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (${exp.estado.name() == 'NOTIFICADO'} ? 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-700 text-slate-300'))"
+                              th:text="${exp.estado}">
+                            EN_ATENCION
+                        </span>
+                        <div th:if="${exp.reabierto}" class="text-[9px] text-amber-400 font-semibold mt-0.5">[REABIERTO]</div>
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button th:if="${exp.estado.name() != 'EN_ATENCION' and exp.estado.name() != 'RESUELTO' and exp.estado.name() != 'NOTIFICADO' and exp.estado.name() != 'ARCHIVADO'}"
+                                    th:data-id="${exp.id}"
+                                    th:data-numero="${exp.numeroExpediente}"
+                                    onclick="abrirModalIniciarAtencion(this.getAttribute('data-id'), this.getAttribute('data-numero'))"
+                                    class="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
+                                    title="Iniciar Atención">
+                                <i data-lucide="play" class="w-4 h-4"></i>
+                            </button>
+
+                            <!-- Gestionar Detalle Integral -->
+                            <a th:href="@{'/dashboard/mesa-partes/atencion/' + ${exp.id}}"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                Gestionar
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${expedientes.totalPages > 1}" class="px-4 py-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Mostrando página <span class="font-semibold text-slate-200" th:text="${expedientes.number + 1}">1</span> de <span class="font-semibold text-slate-200" th:text="${expedientes.totalPages}">5</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <a th:if="${expedientes.hasPrevious()}"
+                   th:href="@{/dashboard/mesa-partes/atencion(page=${expedientes.number - 1}, size=15, termino=${terminoSel}, estado=${estadoSel}, oficinaId=${oficinaSel})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    Anterior
+                </a>
+                <a th:if="${expedientes.hasNext()}"
+                   th:href="@{/dashboard/mesa-partes/atencion(page=${expedientes.number + 1}, size=15, termino=${terminoSel}, estado=${estadoSel}, oficinaId=${oficinaSel})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Iniciar Atención (Centrado) -->
+    <div id="modalIniciarAtencion" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4 text-blue-400"></i>
+                    Iniciar Atención Formal
+                </h3>
+                <button type="button" onclick="cerrarModalIniciarAtencion()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="mt-4 space-y-3">
+                <p class="text-xs text-slate-300">
+                    Se procederá a cambiar el estado del expediente <span id="spanExpNumero" class="font-bold text-blue-400"></span> al estado <strong>EN ATENCIÓN</strong>, registrando el inicio del cómputo de sustanciación técnica.
+                </p>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Indicaciones u observaciones iniciales (opcional):</label>
+                    <textarea id="txtIndicacionesAtencion" rows="3"
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                              placeholder="Ej: Se inicia análisis de antecedentes registrales y verificación catastral..."></textarea>
+                </div>
+            </div>
+            <div class="mt-5 flex items-center justify-end gap-2 border-t border-slate-700/60 pt-3">
+                <button type="button" onclick="cerrarModalIniciarAtencion()" class="px-3 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarIniciarAtencion" onclick="ejecutarIniciarAtencion()" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Confirmar Inicio</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        let expedienteIdActual = null;
+
+        function abrirModalIniciarAtencion(id, numero) {
+            expedienteIdActual = id;
+            document.getElementById('spanExpNumero').textContent = numero;
+            document.getElementById('txtIndicacionesAtencion').value = '';
+            if (window.abrirModal) {
+                window.abrirModal('modalIniciarAtencion');
+            } else {
+                document.getElementById('modalIniciarAtencion').classList.remove('hidden');
+            }
+        }
+
+        function cerrarModalIniciarAtencion() {
+            if (window.cerrarModal) {
+                window.cerrarModal('modalIniciarAtencion');
+            } else {
+                document.getElementById('modalIniciarAtencion').classList.add('hidden');
+            }
+            expedienteIdActual = null;
+        }
+
+        async function ejecutarIniciarAtencion() {
+            if (!expedienteIdActual) return;
+            const indicaciones = document.getElementById('txtIndicacionesAtencion').value;
+            const btn = document.getElementById('btnConfirmarIniciarAtencion');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Procesando...</span>';
+            }
+
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteIdActual + '/iniciar-atencion', {
+                    method: 'POST',
+                    body: JSON.stringify({ indicaciones: indicaciones })
+                });
+                if (window.mostrarToast) {
+                    window.mostrarToast('Atención del expediente iniciada formalmente.', 'success');
+                }
+                cerrarModalIniciarAtencion();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (err) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Confirmar Inicio</span>';
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            }
+        }
+
+        window.abrirModalIniciarAtencion = abrirModalIniciarAtencion;
+        window.cerrarModalIniciarAtencion = cerrarModalIniciarAtencion;
+        window.ejecutarIniciarAtencion = ejecutarIniciarAtencion;
+    </script>
+</th:block>
+</body>
+</html>

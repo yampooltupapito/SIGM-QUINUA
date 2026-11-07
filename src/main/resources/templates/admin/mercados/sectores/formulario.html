@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="(${esEdicion} ? 'Editar Sector — ' + ${sectorOriginal.codigo} : 'Nuevo Sector Comercial') + ' | SIGM-QUINUA'">Formulario Sector | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Módulos Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id}}" th:text="${mercado.nombre}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercado</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/sectores'}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Sectores</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300" th:text="${esEdicion} ? 'Editar Sector' : 'Nuevo Sector'">Formulario</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="layout-grid" class="w-6 h-6 text-blue-500"></i>
+                <span th:text="${esEdicion} ? 'Editar Sector: ' + ${sectorOriginal.nombre} + ' (' + ${sectorOriginal.codigo} + ')' : 'Registrar Nuevo Sector Comercial'">Formulario Sector</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                <span th:text="'Mercado: ' + ${mercado.nombre} + ' (' + ${mercado.codigo} + ')'">Mercado</span> — Defina la configuración física y comercial del sector.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/sectores'}"
+               class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver a Sectores</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="card p-6 md:p-8 rounded-2xl bg-card border border-theme shadow-xl max-w-4xl mx-auto">
+        <form id="formSector" th:data-es-edicion="${esEdicion}"
+              th:data-mercado-id="${mercado.id}"
+              th:data-sector-id="${esEdicion ? sectorOriginal.id : ''}"
+              class="space-y-6">
+
+            <input type="hidden" id="sectorVersion" th:if="${esEdicion}" th:value="${sector.version}">
+
+            <div id="alertaErrorFormulario" class="hidden p-4 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-300 text-xs"></div>
+
+            <!-- Sección: Identificación y Código -->
+            <div class="border-b border-theme pb-5 space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="tag" class="w-4 h-4 text-blue-400"></i>
+                    <span>Identificación del Sector</span>
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Código del Sector -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Código del Sector *
+                            <span class="text-[11px] text-slate-500 font-normal">(Único dentro de este mercado)</span>
+                        </label>
+                        <input type="text" id="codigo" name="codigo" required maxlength="50"
+                               th:value="${esEdicion ? sectorOriginal.codigo : ''}"
+                               th:disabled="${esEdicion}"
+                               placeholder="Ej. SEC-01, SEC-VERDURAS, SEC-NORTE"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-white placeholder-slate-500 font-mono uppercase focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <p class="text-[11px] text-slate-500">Se convertirá automáticamente a mayúsculas.</p>
+                    </div>
+
+                    <!-- Nombre del Sector -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Nombre del Sector *
+                        </label>
+                        <input type="text" id="nombre" name="nombre" required maxlength="100"
+                               th:value="${esEdicion ? sectorOriginal.nombre : ''}"
+                               placeholder="Ej. Sector Carnes y Embutidos, Sector Artesanías"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-slate-300">
+                        Descripción o Alcance Comercial
+                    </label>
+                    <textarea id="descripcion" name="descripcion" rows="3" maxlength="500"
+                              th:text="${esEdicion ? sectorOriginal.descripcion : ''}"
+                              placeholder="Detalles sobre los giros permitidos, orientación física o particularidades del sector..."
+                              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+            </div>
+
+            <!-- Sección: Clasificación y Ubicación -->
+            <div class="border-b border-theme pb-5 space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Categorización y Distribución</span>
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Categoría Comercial -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Categoría Comercial
+                        </label>
+                        <select id="categoriaComercial" name="categoriaComercial"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="">-- Sin categoría asignada --</option>
+                            <option th:each="cat : ${categorias}"
+                                    th:value="${cat.nombre}"
+                                    th:text="${cat.nombre}"
+                                    th:selected="${esEdicion ? (cat.nombre == sectorOriginal.categoriaComercial) : false}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Tipo de Sector -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Tipo de Sector
+                        </label>
+                        <input type="text" id="tipoSector" name="tipoSector" maxlength="50"
+                               th:value="${esEdicion ? sectorOriginal.tipoSector : 'GENERAL'}"
+                               placeholder="GENERAL, PERECIBLES, SECOS, ARTESANAL"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-white placeholder-slate-500 uppercase focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <!-- Orden Visual -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Orden de Presentación
+                        </label>
+                        <input type="number" id="ordenVisual" name="ordenVisual" min="0" max="999"
+                               th:value="${esEdicion ? sectorOriginal.ordenVisual : 0}"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <p class="text-[11px] text-slate-500">Número menor se muestra primero.</p>
+                    </div>
+                </div>
+
+                <!-- Estado Inicial (solo en creación) -->
+                <div th:unless="${esEdicion}" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">
+                            Estado Inicial *
+                        </label>
+                        <select id="estadoInicial" name="estado" required
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="est : ${estados}"
+                                    th:value="${est.name()}"
+                                    th:text="${est.descripcion}"
+                                    th:selected="${est.name() == 'ACTIVO'}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end space-x-3 pt-4">
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/sectores'}"
+                   class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" id="btnGuardarSector"
+                        class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition-colors">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span th:text="${esEdicion} ? 'Actualizar Sector' : 'Guardar Sector'">Guardar</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-sectores.js}"></script>
+</th:block>
+</body>
+</html>

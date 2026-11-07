@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Pagos Tributarios y Caja — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Notificaciones de éxito y error -->
+    <div th:if="${success}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${success}" class="text-sm font-medium">Operación realizada con éxito</span>
+        </div>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${error}" class="text-sm font-medium">Ocurrió un error</span>
+        </div>
+    </div>
+
+    <!-- Cabecera de Página -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Pagos Tributarios</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="wallet" class="w-6 h-6 text-blue-400"></i>
+                Registro y Control de Pagos Tributarios
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+                Recepción de pagos en ventanilla, transferencias bancarias, imputación contable y control de recaudación.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/tributaria/pagos/exportar/excel(busqueda=${busqueda}, contribuyenteId=${contribuyenteId}, sesionCajaId=${sesionCajaId}, medioPago=${medioPago}, estado=${estado}, desde=${desde}, hasta=${hasta})}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+                <span>Excel</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/pagos/exportar/pdf(busqueda=${busqueda}, contribuyenteId=${contribuyenteId}, sesionCajaId=${sesionCajaId}, medioPago=${medioPago}, estado=${estado}, desde=${desde}, hasta=${hasta})}"
+               target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>PDF</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/pagos/nuevo}"
+               sec:authorize="hasAuthority('TRIBUTARIA_PAGOS_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Pago (Cajero)</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Financieros Reales -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Cajas Activas</span>
+                <i data-lucide="store" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white" th:text="${dashboard.cajasActivas}">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Ventanillas operativas</div>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Turnos Abiertos</span>
+                <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white" th:text="${dashboard.sesionesAbiertas}">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Sesiones recaudando</div>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Pagos Confirmados</span>
+                <i data-lucide="check-check" class="w-4 h-4 text-teal-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white" th:text="${dashboard.pagosConfirmados}">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Con abono a cuenta</div>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Pendientes</span>
+                <i data-lucide="hourglass" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white" th:text="${dashboard.pagosPendientes}">0</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Borradores / Bancarios</div>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Recaudación Hoy</span>
+                <i data-lucide="circle-dollar-sign" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-xl font-bold text-emerald-400">
+                S/ <span th:text="${#numbers.formatDecimal(dashboard.recaudacionPeriodo, 1, 'POINT', 2, 'COMMA')}">0.00</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Total recaudado</div>
+        </div>
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-medium">Efectivo Ventanilla</span>
+                <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white">
+                S/ <span th:text="${#numbers.formatDecimal(dashboard.efectivoRecaudado, 1, 'POINT', 2, 'COMMA')}">0.00</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Dinero físico hoy</div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+        <form th:action="@{/dashboard/tributaria/pagos}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Búsqueda Rápida</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" name="busqueda" th:value="${busqueda}"
+                           placeholder="N° pago, DNI/RUC, voucher..."
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Medio de Pago</label>
+                <select name="medioPago" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todos los medios</option>
+                    <option th:each="m : ${mediosPago}" th:value="${m.name()}" th:text="${m.descripcion}" th:selected="${m.name() == (medioPago != null ? medioPago.name() : '')}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Estado del Pago</label>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="e : ${estadosPago}" th:value="${e.name()}" th:text="${e.descripcion}" th:selected="${e.name() == (estado != null ? estado.name() : '')}"></option>
+                </select>
+            </div>
+            <div class="sm:col-span-2 lg:col-span-2 flex items-end gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/pagos}" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Pagos -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                    <tr>
+                        <th class="py-3 px-4">Operación</th>
+                        <th class="py-3 px-4">Fecha y Hora</th>
+                        <th class="py-3 px-4">Contribuyente</th>
+                        <th class="py-3 px-4">Medio de Pago</th>
+                        <th class="py-3 px-4">Caja / Ventanilla</th>
+                        <th class="py-3 px-4 text-right">Importe Total</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]">
+                    <tr th:if="${#lists.isEmpty(pagos.content)}" class="text-center text-slate-500 py-8">
+                        <td colspan="8" class="py-8">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            <p class="text-sm font-medium text-slate-400">No se encontraron pagos registrados</p>
+                            <p class="text-xs text-slate-500 mt-1">Utilice el botón superior para registrar un nuevo cobro en ventanilla.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="p : ${pagos.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400">
+                            <a th:href="@{'/dashboard/tributaria/pagos/' + ${p.id}}" th:text="${p.codigoPago}" class="hover:underline">PAG-2026-00001</a>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${#temporals.format(p.fechaHoraPago, 'dd/MM/yyyy HH:mm')}">26/10/2026 10:30</td>
+                        <td class="py-3 px-4">
+                            <div class="font-medium text-white" th:text="${p.contribuyenteNombre}">Juan Pérez</div>
+                            <div class="text-[11px] text-slate-400 font-mono" th:text="${p.contribuyenteDocumento}">DNI 12345678</div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300">
+                            <span th:text="${p.medioPagoDescripcion}">Efectivo en Ventanilla</span>
+                            <div th:if="${p.numeroOperacionBancaria != null}" class="text-[10px] text-slate-500 font-mono" th:text="'Op: ' + ${p.numeroOperacionBancaria}"></div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${p.cajaNombre}">Ventanilla Principal</td>
+                        <td class="py-3 px-4 text-right font-mono font-semibold text-white">
+                            S/ <span th:text="${#numbers.formatDecimal(p.importe, 1, 'POINT', 2, 'COMMA')}">150.00</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${p.estadoBadgeClass}"
+                                  th:text="${p.estadoDescripcion}">CONFIRMADO</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <div class="flex items-center justify-center space-x-1.5">
+                                <a th:href="@{'/dashboard/tributaria/pagos/' + ${p.id}}"
+                                   class="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors"
+                                   title="Ver Detalle Integral del Pago">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${pagos.totalPages > 1}" class="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${pagos.number + 1}">1</span> de
+                <span class="font-bold text-white" th:text="${pagos.totalPages}">1</span>
+                (<span th:text="${pagos.totalElements}">0</span> pagos registrados)
+            </div>
+            <div class="flex items-center space-x-1">
+                <a th:if="${pagos.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/pagos(page=${pagos.number - 1}, size=${pagos.size}, busqueda=${busqueda}, medioPago=${medioPago}, estado=${estado})}"
+                   class="px-2.5 py-1 bg-[#101827] hover:bg-slate-700 rounded border border-[#334155] text-slate-300">
+                    Anterior
+                </a>
+                <a th:if="${pagos.hasNext()}"
+                   th:href="@{/dashboard/tributaria/pagos(page=${pagos.number + 1}, size=${pagos.size}, busqueda=${busqueda}, medioPago=${medioPago}, estado=${estado})}"
+                   class="px-2.5 py-1 bg-[#101827] hover:bg-slate-700 rounded border border-[#334155] text-slate-300">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

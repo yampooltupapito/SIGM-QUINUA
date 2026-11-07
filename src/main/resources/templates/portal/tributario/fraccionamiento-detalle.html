@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Detalle de Fraccionamiento | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <a th:href="@{/portal/tributario/fraccionamientos}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center gap-1 mb-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Convenios
+                    </a>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight" th:text="'Convenio N° ' + ${fraccionamiento.codigoConvenio}">Convenio N° CONV-001</h2>
+                    <p class="text-xs text-slate-500" th:text="${fraccionamiento.resolucionAprobacion != null ? 'Aprobado mediante ' + fraccionamiento.resolucionAprobacion : 'Resolución en trámite'}">Res. N° 045-2026</p>
+                </div>
+                <div>
+                    <span th:if="${fraccionamiento.estado == 'VIGENTE'}" class="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">VIGENTE</span>
+                    <span th:if="${fraccionamiento.estado == 'CANCELADO' or fraccionamiento.estado == 'FINALIZADO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CANCELADO</span>
+                    <span th:if="${fraccionamiento.estado == 'PERDIDO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">PERDIDO</span>
+                </div>
+            </div>
+
+            <!-- Resumen Financiero del Convenio -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Fraccionado</span>
+                    <span class="text-base font-bold text-slate-800 mt-1 block" th:text="'S/ ' + ${#numbers.formatDecimal(fraccionamiento.montoTotalFraccionado, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Cuota Inicial Pagada</span>
+                    <span class="text-base font-bold text-emerald-600 mt-1 block" th:text="'S/ ' + ${#numbers.formatDecimal(fraccionamiento.cuotaInicial, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Cuotas Amortizadas</span>
+                    <span class="text-base font-bold text-slate-800 mt-1 block" th:text="${fraccionamiento.cuotasPagadas} + ' de ' + ${fraccionamiento.numeroCuotas}">0 de 6</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Saldo por Amortizar</span>
+                    <span class="text-base font-black text-amber-600 mt-1 block" th:text="'S/ ' + ${#numbers.formatDecimal(fraccionamiento.saldoPendiente, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+            </div>
+
+            <!-- Cronograma de Cuotas -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Cronograma Oficial de Vencimiento de Cuotas</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">N° Cuota</th>
+                                <th class="py-3 px-4">Fecha Vencimiento</th>
+                                <th class="py-3 px-4 text-right">Amortización (S/)</th>
+                                <th class="py-3 px-4 text-right">Interés Fracc. (S/)</th>
+                                <th class="py-3 px-4 text-right">Total Cuota (S/)</th>
+                                <th class="py-3 px-4 text-center">Estado Cuota</th>
+                                <th class="py-3 px-4 text-center">Fecha Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${fraccionamiento.cronogramaCuotas == null || fraccionamiento.cronogramaCuotas.empty}">
+                                <td colspan="7" class="text-center py-8 text-slate-400">
+                                    No hay detalle de cuotas disponible.
+                                </td>
+                            </tr>
+                            <tr th:each="c : ${fraccionamiento.cronogramaCuotas}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3.5 px-4 font-bold text-slate-900" th:text="'Cuota ' + ${c.numeroCuota}">Cuota 1</td>
+                                <td class="py-3.5 px-4" th:text="${#temporals.format(c.fechaVencimiento, 'dd/MM/yyyy')}">28/02/2026</td>
+                                <td class="py-3.5 px-4 text-right text-slate-600" th:text="${#numbers.formatDecimal(c.montoAmortizacion, 1, 'POINT', 2, 'POINT')}">100.00</td>
+                                <td class="py-3.5 px-4 text-right text-slate-600" th:text="${#numbers.formatDecimal(c.montoInteres, 1, 'POINT', 2, 'POINT')}">5.00</td>
+                                <td class="py-3.5 px-4 text-right font-bold text-slate-900" th:text="${#numbers.formatDecimal(c.montoCuotaTotal, 1, 'POINT', 2, 'POINT')}">105.00</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <span th:if="${c.estadoCuota == 'PAGADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">PAGADO</span>
+                                    <span th:if="${c.estadoCuota != 'PAGADO' and c.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">VENCIDO</span>
+                                    <span th:if="${c.estadoCuota != 'PAGADO' and !c.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">PENDIENTE</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center text-slate-600" th:text="${c.fechaPago != null ? #temporals.format(c.fechaPago, 'dd/MM/yyyy') : '—'}">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed text-[11px]">
+                    <strong>Pérdida del Beneficio de Fraccionamiento (Art. 36 C.T.):</strong> El retraso en el abono de dos (2) cuotas consecutivas o de la última cuota facultará a la Municipalidad Distrital de Quinua a declarar la pérdida del convenio y exigir la cobranza de la totalidad del saldo pendiente en vía ordinaria o coactiva.
+                </div>
+            </div>
+</div>
+</body>
+</html>

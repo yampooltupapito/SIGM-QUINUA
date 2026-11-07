@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Detalle del Pabellón — ' + ${pabellon.nombre} + ' | SIGM-QUINUA'">Detalle de Pabellón | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Módulos Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id}}" th:text="${mercado.nombre}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercado</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones'}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Pabellones</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300" th:text="${pabellon.codigo}">PAB-01</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight" th:text="${pabellon.nombre}">Pabellón Central</h1>
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-md bg-slate-800 text-blue-400 border border-slate-700 font-bold"
+                      th:text="${pabellon.codigo}">PAB-01</span>
+                <span th:if="${pabellon.estado == 'ACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVO</span>
+                <span th:if="${pabellon.estado == 'INACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">INACTIVO</span>
+                <span th:if="${pabellon.estado == 'EN_MANTENIMIENTO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">MANTENIMIENTO</span>
+                <span th:if="${pabellon.estado == 'SUSPENDIDO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">SUSPENDIDO</span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                <span th:text="'Mercado: ' + ${mercado.nombre} + ' (' + ${mercado.codigo} + ')'">Mercado</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones/' + ${pabellon.id} + '/editar'}"
+               sec:authorize="hasAuthority('MERCADOS_PABELLON_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span>Editar Pabellón</span>
+            </a>
+
+            <button type="button"
+                    sec:authorize="hasAuthority('MERCADOS_PABELLON_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="btn-cambiar-estado-pabellon inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors"
+                    th:data-pabellon-id="${pabellon.id}"
+                    th:data-pabellon-codigo="${pabellon.codigo}"
+                    th:data-pabellon-nombre="${pabellon.nombre}"
+                    th:data-pabellon-estado="${pabellon.estado}"
+                    th:data-pabellon-puestos="${pabellon.totalPuestos}">
+                <i data-lucide="power" class="w-4 h-4"></i>
+                <span>Cambiar Estado</span>
+            </button>
+
+            <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones'}"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas Métricas del Pabellón -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <i data-lucide="store" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Puestos Asociados</p>
+                <p class="text-xl font-bold text-white mt-0.5" th:text="${pabellon.totalPuestos}">0</p>
+            </div>
+        </div>
+
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sector Perteneciente</p>
+                <p class="text-sm font-bold text-white mt-0.5 truncate" th:text="${pabellon.sectorNombre != null ? pabellon.sectorNombre : 'Independiente'}">Comidas</p>
+            </div>
+        </div>
+
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Nivel / Piso</p>
+                <p class="text-xl font-bold text-white mt-0.5" th:text="'Piso ' + ${pabellon.nivel}">Piso 1</p>
+            </div>
+        </div>
+
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <i data-lucide="arrow-down-up" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Orden Visual</p>
+                <p class="text-xl font-bold text-white mt-0.5 font-mono" th:text="${pabellon.ordenVisual}">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Detalle -->
+    <div class="card rounded-2xl bg-card border border-theme overflow-hidden shadow-xl">
+        <div class="border-b border-theme bg-slate-900/60 flex space-x-1 p-2">
+            <button type="button" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold transition-colors bg-blue-600 text-white" data-target="tab-info">
+                Información General
+            </button>
+            <button type="button" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors" data-target="tab-historial">
+                Historial de Estados (<span th:text="${#lists.size(historial)}">0</span>)
+            </button>
+        </div>
+
+        <!-- Contenido Tab 1: Info General -->
+        <div id="tab-info" class="tab-content p-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-slate-500 block">Código del Pabellón</span>
+                        <span class="font-mono font-bold text-white text-sm" th:text="${pabellon.codigo}">PAB-01</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Nombre</span>
+                        <span class="font-semibold text-white" th:text="${pabellon.nombre}">Pabellón Central</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Descripción</span>
+                        <p class="text-slate-300 mt-1" th:text="${pabellon.descripcion != null ? pabellon.descripcion : 'Sin descripción registrada.'}"></p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-slate-500 block">Sector Asociado</span>
+                        <span class="text-white font-medium" th:text="${pabellon.sectorNombre != null ? pabellon.sectorNombre : 'Sin sector asociado (Independiente)'}">Sector Comidas</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Nivel / Piso</span>
+                        <span class="text-white font-medium" th:text="'Piso ' + ${pabellon.nivel}">Piso 1</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Fecha de Registro</span>
+                        <span class="text-slate-300" th:text="${pabellon.createdAt != null ? #temporals.format(pabellon.createdAt, 'dd/MM/yyyy HH:mm') : '-'}">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Última Actualización</span>
+                        <span class="text-slate-300" th:text="${pabellon.updatedAt != null ? #temporals.format(pabellon.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Tab 2: Historial -->
+        <div id="tab-historial" class="tab-content p-6 hidden">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">Registro Inmutable de Cambios de Estado</h4>
+
+            <div th:if="${#lists.isEmpty(historial)}" class="text-center py-6 text-slate-500 text-xs">
+                No hay modificaciones registradas en el historial de este pabellón.
+            </div>
+
+            <div th:unless="${#lists.isEmpty(historial)}" class="space-y-3">
+                <div th:each="item : ${historial}" class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-semibold text-slate-400" th:text="${item.estadoAnterior}">ACTIVO</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-600"></i>
+                            <span class="font-bold text-white" th:text="${item.estadoNuevo}">SUSPENDIDO</span>
+                            <span class="text-slate-500">— Responsable: <span class="text-slate-300 font-medium" th:text="${item.usuarioResponsable}">admin</span></span>
+                        </div>
+                        <p class="text-slate-300 italic" th:text="'Motivo: &quot;' + ${item.motivo} + '&quot;'"></p>
+                    </div>
+                    <div class="text-[11px] text-slate-500 whitespace-nowrap" th:text="${#temporals.format(item.fechaCambio, 'dd/MM/yyyy HH:mm:ss')}">
+                        16/10/2026 12:00:00
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambio de Estado de Pabellón -->
+    <div id="modalCambioEstadoPabellon" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div id="modalEstadoPabellonBackdrop" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+        <div class="relative w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-6 shadow-2xl z-10 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i>
+                    <h3 class="text-sm font-bold text-white">Cambiar Estado del Pabellón</h3>
+                </div>
+                <button type="button" id="btnCerrarModalEstadoPabellon" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formCambioEstadoPabellon" class="space-y-4">
+                <input type="hidden" id="modalPabellonId">
+
+                <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs space-y-1">
+                    <div class="text-slate-400">Pabellón: <span id="modalPabellonCodigo" class="font-bold text-white"></span> — <span id="modalPabellonNombre" class="text-slate-200"></span></div>
+                    <div class="text-slate-400">Estado actual: <span id="modalPabellonEstadoActual" class="font-semibold text-blue-400"></span></div>
+                    <div class="text-slate-400">Puestos vinculados: <span id="modalPabellonPuestos" class="font-bold text-amber-400">0</span></div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-slate-300">Nuevo Estado *</label>
+                    <select id="modalNuevoEstadoPabellon" required
+                            class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option value="">Seleccione el nuevo estado</option>
+                        <option th:each="est : ${estados}" th:value="${est.name()}" th:text="${est.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-300">Motivo del Cambio *</label>
+                        <span id="contadorMotivoPabellon" class="text-[10px] text-slate-500">0 / 500</span>
+                    </div>
+                    <textarea id="modalMotivoPabellon" rows="3" required maxlength="500"
+                              placeholder="Indique el motivo de la modificación de estado..."
+                              class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div id="modalEstadoPabellonError" class="hidden p-2.5 rounded-xl bg-rose-900/30 border border-rose-500/40 text-rose-300 text-xs"></div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" id="btnCancelarModalEstadoPabellon"
+                            class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarModalEstadoPabellon"
+                            class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors">
+                        Guardar Cambio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-pabellones.js}"></script>
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white');
+                    b.classList.add('text-slate-400');
+                });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+                btn.classList.add('bg-blue-600', 'text-white');
+                btn.classList.remove('text-slate-400');
+                const target = btn.getAttribute('data-target');
+                document.getElementById(target).classList.remove('hidden');
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

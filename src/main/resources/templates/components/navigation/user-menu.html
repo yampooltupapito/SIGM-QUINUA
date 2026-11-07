@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     MODAL ACCESIBLE DE PERFIL DE USUARIO (UserMenu / ProfileModal)
+     ========================================================================== -->
+<div th:fragment="userProfileModal"
+     id="modalPerfilUsuario" role="dialog" aria-modal="true" aria-labelledby="modalPerfilTitulo" aria-hidden="true"
+     class="modal-container sigm-modal-backdrop fixed inset-0 bg-slate-950/70 z-50 hidden items-center justify-center p-4">
+    <div class="sigm-modal-dialog w-full max-w-md animate-fade-in">
+        <div class="sigm-modal-header">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-700 flex items-center justify-center font-bold text-sm text-white"
+                     th:text="${userProfile != null ? userProfile.iniciales : 'MQ'}">MQ</div>
+                <div>
+                    <h3 id="modalPerfilTitulo" class="text-sm font-bold text-slate-100" th:text="${userProfile != null ? userProfile.nombreCompleto : 'Usuario'}">Usuario</h3>
+                    <p class="text-xs text-blue-400 font-mono" th:text="${userProfile != null ? userProfile.username : 'admin'}">admin</p>
+                </div>
+            </div>
+            <button type="button" onclick="cerrarModal('modalPerfilUsuario')" aria-label="Cerrar ventana de perfil" class="text-slate-400 hover:text-white p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="sigm-modal-body space-y-4 text-xs">
+            <div>
+                <span class="text-slate-400 block mb-1">Documento de Identidad</span>
+                <p class="font-semibold text-slate-200" th:text="${(userProfile != null ? userProfile.tipoDocumento : 'DNI') + ' - ' + (userProfile != null ? userProfile.numeroDocumento : '---')}">DNI - ---</p>
+            </div>
+            <div>
+                <span class="text-slate-400 block mb-1">Cargo y Dependencia</span>
+                <p class="font-semibold text-slate-200" th:text="${userProfile != null ? userProfile.cargo : 'Servidor Municipal'}">Cargo</p>
+                <p class="text-slate-400" th:text="${userProfile != null ? userProfile.oficina : 'Sede Central Quinua'}">Oficina</p>
+            </div>
+            <div>
+                <span class="text-slate-400 block mb-1">Correo Electrónico Institucional</span>
+                <p class="font-semibold text-slate-200" th:text="${userProfile != null ? userProfile.correo : '---'}">correo@quinua.gob.pe</p>
+            </div>
+            <div>
+                <span class="text-slate-400 block mb-1.5">Roles Asignados</span>
+                <div class="flex flex-wrap gap-1.5">
+                    <span th:each="r : ${userProfile != null ? userProfile.roles : {'ROLE_ADMIN'}}"
+                          class="px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/50 text-[10px] font-medium"
+                          th:text="${r}">ROLE_ADMIN</span>
+                </div>
+            </div>
+        </div>
+        <div class="sigm-modal-footer">
+            <a th:href="@{/dashboard/perfil}" class="sigm-btn sigm-btn-primary">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                <span>Ir a Mi Perfil</span>
+            </a>
+            <button type="button" onclick="cerrarModal('modalPerfilUsuario')" class="sigm-btn sigm-btn-secondary">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+

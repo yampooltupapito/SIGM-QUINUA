@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     1. COMPONENTE ALERT (Alerta contextual con cierre opcional)
+     ========================================================================== -->
+<div th:fragment="alert(tipo, titulo, mensaje)"
+     th:if="${!#strings.isEmpty(mensaje)}"
+     role="alert"
+     class="p-4 rounded-xl border text-xs flex items-start justify-between gap-3 shadow-sm animate-fade-in"
+     th:classappend="${tipo == 'success'} ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' :
+                     (${tipo == 'warning'} ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' :
+                     (${tipo == 'error' or tipo == 'danger'} ? 'bg-rose-500/10 border-rose-500/30 text-rose-200' :
+                     'bg-blue-500/10 border-blue-500/30 text-blue-200'))">
+    <div class="flex items-start space-x-2.5">
+        <i th:attr="data-lucide=${tipo == 'success' ? 'check-circle-2' : (tipo == 'warning' ? 'alert-triangle' : (tipo == 'error' or tipo == 'danger' ? 'alert-octagon' : 'info'))}"
+           class="w-4 h-4 mt-0.5 flex-shrink-0"
+           th:classappend="${tipo == 'success'} ? 'text-emerald-400' : (${tipo == 'warning'} ? 'text-amber-400' : (${tipo == 'error' or tipo == 'danger'} ? 'text-rose-400' : 'text-blue-400'))"></i>
+        <div>
+            <p th:if="${!#strings.isEmpty(titulo)}" class="font-bold text-slate-100 mb-0.5" th:text="${titulo}">Aviso</p>
+            <p class="leading-relaxed" th:text="${mensaje}">Mensaje del sistema</p>
+        </div>
+    </div>
+    <button type="button" onclick="this.parentElement.remove()" aria-label="Cerrar alerta" class="p-1 opacity-70 hover:opacity-100 transition-opacity">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+</div>
+
+<!-- ==========================================================================
+     2. BLOQUE AUTOMÁTICO DE ALERTAS FLASH DE CONTROLADORES SPRING MVC
+     ========================================================================== -->
+<div th:fragment="flashAlerts" class="space-y-2">
+    <div th:replace="~{components/feedback/alert :: alert('success', 'Operación Exitosa', ${mensajeExito != null ? mensajeExito : successMessage})}"></div>
+    <div th:replace="~{components/feedback/alert :: alert('error', 'Error en la Operación', ${mensajeError != null ? mensajeError : errorMessage})}"></div>
+    <div th:replace="~{components/feedback/alert :: alert('warning', 'Atención', ${mensajeAdvertencia != null ? mensajeAdvertencia : warningMessage})}"></div>
+</div>
+
+</body>
+</html>
+

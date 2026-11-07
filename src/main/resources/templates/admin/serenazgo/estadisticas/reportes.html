@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Centro de Reportes de Seguridad Ciudadana - SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Feedback -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeExito}" class="text-sm font-medium">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-200">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-octagon" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeError}" class="text-sm font-medium">Error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-200">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Principal del Centro de Reportes -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#202c3d] p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
+                    <i data-lucide="file-spreadsheet" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Centro de Reportes Institucionales</h1>
+                    <p class="text-sm text-slate-400">Generación, auditoría y descarga de informes analíticos en formato PDF y Excel (XLSX).</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1 text-xs text-slate-400">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Municipalidad Distrital de Quinua — Huamanga, Ayacucho</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <a th:href="@{/dashboard/serenazgo/estadisticas}"
+               class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center space-x-2 transition-all">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-400"></i>
+                <span>Panel Estadístico</span>
+            </a>
+            <button type="button" onclick="abrirModalGenerarReporte(null)"
+                    class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-blue-600/20 transition-all">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Reporte</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Catálogo de 10 Reportes Predefinidos -->
+    <div class="bg-[#202c3d] p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60">
+            <div class="space-y-0.5">
+                <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-blue-400"></i>
+                    <span>Catálogo de Reportes Oficiales Preconfigurados</span>
+                </h2>
+                <p class="text-xs text-slate-400">Plantillas parametrizadas conformes a la normativa de Serenazgo (Ley N° 31297)</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                10 Plantillas Oficiales
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <div th:each="tip : ${tiposReporte}"
+                 class="p-4 rounded-xl bg-[#101827] border border-slate-700/70 hover:border-blue-500/40 transition-all flex flex-col justify-between space-y-3 group">
+                <div class="space-y-1">
+                    <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider" th:text="${tip.categoria}">CATEGORIA</span>
+                    <h3 class="text-xs font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2" th:text="${tip.titulo}">Título</h3>
+                    <p class="text-[11px] text-slate-400 line-clamp-3" th:text="${tip.descripcion}">Descripción</p>
+                </div>
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+                    <button type="button"
+                            th:data-tipo="${tip.name()}" data-formato="PDF"
+                            onclick="abrirModalGenerarReporteConTipo(this.getAttribute('data-tipo'), this.getAttribute('data-formato'))"
+                            class="px-2 py-1 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-[10px] font-bold flex items-center space-x-1">
+                        <i data-lucide="file-text" class="w-3 h-3"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button type="button"
+                            th:data-tipo="${tip.name()}" data-formato="EXCEL"
+                            onclick="abrirModalGenerarReporteConTipo(this.getAttribute('data-tipo'), this.getAttribute('data-formato'))"
+                            class="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 text-[10px] font-bold flex items-center space-x-1">
+                        <i data-lucide="sheet" class="w-3 h-3"></i>
+                        <span>Excel</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Reportes Generados -->
+    <div class="bg-[#202c3d] p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700/60 gap-3">
+            <div class="space-y-0.5">
+                <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="history" class="w-5 h-5 text-indigo-400"></i>
+                    <span>Historial y Bitácora de Reportes Emitidos</span>
+                </h2>
+                <p class="text-xs text-slate-400">Trazabilidad de documentos generados para auditoría y consulta municipal</p>
+            </div>
+
+            <!-- Filtros de Bitácora -->
+            <form method="get" th:action="@{/dashboard/serenazgo/reportes}" class="flex flex-wrap items-center gap-2">
+                <select name="tipo"
+                        class="bg-[#101827] border border-slate-700 text-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+                    <option value="">Todos los tipos</option>
+                    <option th:each="t : ${tiposReporte}" th:value="${t.name()}" th:text="${t.titulo}"
+                            th:selected="${tipoSeleccionado == t}">Tipo</option>
+                </select>
+                <input type="date" name="desde" th:value="${desde}"
+                       class="bg-[#101827] border border-slate-700 text-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+                <input type="date" name="hasta" th:value="${hasta}"
+                       class="bg-[#101827] border border-slate-700 text-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+                <button type="submit" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-[#101827] text-slate-300 font-bold border-b border-slate-700">
+                    <tr>
+                        <th class="p-3">Código</th>
+                        <th class="p-3">Tipo / Título</th>
+                        <th class="p-3 text-center">Formato</th>
+                        <th class="p-3 text-center">Fecha Emisión</th>
+                        <th class="p-3">Generado Por</th>
+                        <th class="p-3 text-right">Tamaño</th>
+                        <th class="p-3 text-center">Estado</th>
+                        <th class="p-3 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    <tr th:if="${reportes.empty}">
+                        <td colspan="8" class="p-8 text-center text-slate-500">
+                            No se registran reportes emitidos con los criterios especificados.
+                        </td>
+                    </tr>
+                    <tr th:each="r : ${reportes.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="p-3 font-mono font-bold text-blue-400" th:text="${r.codigo}">REP-SER-2026-00001</td>
+                        <td class="p-3">
+                            <span class="font-bold text-white block" th:text="${r.titulo}">Título</span>
+                            <span class="text-[11px] text-slate-400" th:text="${r.tipoReporteTitulo}">Tipo</span>
+                        </td>
+                        <td class="p-3 text-center">
+                            <span th:if="${r.formato.name() == 'PDF'}"
+                                  class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px]">
+                                PDF
+                            </span>
+                            <span th:if="${r.formato.name() == 'EXCEL'}"
+                                  class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[10px]">
+                                XLSX
+                            </span>
+                        </td>
+                        <td class="p-3 text-center font-mono text-slate-300"
+                            th:text="${#temporals.format(r.fechaGeneracion, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                        <td class="p-3 text-slate-300" th:text="${r.usernameGenerador}">usuario</td>
+                        <td class="p-3 text-right font-mono text-slate-400" th:text="${r.tamanioFormateado}">0 KB</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                                  th:classappend="${r.estadoBadgeClass}"
+                                  th:text="${r.estadoDescripcion}">Completado</span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <a th:href="@{/dashboard/serenazgo/reportes/{id}/descargar(id=${r.id})}"
+                               class="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-500/30 text-[11px] font-semibold inline-flex items-center space-x-1.5 transition-all">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Descargar</span>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${reportes.totalPages > 1}" class="pt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-700/50">
+            <span>Página <strong th:text="${reportes.number + 1}">1</strong> de <strong th:text="${reportes.totalPages}">1</strong></span>
+            <div class="flex items-center space-x-2">
+                <a th:if="${reportes.hasPrevious()}"
+                   th:href="@{/dashboard/serenazgo/reportes(page=${reportes.number - 1}, size=${reportes.size}, tipo=${tipoSeleccionado}, desde=${desde}, hasta=${hasta})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">Anterior</a>
+                <a th:if="${reportes.hasNext()}"
+                   th:href="@{/dashboard/serenazgo/reportes(page=${reportes.number + 1}, size=${reportes.size}, tipo=${tipoSeleccionado}, desde=${desde}, hasta=${hasta})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Generador de Reportes -->
+    <div id="modalGenerarReporte" class="fixed inset-0 bg-slate-950/70 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in">
+            <form method="post" th:action="@{/dashboard/serenazgo/reportes/generar}">
+                <div class="p-5 border-b border-slate-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded-xl bg-blue-600/20 text-blue-400">
+                            <i data-lucide="printer" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Generar Reporte Institucional</h3>
+                            <p class="text-xs text-slate-400">Emisión auditada con parámetros analíticos</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarModal('modalGenerarReporte')" class="text-slate-400 hover:text-white p-1">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-4 text-xs">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Tipo de Reporte Oficial *</label>
+                        <select name="tipoReporte" id="inputTipoReporte" required
+                                class="w-full bg-[#101827] border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                            <option th:each="tip : ${tiposReporte}" th:value="${tip.name()}" th:text="${tip.titulo}">Tipo</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Formato de Exportación *</label>
+                        <select name="formato" id="inputFormato" required
+                                class="w-full bg-[#101827] border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                            <option th:each="f : ${formatos}" th:value="${f.name()}" th:text="${f.descripcion}">Formato</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Título Personalizado (Opcional)</label>
+                        <input type="text" name="titulo" placeholder="Dejar vacío para usar el título predeterminado"
+                               class="w-full bg-[#101827] border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Período de Análisis</label>
+                        <select name="filtro.periodoTipo"
+                                class="w-full bg-[#101827] border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                            <option value="MES_ACTUAL">Mes actual</option>
+                            <option value="HOY">Hoy</option>
+                            <option value="ULTIMOS_7_DIAS">Últimos 7 días</option>
+                            <option value="TRIMESTRE_ACTUAL">Trimestre actual</option>
+                            <option value="ANIO_ACTUAL">Año actual</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Sector Específico (Opcional)</label>
+                        <select name="filtro.sectorId"
+                                class="w-full bg-[#101827] border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todos los sectores del distrito</option>
+                            <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.codigo + ' - ' + s.nombre}">Sector</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-900 border-t border-slate-700 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalGenerarReporte')"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-600/20 flex items-center space-x-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Generar y Almacenar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    function abrirModalGenerarReporte() {
+        abrirModal('modalGenerarReporte');
+    }
+
+    function abrirModalGenerarReporteConTipo(tipo, formato) {
+        const selTipo = document.getElementById('inputTipoReporte');
+        const selFormato = document.getElementById('inputFormato');
+        if (selTipo) selTipo.value = tipo;
+        if (selFormato) selFormato.value = formato;
+        abrirModal('modalGenerarReporte');
+    }
+</script>
+</th:block>
+</body>
+</html>

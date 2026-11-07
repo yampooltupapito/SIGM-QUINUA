@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Reportes, Estadísticas y Supervisión — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. ENCABEZADO INSTITUCIONAL Y ACCIONES DE EXPORTACIÓN -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-slate-700/60 p-6 shadow-xl">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>SIGM-QUINUA — MÓDULO DE MESA DE PARTES VIRTUAL</span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="bar-chart-2" class="w-6 h-6 text-blue-400"></i>
+                    <span>Supervisión, Métricas y Reportes Administrativos</span>
+                </h1>
+                <p class="text-xs text-slate-300 max-w-3xl leading-relaxed">
+                    Monitoreo en tiempo real del flujo de trámites, tiempos de atención, control de plazos legales y productividad
+                    de las dependencias orgánicas de la Municipalidad Distrital de Quinua.
+                </p>
+            </div>
+
+            <!-- Botones de Acción y Exportación -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button type="button" id="btnRecargarReportes"
+                        class="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition-all shadow-sm">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400"></i>
+                    <span>Actualizar</span>
+                </button>
+
+                <button type="button" id="btnExportarExcel"
+                        class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-semibold shadow-lg shadow-emerald-950/40 hover:scale-[1.02] transition-all">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Exportar Excel</span>
+                </button>
+
+                <button type="button" id="btnExportarPdf"
+                        class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 hover:scale-[1.02] transition-all">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Exportar PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicador de Carga Global -->
+    <div id="indicadorCargaReportes" class="hidden flex items-center justify-center p-3 rounded-xl bg-blue-950/40 border border-blue-800/40 text-blue-300 text-xs animate-pulse">
+        <i data-lucide="loader" class="w-4 h-4 animate-spin mr-2"></i>
+        <span>Sincronizando indicadores y estadísticas desde PostgreSQL...</span>
+    </div>
+
+    <!-- 2. PANEL DE FILTROS AVANZADOS -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+        <form id="formFiltrosReporte" class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="filter" class="w-4 h-4 text-blue-400"></i>
+                    <span>Filtros de Análisis Cronológico y Operativo</span>
+                </h3>
+                <span class="text-[11px] text-slate-400">Los datos reflejan información real de la base institucional</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <!-- Período -->
+                <div class="space-y-1">
+                    <label for="filtroPeriodo" class="font-medium text-slate-300">Rango Temporal:</label>
+                    <select id="filtroPeriodo" name="periodo"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="MES_ACTUAL" selected>Mes Actual</option>
+                        <option value="MES_ANTERIOR">Mes Anterior</option>
+                        <option value="TRIMESTRE_ACTUAL">Trimestre Actual</option>
+                        <option value="ANIO_ACTUAL">Año en Curso</option>
+                        <option value="PERSONALIZADO">Personalizado (Rango)</option>
+                    </select>
+                </div>
+
+                <!-- Fecha Inicio -->
+                <div class="space-y-1">
+                    <label for="filtroFechaInicio" class="font-medium text-slate-300">Fecha Desde:</label>
+                    <input type="date" id="filtroFechaInicio" name="fechaInicio"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Fecha Fin -->
+                <div class="space-y-1">
+                    <label for="filtroFechaFin" class="font-medium text-slate-300">Fecha Hasta:</label>
+                    <input type="date" id="filtroFechaFin" name="fechaFin"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Dependencia / Oficina -->
+                <div class="space-y-1">
+                    <label for="filtroOficina" class="font-medium text-slate-300">Dependencia / Oficina:</label>
+                    <select id="filtroOficina" name="oficinaId"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todas las Oficinas</option>
+                        <option th:each="ofi : ${oficinas}" th:value="${ofi.id}" th:text="${ofi.nombre}"></option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Trámite -->
+                <div class="space-y-1">
+                    <label for="filtroTipoTramite" class="font-medium text-slate-300">Procedimiento / Trámite:</label>
+                    <select id="filtroTipoTramite" name="tipoTramiteId"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todos los Procedimientos</option>
+                        <option th:each="tramite : ${tiposTramite}" th:value="${tramite.id}" th:text="${tramite.nombre}"></option>
+                    </select>
+                </div>
+
+                <!-- Estado del Expediente -->
+                <div class="space-y-1">
+                    <label for="filtroEstado" class="font-medium text-slate-300">Estado del Expediente:</label>
+                    <select id="filtroEstado" name="estado"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todos los Estados</option>
+                        <option th:each="est : ${estados}" th:value="${est.name()}" th:text="${est.name()}"></option>
+                    </select>
+                </div>
+
+                <!-- Prioridad -->
+                <div class="space-y-1">
+                    <label for="filtroPrioridad" class="font-medium text-slate-300">Nivel de Prioridad:</label>
+                    <select id="filtroPrioridad" name="prioridad"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todas</option>
+                        <option th:each="p : ${prioridades}" th:value="${p.name()}" th:text="${p.name()}"></option>
+                    </select>
+                </div>
+
+                <!-- Canal de Ingreso -->
+                <div class="space-y-1">
+                    <label for="filtroCanal" class="font-medium text-slate-300">Canal de Presentación:</label>
+                    <select id="filtroCanal" name="canalIngreso"
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todos</option>
+                        <option th:each="c : ${canales}" th:value="${c.name()}" th:text="${c.name()}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Búsqueda y Botones -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <div class="relative w-full sm:w-80">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" id="filtroTermino" name="termino" placeholder="Buscar por N° Expediente, asunto o DNI..."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button type="button" id="btnLimpiarFiltros"
+                            class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors">
+                        Limpiar
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-900/40 transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Aplicar Filtros</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. TARJETAS DE INDICADORES PRINCIPALES (KPIs) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <!-- Presentados -->
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-4 flex flex-col justify-between shadow-md">
+            <div class="flex items-center justify-between text-slate-400 text-xs">
+                <span>Presentados</span>
+                <i data-lucide="file-plus" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-slate-100" id="kpiTotalPresentados"
+                 th:text="${resumen != null ? resumen.totalPresentados : 0}">0</div>
+            <div class="mt-1 text-[10px] text-blue-400">Ingresos brutos del período</div>
+        </div>
+
+        <!-- Recibidos -->
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-4 flex flex-col justify-between shadow-md">
+            <div class="flex items-center justify-between text-slate-400 text-xs">
+                <span>Recibidos</span>
+                <i data-lucide="inbox" class="w-4 h-4 text-cyan-400"></i>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-slate-100" id="kpiTotalRecibidos"
+                 th:text="${resumen != null ? resumen.totalRecibidos : 0}">0</div>
+            <div class="mt-1 text-[10px] text-cyan-400">Conformidad de admisibilidad</div>
+        </div>
+
+        <!-- En Atención -->
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-4 flex flex-col justify-between shadow-md">
+            <div class="flex items-center justify-between text-slate-400 text-xs">
+                <span>En Atención / Trámite</span>
+                <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-slate-100" id="kpiTotalEnAtencion"
+                 th:text="${resumen != null ? resumen.totalEnAtencion : 0}">0</div>
+            <div class="mt-1 text-[10px] text-purple-400">En evaluación técnica/legal</div>
+        </div>
+
+        <!-- Observados -->
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-4 flex flex-col justify-between shadow-md">
+            <div class="flex items-center justify-between text-slate-400 text-xs">
+                <span>Observados</span>
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-slate-100" id="kpiTotalObservados"
+                 th:text="${resumen != null ? resumen.totalObservados : 0}">0</div>
+            <div class="mt-1 text-[10px] text-rose-400">Pendiente de subsanación</div>
+        </div>
+
+        <!-- Resueltos -->
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-4 flex flex-col justify-between shadow-md">
+            <div class="flex items-center justify-between text-slate-400 text-xs">
+                <span>Resueltos / Concluidos</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-slate-100" id="kpiTotalResueltos"
+                 th:text="${resumen != null ? resumen.totalResueltos : 0}">0</div>
+            <div class="mt-1 text-[10px] text-emerald-400">Acto administrativo emitido</div>
+        </div>
+    </div>
+
+    <!-- 4. INDICADORES DE EFICIENCIA Y CONTROL DE PLAZOS LEGALES -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Eficiencia Operativa -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                <span>Indicadores de Eficiencia y Celeridad (TUO Ley N° 27444)</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 pt-4 text-center">
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tiempo Promedio</div>
+                    <div class="text-lg font-bold text-blue-400 mt-1" id="kpiPromedioAtencion">-</div>
+                    <div class="text-[10px] text-slate-400">Presentación a resolución</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tiempo Mediano</div>
+                    <div class="text-lg font-bold text-cyan-400 mt-1" id="kpiMedianaAtencion">-</div>
+                    <div class="text-[10px] text-slate-400">50% de expedientes</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tiempo Recepción</div>
+                    <div class="text-lg font-bold text-purple-400 mt-1" id="kpiPromedioRecepcion">-</div>
+                    <div class="text-[10px] text-slate-400">Horas promedio</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tiempo Derivación</div>
+                    <div class="text-lg font-bold text-amber-400 mt-1" id="kpiPromedioDerivacion">-</div>
+                    <div class="text-[10px] text-slate-400">Aceptación en destino</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tasa de Resolución</div>
+                    <div class="text-lg font-bold text-emerald-400 mt-1" id="kpiTasaResolucion">0.0%</div>
+                    <div class="text-[10px] text-slate-400">Resueltos / Total</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Tasa Observación</div>
+                    <div class="text-lg font-bold text-rose-400 mt-1" id="kpiTasaObservacion">0.0%</div>
+                    <div class="text-[10px] text-slate-400">Observados / Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control de Plazos -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="calendar-clock" class="w-4 h-4 text-emerald-400"></i>
+                <span>Monitoreo de Plazos Legales y Vencimientos</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 pt-4 text-center">
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Dentro de Plazo</div>
+                    <div class="text-lg font-bold text-emerald-400 mt-1" id="plazoEnPlazo">0</div>
+                    <div class="text-[10px] text-emerald-400/80">Trámite regular</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Próximos a Vencer</div>
+                    <div class="text-lg font-bold text-amber-400 mt-1" id="plazoProximosVencer">0</div>
+                    <div class="text-[10px] text-amber-400/80">3 días o menos</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Vencidos</div>
+                    <div class="text-lg font-bold text-rose-400 mt-1" id="plazoVencidos">0</div>
+                    <div class="text-[10px] text-rose-400/80">Superaron fecha límite</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[11px] text-slate-400">Plazo Suspendido</div>
+                    <div class="text-lg font-bold text-cyan-400 mt-1" id="plazoSuspendidos">0</div>
+                    <div class="text-[10px] text-cyan-400/80">En subsanación ciudadana</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60 col-span-2 sm:col-span-1">
+                    <div class="text-[11px] text-slate-400">Sin Plazo Configurado</div>
+                    <div class="text-lg font-bold text-slate-400 mt-1" id="plazoSinPlazo">0</div>
+                    <div class="text-[10px] text-slate-400">Procedimiento no regulado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. GRÁFICOS INTERACTIVOS (MODO OSCURO INSTITUCIONAL) -->
+    <div id="seccion-graficos" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Gráfico 1: Expedientes por Estado -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i>
+                <span>Distribución de Expedientes por Estado</span>
+            </h3>
+            <div class="h-64 mt-3 relative">
+                <canvas id="chartExpedientesEstado"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Evolución Mensual -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                <span>Evolución Cronológica Mensual (Presentados vs Resueltos)</span>
+            </h3>
+            <div class="h-64 mt-3 relative">
+                <canvas id="chartEvolucionMensual"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 3: Expedientes por Oficina -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="building-2" class="w-4 h-4 text-purple-400"></i>
+                <span>Carga de Expedientes por Unidad Orgánica Municipal</span>
+            </h3>
+            <div class="h-64 mt-3 relative">
+                <canvas id="chartExpedientesOficina"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 4: Procedimientos más Frecuentes -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+                <span>Procedimientos Administrativos más Frecuentes</span>
+            </h3>
+            <div class="h-64 mt-3 relative">
+                <canvas id="chartExpedientesTramite"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. COMPARATIVA DE PERÍODOS Y SUPERVISIÓN -->
+    <div id="seccion-supervision" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Comparativa de Desempeño -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="git-compare" class="w-4 h-4 text-cyan-400"></i>
+                <span>Comparativa de Desempeño Inter-Períodos</span>
+            </h3>
+            <div class="mt-4 space-y-3 text-xs">
+                <div class="flex items-center justify-between text-slate-400 pb-1 border-b border-slate-700/40 text-[11px]">
+                    <span class="w-1/3">Métrica Evaluada</span>
+                    <span class="w-1/4 text-center" id="compLabelAnterior">Período Anterior</span>
+                    <span class="w-1/4 text-center" id="compLabelActual">Período Actual</span>
+                    <span class="w-1/6 text-right">Variación</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-200">
+                    <span class="w-1/3 font-medium">Expedientes Presentados</span>
+                    <span class="w-1/4 text-center text-slate-400" id="compPresAnterior">0</span>
+                    <span class="w-1/4 text-center font-bold text-blue-400" id="compPresActual">0</span>
+                    <span class="w-1/6 text-right font-mono font-bold text-blue-400" id="compPresVariacion">0.0%</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-200">
+                    <span class="w-1/3 font-medium">Expedientes Resueltos</span>
+                    <span class="w-1/4 text-center text-slate-400" id="compResAnterior">0</span>
+                    <span class="w-1/4 text-center font-bold text-emerald-400" id="compResActual">0</span>
+                    <span class="w-1/6 text-right font-mono font-bold text-emerald-400" id="compResVariacion">0.0%</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-200">
+                    <span class="w-1/3 font-medium">Expedientes Observados</span>
+                    <span class="w-1/4 text-center text-slate-400" id="compObsAnterior">0</span>
+                    <span class="w-1/4 text-center font-bold text-rose-400" id="compObsActual">0</span>
+                    <span class="w-1/6 text-right font-mono font-bold text-rose-400" id="compObsVariacion">0.0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supervisión de Derivaciones y Observaciones -->
+        <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="shield-check" class="w-4 h-4 text-blue-400"></i>
+                <span>Supervisión de Derivaciones y Subsanaciones</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 text-center text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Derivaciones Enviadas</div>
+                    <div class="text-base font-bold text-slate-200 mt-0.5" id="supDerivEnviadas">0</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Derivaciones Recibidas</div>
+                    <div class="text-base font-bold text-cyan-400 mt-0.5" id="supDerivRecibidas">0</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Derivaciones Pendientes</div>
+                    <div class="text-base font-bold text-amber-400 mt-0.5" id="supDerivPendientes">0</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Expedientes Observados</div>
+                    <div class="text-base font-bold text-rose-400 mt-0.5" id="supObsExps">0</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Subsanaciones Recibidas</div>
+                    <div class="text-base font-bold text-emerald-400 mt-0.5" id="supSubsPresentadas">0</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+                    <div class="text-[10px] text-slate-400">Tiempo Aceptación</div>
+                    <div class="text-base font-bold text-purple-400 mt-0.5" id="supDerivPromedio">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. TABLA DE EXPEDIENTES DETALLADOS -->
+    <div id="seccion-tabla" class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg">
+        <div class="flex flex-col sm:flex-row items-center justify-between pb-3 border-b border-slate-700/60 gap-3">
+            <div>
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="list" class="w-4 h-4 text-blue-400"></i>
+                    <span>Expedientes Detallados en Período</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Listado de registros con trazabilidad de días transcurridos</p>
+            </div>
+            <div class="text-xs text-slate-400">
+                Total: <span id="paginacionTotalRegistros" class="font-bold text-slate-200">0</span> expedientes
+            </div>
+        </div>
+
+        <div class="overflow-x-auto mt-3">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="bg-slate-900/80 text-[11px] text-slate-300 font-semibold border-b border-slate-700">
+                    <th class="py-2.5 px-3 text-center w-12">N°</th>
+                    <th class="py-2.5 px-3">N° Expediente</th>
+                    <th class="py-2.5 px-3">Fecha Ingreso</th>
+                    <th class="py-2.5 px-3">Tipo de Trámite</th>
+                    <th class="py-2.5 px-3">Solicitante</th>
+                    <th class="py-2.5 px-3">Dependencia</th>
+                    <th class="py-2.5 px-3 text-center">Estado</th>
+                    <th class="py-2.5 px-3 text-center">Días</th>
+                </tr>
+                </thead>
+                <tbody id="tbodyExpedientesReporte">
+                <tr>
+                    <td colspan="8" class="text-center py-8 text-slate-400 text-xs">
+                        <i data-lucide="loader" class="w-5 h-5 mx-auto mb-1 animate-spin"></i>
+                        Cargando expedientes...
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginador -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-700/60 mt-3 text-xs text-slate-400">
+            <div>
+                Página <span id="paginacionPaginaActual" class="font-bold text-slate-200">1</span> de <span id="paginacionTotalPaginas" class="font-bold text-slate-200">1</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button type="button" id="btnPaginaAnterior"
+                        class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 text-slate-300 transition-colors">
+                    Anterior
+                </button>
+                <button type="button" id="btnPaginaSiguiente"
+                        class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700 text-slate-300 transition-colors">
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts JavaScript para Chart.js, Filtros y Reportes -->
+<div layout:fragment="scripts">
+    <script th:src="@{/js/mesapartes/reportes-filtros.js}"></script>
+    <script th:src="@{/js/mesapartes/reportes-graficos.js}"></script>
+    <script th:src="@{/js/mesapartes/reportes.js}"></script>
+</div>
+
+</body>
+</html>

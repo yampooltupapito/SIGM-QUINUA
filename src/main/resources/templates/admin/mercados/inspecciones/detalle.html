@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Inspección ' + inspeccion.codigoInspeccion + ' | SIGM-QUINUA'}">Detalle Inspección</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/inspecciones}" class="hover:text-blue-400 transition-colors">Inspecciones</a>
+                <span>/</span>
+                <span class="text-slate-200 font-mono" th:text="${inspeccion.codigoInspeccion}">INS-MER-2026-000001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <span th:text="${'Inspección ' + inspeccion.codigoInspeccion}">INS-MER-2026-000001</span>
+                </h1>
+                <span th:class="${'px-2.5 py-1 rounded-full text-xs font-semibold border ' +
+                        (inspeccion.estado != null and inspeccion.estado.name() == 'FINALIZADA' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                        (inspeccion.estado != null and inspeccion.estado.name() == 'EN_PROCESO' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                        (inspeccion.estado != null and inspeccion.estado.name() == 'PENDIENTE_REVISION' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
+                        (inspeccion.estado != null and inspeccion.estado.name() == 'CANCELADA' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'))))}"
+                      th:text="${inspeccion.estadoDescripcion != null ? inspeccion.estadoDescripcion : (inspeccion.estado != null ? inspeccion.estado.name() : '-')}"></span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="${inspeccion.motivo}">Supervisión comercial y sanitaria</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Botón Iniciar Inspección -->
+            <button th:if="${inspeccion.estado != null and (inspeccion.estado.name() == 'PROGRAMADA' or inspeccion.estado.name() == 'ASIGNADA')}"
+                    onclick="iniciarInspeccion()"
+                    sec:authorize="hasAuthority('MERCADOS_INSPECCION_EJECUTAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Iniciar Visita In Situ
+            </button>
+
+            <!-- Botón Finalizar Visita -->
+            <button th:if="${inspeccion.estado != null and inspeccion.estado.name() == 'EN_PROCESO'}"
+                    onclick="abrirModalFinalizar()"
+                    sec:authorize="hasAuthority('MERCADOS_INSPECCION_EJECUTAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Finalizar Visita
+            </button>
+
+            <!-- Botón Descargar Acta PDF si ya existe -->
+            <a th:if="${inspeccion.tieneActa}"
+               th:href="@{'/api/mercados/inspecciones/' + ${inspeccion.id} + '/acta/pdf'}"
+               target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Descargar Acta PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-[#334155] flex gap-2 overflow-x-auto text-xs font-semibold">
+        <button onclick="cambiarPestana('tabGeneral')" id="btnTabGeneral" class="tab-btn px-4 py-2.5 text-indigo-400 border-b-2 border-indigo-500 font-bold">
+            Información General
+        </button>
+        <button onclick="cambiarPestana('tabVerificaciones')" id="btnTabVerificaciones" class="tab-btn px-4 py-2.5 text-slate-400 hover:text-white border-b-2 border-transparent">
+            Verificaciones (<span th:text="${detalle.verificaciones.size()}">0</span>)
+        </button>
+        <button onclick="cambiarPestana('tabHallazgos')" id="btnTabHallazgos" class="tab-btn px-4 py-2.5 text-slate-400 hover:text-white border-b-2 border-transparent">
+            Hallazgos (<span th:text="${detalle.hallazgos.size()}">0</span>)
+        </button>
+        <button onclick="cambiarPestana('tabMedidas')" id="btnTabMedidas" class="tab-btn px-4 py-2.5 text-slate-400 hover:text-white border-b-2 border-transparent">
+            Medidas Correctivas (<span th:text="${detalle.medidasCorrectivas.size()}">0</span>)
+        </button>
+        <button onclick="cambiarPestana('tabEvidencias')" id="btnTabEvidencias" class="tab-btn px-4 py-2.5 text-slate-400 hover:text-white border-b-2 border-transparent">
+            Evidencias (<span th:text="${detalle.evidencias.size()}">0</span>)
+        </button>
+        <button onclick="cambiarPestana('tabActa')" id="btnTabActa" class="tab-btn px-4 py-2.5 text-slate-400 hover:text-white border-b-2 border-transparent">
+            Acta de Inspección
+        </button>
+    </div>
+
+    <!-- 1. PESTAÑA: Información General -->
+    <div id="tabGeneral" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Ubicación y Alcance
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400">Mercado:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.mercadoNombre}">Mercado</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Puesto Comercial:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.puestoCodigo != null ? inspeccion.puestoCodigo : 'GENERAL'}">-</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Comerciante Titular:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.comercianteNombre != null ? inspeccion.comercianteNombre : 'ÁREA PÚBLICA / COMÚN'}">-</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">DNI / RUC:</span>
+                        <p class="font-mono text-slate-300 mt-0.5" th:text="${inspeccion.comercianteDocumento != null ? inspeccion.comercianteDocumento : '-'}">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Equipo Inspector
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400">Inspector Responsable:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.inspectorResponsableNombre != null ? inspeccion.inspectorResponsableNombre : 'No asignado'}">-</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Oficina Responsable:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.oficinaResponsableNombre != null ? inspeccion.oficinaResponsableNombre : 'Desarrollo Económico'}">-</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Fecha Programada:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.fechaProgramada}">2026-10-20</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Inicio Real In Situ:</span>
+                        <p class="font-semibold text-white mt-0.5" th:text="${inspeccion.fechaInicioReal != null ? #temporals.format(inspeccion.fechaInicioReal, 'yyyy-MM-dd HH:mm') : 'No iniciada'}">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-white">Objetivo de la Supervisión</h3>
+            <p class="text-xs text-slate-300 leading-relaxed" th:text="${inspeccion.objetivo}">Detalle...</p>
+        </div>
+    </div>
+
+    <!-- 2. PESTAÑA: Verificaciones -->
+    <div id="tabVerificaciones" class="tab-content hidden space-y-4">
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm">
+            <h3 class="text-sm font-bold text-white mb-4">Lista de Verificación In Situ</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                    <tr class="bg-[#101827] text-slate-400 uppercase text-[11px] border-b border-[#334155]">
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Categoría</th>
+                        <th class="py-3 px-4">Criterio</th>
+                        <th class="py-3 px-4">Evaluación</th>
+                        <th class="py-3 px-4">Observaciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#334155]/60 text-slate-300">
+                    <tr th:if="${detalle.verificaciones.empty}">
+                        <td colspan="5" class="py-6 text-center text-slate-400">No hay verificaciones registradas aún.</td>
+                    </tr>
+                    <tr th:each="v : ${detalle.verificaciones}">
+                        <td class="py-3 px-4 font-mono font-bold text-indigo-400" th:text="${v.itemCodigo}">ITEM-01</td>
+                        <td class="py-3 px-4" th:text="${v.itemCategoria}">SALUBRIDAD</td>
+                        <td class="py-3 px-4" th:text="${v.itemDescripcion}">Criterio...</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${v.resultado != null ? (v.resultado.name() == 'CONFORME' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                   (v.resultado.name() == 'NO_CONFORME' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-300')) : 'bg-slate-700 text-slate-300'}"
+                                  th:text="${v.resultadoDescripcion != null ? v.resultadoDescripcion : (v.resultado != null ? v.resultado.name() : 'PENDIENTE')}">Conforme</span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${v.observaciones != null ? v.observaciones : '-'}">-</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. PESTAÑA: Hallazgos -->
+    <div id="tabHallazgos" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <h3 class="text-sm font-bold text-white">Hallazgos Técnicos Registrados</h3>
+            <button onclick="abrirModalHallazgo()"
+                    sec:authorize="hasAuthority('MERCADOS_INSPECCION_HALLAZGO_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Registrar Hallazgo
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div th:if="${detalle.hallazgos.empty}" class="col-span-2 bg-[#1e293b] p-8 text-center rounded-2xl border border-[#202c3d] text-slate-400 text-xs">
+                No se registraron hallazgos técnicos en esta inspección.
+            </div>
+            <div th:each="h : ${detalle.hallazgos}" class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-sm space-y-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="font-mono text-xs font-bold text-rose-400" th:text="${h.codigo}">HAL-001</span>
+                        <h4 class="text-xs font-bold text-white mt-0.5" th:text="${h.categoria}">INFRAESTRUCTURA</h4>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                          th:text="${h.gravedadTecnica != null ? h.gravedadTecnica.name() : 'GENERAL'}">LEVE</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed" th:text="${h.descripcion}">Descripción...</p>
+                <div class="pt-2 border-t border-[#334155] flex justify-between items-center text-[11px] text-slate-400">
+                    <span>Estado: <strong class="text-white" th:text="${h.estado}">ABIERTO</strong></span>
+                    <button th:data-id="${h.id}"
+                            onclick="abrirModalMedida(this.dataset.id)"
+                            sec:authorize="hasAuthority('MERCADOS_INSPECCION_MEDIDA_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                            class="text-indigo-400 hover:text-indigo-300 font-semibold">
+                        + Medida Correctiva
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. PESTAÑA: Medidas Correctivas -->
+    <div id="tabMedidas" class="tab-content hidden space-y-4">
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm">
+            <h3 class="text-sm font-bold text-white mb-4">Medidas Correctivas y Compromisos de Subsanación</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                    <tr class="bg-[#101827] text-slate-400 uppercase text-[11px] border-b border-[#334155]">
+                        <th class="py-3 px-4">Hallazgo</th>
+                        <th class="py-3 px-4">Descripción de la Medida</th>
+                        <th class="py-3 px-4">Responsable</th>
+                        <th class="py-3 px-4">Plazo Límite</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#334155]/60 text-slate-300">
+                    <tr th:if="${detalle.medidasCorrectivas.empty}">
+                        <td colspan="6" class="py-6 text-center text-slate-400">No se han emitido medidas correctivas para esta inspección.</td>
+                    </tr>
+                    <tr th:each="m : ${detalle.medidasCorrectivas}">
+                        <td class="py-3 px-4 font-mono font-bold text-rose-400" th:text="${m.hallazgoCodigo}">HAL-001</td>
+                        <td class="py-3 px-4 font-medium text-white" th:text="${m.descripcion}">Medida...</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${m.tipoResponsable}">COMERCIANTE</td>
+                        <td class="py-3 px-4">
+                            <span th:text="${m.fechaLimite}">2026-10-30</span>
+                            <span th:if="${m.vencida}" class="ml-1 text-[10px] text-rose-400 font-bold">(Vencida)</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${m.estado != null ? (m.estado.name() == 'SUBSANADA' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                   (m.estado.name() == 'PRESENTADA_PARA_VERIFICACION' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400')) : 'bg-amber-500/20 text-amber-400'}"
+                                  th:text="${m.estadoDescripcion != null ? m.estadoDescripcion : (m.estado != null ? m.estado.name() : 'Pendiente')}">Pendiente</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button th:if="${m.estado == null or m.estado.name() != 'SUBSANADA'}"
+                                    th:data-id="${m.id}"
+                                    onclick="abrirModalSubsanacion(this.dataset.id)"
+                                    class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs">
+                                Registrar Subsanación
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. PESTAÑA: Evidencias -->
+    <div id="tabEvidencias" class="tab-content hidden space-y-4">
+        <div class="flex justify-between items-center bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <h3 class="text-sm font-bold text-white">Evidencias Fotográficas y Documentales</h3>
+            <button onclick="abrirModalEvidencia()"
+                    sec:authorize="hasAuthority('MERCADOS_INSPECCION_EVIDENCIA_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Subir Evidencia
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div th:if="${detalle.evidencias.empty}" class="col-span-3 bg-[#1e293b] p-8 text-center rounded-2xl border border-[#202c3d] text-slate-400 text-xs">
+                No hay evidencias adjuntas.
+            </div>
+            <div th:each="ev : ${detalle.evidencias}" class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-sm space-y-2">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span class="font-bold text-white text-xs truncate" th:text="${ev.nombreArchivo}">archivo.jpg</span>
+                </div>
+                <p class="text-[11px] text-slate-400" th:text="${ev.descripcion != null ? ev.descripcion : 'Sin descripción'}">-</p>
+                <div class="pt-2 border-t border-[#334155] text-[10px] text-slate-500 font-mono truncate" th:text="${'SHA-256: ' + ev.hashSha256}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. PESTAÑA: Acta Oficial -->
+    <div id="tabActa" class="tab-content hidden space-y-4">
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-[#334155] pb-3">
+                <h3 class="text-sm font-bold text-white">Acta Oficial de Inspección</h3>
+                <div class="flex gap-2">
+                    <button th:if="${detalle.acta == null or (detalle.acta.estado != null and detalle.acta.estado.name() != 'EMITIDA')}"
+                            onclick="abrirModalActa()"
+                            sec:authorize="hasAuthority('MERCADOS_INSPECCION_ACTA_ELABORAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg">
+                        Redactar Acta
+                    </button>
+                    <button th:if="${detalle.acta != null and detalle.acta.estado != null and detalle.acta.estado.name() != 'EMITIDA'}"
+                            onclick="aprobarActa()"
+                            sec:authorize="hasAuthority('MERCADOS_INSPECCION_ACTA_APROBAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">
+                        Aprobar y Emitir Formalmente
+                    </button>
+                </div>
+            </div>
+
+            <div th:if="${detalle.acta == null}" class="py-8 text-center text-slate-400 text-xs">
+                Aún no se ha redactado el borrador del acta de inspección.
+            </div>
+
+            <div th:if="${detalle.acta != null}" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3 bg-[#101827] p-4 rounded-xl border border-[#334155]">
+                    <div>
+                        <span class="text-slate-400">Código de Acta:</span>
+                        <p class="font-mono font-bold text-indigo-400 mt-0.5" th:text="${detalle.acta.codigoActa}">ACTA-INS-2026-000001</p>
+                    </div>
+                    <div>
+                        <span class="text-slate-400">Estado:</span>
+                        <p class="font-bold text-emerald-400 mt-0.5" th:text="${detalle.acta.estadoDescripcion != null ? detalle.acta.estadoDescripcion : (detalle.acta.estado != null ? detalle.acta.estado.name() : 'EMITIDA')}">EMITIDA</p>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="font-bold text-slate-300">Resumen General:</span>
+                    <p class="text-slate-300 mt-1" th:text="${detalle.acta.resumen}"></p>
+                </div>
+
+                <div>
+                    <span class="font-bold text-slate-300">Conclusiones:</span>
+                    <p class="text-slate-300 mt-1" th:text="${detalle.acta.conclusiones}"></p>
+                </div>
+
+                <div th:if="${detalle.acta.recomendaciones != null}">
+                    <span class="font-bold text-slate-300">Recomendaciones:</span>
+                    <p class="text-slate-300 mt-1" th:text="${detalle.acta.recomendaciones}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Registrar Hallazgo -->
+    <div id="modalHallazgo" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-sm font-bold text-white mb-4">Registrar Hallazgo Técnico</h3>
+            <form id="formHallazgo" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Categoría</label>
+                    <input type="text" id="halCategoria" required placeholder="Ej. SALUBRIDAD, INFRAESTRUCTURA"
+                           class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Gravedad Técnica</label>
+                    <select id="halGravedad" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2">
+                        <option value="LEVE">Leve</option>
+                        <option value="MODERADA" selected>Moderada</option>
+                        <option value="GRAVE">Grave</option>
+                        <option value="MUY_GRAVE">Muy Grave</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción del Hallazgo</label>
+                    <textarea id="halDescripcion" required rows="3" placeholder="Detalle la inobservancia constatada..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalHallazgo')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg">Guardar Hallazgo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Subir Evidencia -->
+    <div id="modalEvidencia" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-sm font-bold text-white mb-4">Adjuntar Evidencia Fotográfica / Documental</h3>
+            <form id="formEvidencia" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Archivo (JPG, PNG, PDF max 15MB)</label>
+                    <input type="file" id="evArchivo" required accept=".jpg,.jpeg,.png,.webp,.pdf"
+                           class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción</label>
+                    <input type="text" id="evDescripcion" placeholder="Breve descripción de la evidencia..."
+                           class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalEvidencia')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg">Subir Archivo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Registrar Medida Correctiva -->
+    <div id="modalMedida" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-sm font-bold text-white mb-4">Registrar Medida Correctiva</h3>
+            <form id="formMedida" class="space-y-4">
+                <input type="hidden" id="medidaHallazgoId"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción de la Medida</label>
+                    <textarea id="medidaDescripcion" required rows="3" placeholder="Medida o compromiso a ejecutar..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Responsable</label>
+                    <select id="medidaTipoResponsable" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2">
+                        <option value="COMERCIANTE_TITULAR" selected>Comerciante Titular</option>
+                        <option value="ADMINISTRACION_MERCADO">Administración del Mercado</option>
+                        <option value="MANTENIMIENTO_MUNICIPAL">Mantenimiento Municipal</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha Asignación</label>
+                        <input type="date" id="medidaFechaAsignacion" required
+                               class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha Límite</label>
+                        <input type="date" id="medidaFechaLimite" required
+                               class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones (Opcional)</label>
+                    <input type="text" id="medidaObservaciones" placeholder="Detalles adicionales..."
+                           class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalMedida')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg">Guardar Medida</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Registrar Subsanación -->
+    <div id="modalSubsanacion" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-sm font-bold text-white mb-4">Registrar Subsanación de Medida</h3>
+            <form id="formSubsanacion" class="space-y-4">
+                <input type="hidden" id="subsanacionMedidaId"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción de las Acciones Realizadas</label>
+                    <textarea id="subsanacionDescripcion" required rows="4" placeholder="Describa cómo se subsanó la observación..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalSubsanacion')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Enviar Subsanación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Redactar Acta -->
+    <div id="modalActa" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-lg w-full shadow-2xl">
+            <h3 class="text-sm font-bold text-white mb-4">Redactar Acta de Inspección</h3>
+            <form id="formActa" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resumen General</label>
+                    <textarea id="actaResumen" required rows="2" placeholder="Resumen de la visita realizada..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Conclusiones</label>
+                    <textarea id="actaConclusiones" required rows="3" placeholder="Conclusiones técnicas determinantes..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Recomendaciones (Opcional)</label>
+                    <textarea id="actaRecomendaciones" rows="2" placeholder="Recomendaciones preventivas o plazos..."
+                              class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalActa')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg">Guardar Borrador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+const inspeccionId = /*[[${inspeccion.id}]]*/ '';
+
+function cambiarPestana(idTab) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+    document.querySelectorAll(".tab-btn").forEach(el => {
+        el.classList.remove("text-indigo-400", "border-indigo-500", "font-bold");
+        el.classList.add("text-slate-400", "border-transparent");
+    });
+
+    const activeContent = document.getElementById(idTab);
+    if (activeContent) activeContent.classList.remove("hidden");
+
+    const activeBtn = document.getElementById("btn" + idTab.charAt(0).toUpperCase() + idTab.slice(1));
+    if (activeBtn) {
+        activeBtn.classList.remove("text-slate-400", "border-transparent");
+        activeBtn.classList.add("text-indigo-400", "border-indigo-500", "font-bold");
+    }
+}
+
+async function iniciarInspeccion() {
+    if (!confirm("¿Desea iniciar formalmente la inspección in situ? Se registrará la fecha y hora real.")) return;
+    try {
+        await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/iniciar`, { method: "POST" });
+        mostrarToast("Inspección iniciada in situ", "success");
+        setTimeout(() => window.location.reload(), 500);
+    } catch (e) {}
+}
+
+async function abrirModalFinalizar() {
+    const res = prompt("Ingrese el resultado general (CONFORME, CON_OBSERVACIONES o NO_CONFORME):", "CON_OBSERVACIONES");
+    if (!res) return;
+    try {
+        await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/finalizar?resultadoGeneral=` + encodeURIComponent(res), { method: "POST" });
+        mostrarToast("Inspección finalizada in situ. Pendiente elaboración de acta.", "success");
+        setTimeout(() => window.location.reload(), 500);
+    } catch (e) {}
+}
+
+function abrirModalHallazgo() {
+    abrirModal("modalHallazgo");
+}
+
+function abrirModalMedida(hallazgoId) {
+    document.getElementById("medidaHallazgoId").value = hallazgoId;
+    document.getElementById("medidaFechaAsignacion").value = new Date().toISOString().split("T")[0];
+    const limite = new Date();
+    limite.setDate(limite.getDate() + 7);
+    document.getElementById("medidaFechaLimite").value = limite.toISOString().split("T")[0];
+    abrirModal("modalMedida");
+}
+
+function abrirModalSubsanacion(medidaId) {
+    document.getElementById("subsanacionMedidaId").value = medidaId;
+    abrirModal("modalSubsanacion");
+}
+
+function abrirModalEvidencia() {
+    abrirModal("modalEvidencia");
+}
+
+function abrirModalActa() {
+    abrirModal("modalActa");
+}
+
+async function aprobarActa() {
+    if (!confirm("¿Está seguro de aprobar y emitir formalmente el acta? Se generará la firma hash SHA-256 y el código QR de verificación pública.")) return;
+    try {
+        await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/acta/aprobar`, { method: "POST" });
+        mostrarToast("Acta aprobada y emitida exitosamente", "success");
+        setTimeout(() => window.location.reload(), 500);
+    } catch (e) {}
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Submit Hallazgo
+    const formH = document.getElementById("formHallazgo");
+    if (formH) {
+        formH.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const payload = {
+                categoria: document.getElementById("halCategoria").value.trim(),
+                gravedadTecnica: document.getElementById("halGravedad").value,
+                descripcion: document.getElementById("halDescripcion").value.trim()
+            };
+            try {
+                await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/hallazgos`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                mostrarToast("Hallazgo registrado con éxito", "success");
+                cerrarModal("modalHallazgo");
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {}
+        });
+    }
+
+    // Submit Evidencia
+    const formEv = document.getElementById("formEvidencia");
+    if (formEv) {
+        formEv.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById("evArchivo");
+            if (!fileInput.files || fileInput.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append("archivo", fileInput.files[0]);
+            formData.append("descripcion", document.getElementById("evDescripcion").value.trim());
+
+            try {
+                await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/evidencias`, {
+                    method: "POST",
+                    body: formData
+                });
+                mostrarToast("Evidencia cargada con éxito", "success");
+                cerrarModal("modalEvidencia");
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {}
+        });
+    }
+
+    // Submit Acta
+    const formActa = document.getElementById("formActa");
+    if (formActa) {
+        formActa.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const payload = {
+                resumen: document.getElementById("actaResumen").value.trim(),
+                conclusiones: document.getElementById("actaConclusiones").value.trim(),
+                recomendaciones: document.getElementById("actaRecomendaciones").value.trim()
+            };
+            try {
+                await fetchApi(`/api/mercados/inspecciones/${inspeccionId}/acta`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                mostrarToast("Borrador de acta guardado con éxito", "success");
+                cerrarModal("modalActa");
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {}
+        });
+    }
+
+    // Submit Medida Correctiva
+    const formM = document.getElementById("formMedida");
+    if (formM) {
+        formM.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const hallazgoId = document.getElementById("medidaHallazgoId").value;
+            const payload = {
+                descripcion: document.getElementById("medidaDescripcion").value.trim(),
+                tipoResponsable: document.getElementById("medidaTipoResponsable").value,
+                fechaAsignacion: document.getElementById("medidaFechaAsignacion").value,
+                fechaLimite: document.getElementById("medidaFechaLimite").value,
+                observaciones: document.getElementById("medidaObservaciones").value.trim()
+            };
+            try {
+                await fetchApi(`/api/mercados/medidas-correctivas/${hallazgoId}/crear`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                mostrarToast("Medida correctiva registrada con éxito", "success");
+                cerrarModal("modalMedida");
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {}
+        });
+    }
+
+    // Submit Subsanación
+    const formS = document.getElementById("formSubsanacion");
+    if (formS) {
+        formS.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const medidaId = document.getElementById("subsanacionMedidaId").value;
+            const payload = {
+                descripcionSubsanacion: document.getElementById("subsanacionDescripcion").value.trim()
+            };
+            try {
+                await fetchApi(`/api/mercados/medidas-correctivas/${medidaId}/subsanaciones`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                mostrarToast("Subsanación registrada con éxito", "success");
+                cerrarModal("modalSubsanacion");
+                setTimeout(() => window.location.reload(), 500);
+            } catch (err) {}
+        });
+    }
+});
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Seguimiento y Recorrido de Expediente — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Navegación -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">Mesa de Partes</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Seguimiento 360°</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="git-commit" class="w-6 h-6 text-blue-400"></i>
+                Seguimiento: <span class="font-mono text-blue-400" th:text="${expediente.numeroExpediente}">MPV-2026-00001</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5 font-medium" th:text="${expediente.asunto}">Asunto del Expediente</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="abrirModalNuevaActuacion()"
+                    class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-sm">
+                <i data-lucide="file-plus" class="w-4 h-4"></i>
+                Registrar Actuación
+            </button>
+            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id})}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                Ficha Principal
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Bandeja
+            </a>
+        </div>
+    </div>
+
+    <!-- Banner de Control de Plazos Administrativos (LPAG N° 27444) -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-5 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Cómputo de Plazos Administrativos</span>
+                    <span th:if="${plazo.estadoPlazo == 'EN_PLAZO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">EN PLAZO</span>
+                    <span th:if="${plazo.estadoPlazo == 'PROXIMO_VENCIMIENTO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">PRÓXIMO A VENCER</span>
+                    <span th:if="${plazo.estadoPlazo == 'VENCIDO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">VENCIDO</span>
+                    <span th:if="${plazo.estadoPlazo == 'SUSPENDIDO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">SUSPENDIDO (POR SUBSANACIÓN)</span>
+                    <span th:if="${plazo.estadoPlazo == 'SIN_PLAZO_CONFIGURADO'}" class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-700/50 text-slate-400">SIN PLAZO FIJADO</span>
+                </div>
+                <p class="text-xs text-slate-400" th:if="${plazo.plazoDias != null}">
+                    Plazo establecido: <strong class="text-slate-200" th:text="${plazo.plazoDias + ' ' + plazo.unidadPlazo}">30 DIAS_HABILES</strong> |
+                    Transcurridos: <strong class="text-slate-200" th:text="${plazo.diasTranscurridos + ' días'}">5 días</strong> |
+                    Restantes: <strong class="text-slate-200" th:text="${plazo.diasRestantes + ' días'}">25 días</strong>
+                </p>
+                <p class="text-[11px] text-slate-500" th:if="${plazo.fechaLimite != null}">
+                    Fecha límite estimada: <span class="font-mono text-slate-300" th:text="${#temporals.format(plazo.fechaLimite, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                </p>
+            </div>
+            <div class="w-full md:w-64 space-y-1.5" th:if="${plazo.plazoDias != null}">
+                <div class="flex justify-between text-[11px] text-slate-400">
+                    <span>Avance temporal</span>
+                    <span class="font-bold text-slate-200" th:text="${plazo.porcentajeTranscurrido}">20%</span>
+                </div>
+                <div class="w-full bg-[#101827] rounded-full h-2.5 overflow-hidden border border-slate-700">
+                    <div class="h-2.5 rounded-full transition-all duration-500"
+                         th:classappend="${plazo.estadoPlazo == 'VENCIDO'} ? 'bg-rose-500' : (${plazo.estadoPlazo == 'PROXIMO_VENCIMIENTO'} ? 'bg-amber-500' : 'bg-blue-500')"
+                         th:style="'width: ' + ${plazo.porcentajeTranscurrido}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa de Recorrido Administrativo (Flujo entre Oficinas) -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-6 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <i data-lucide="milestone" class="w-4 h-4 text-blue-400"></i>
+            Mapa del Recorrido Administrativo Municipal
+        </h2>
+
+        <!-- Componente Visual del Recorrido -->
+        <div class="relative">
+            <div class="flex flex-col md:flex-row items-stretch justify-between gap-4 relative">
+                <div th:each="nodo, iter : ${recorrido}"
+                     class="flex-1 flex flex-col items-center text-center p-4 rounded-xl border relative"
+                     th:classappend="${nodo.actual} ? 'bg-blue-600/10 border-blue-500/50 shadow-md ring-1 ring-blue-500/30' : 'bg-[#101827] border-slate-700/70'">
+
+                    <!-- Indicador numérico de estación -->
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-2 shadow"
+                         th:classappend="${nodo.actual} ? 'bg-blue-600 text-white ring-4 ring-blue-500/20' : 'bg-slate-700 text-slate-300'"
+                         th:text="${nodo.orden}">1</div>
+
+                    <h3 class="text-xs font-bold text-slate-100" th:text="${nodo.oficinaNombre}">Oficina</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5" th:text="${nodo.accion}">RECEPCIONADO</p>
+
+                    <div class="mt-3 pt-2 border-t border-slate-800 w-full text-[10px] space-y-0.5">
+                        <p class="text-slate-400">
+                            Ingreso: <span class="text-slate-300 font-mono" th:text="${#temporals.format(nodo.fechaEntrada, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        </p>
+                        <p th:if="${nodo.fechaSalida != null}" class="text-slate-500">
+                            Salida: <span class="text-slate-400 font-mono" th:text="${#temporals.format(nodo.fechaSalida, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        </p>
+                        <p th:if="${nodo.responsableNombre != null}" class="text-slate-400">
+                            Atendido por: <span class="text-blue-300 font-medium" th:text="${nodo.responsableNombre}">Usuario</span>
+                        </p>
+                    </div>
+
+                    <span th:if="${nodo.actual}"
+                          class="mt-2 px-2 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 animate-pulse">
+                        UBICACIÓN ACTUAL
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actuaciones Administrativas Internas -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-700/70 flex items-center justify-between">
+            <div>
+                <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                    Actuaciones e Informes Administrativos
+                </h2>
+                <p class="text-[11px] text-slate-400 mt-0.5">Dictámenes, evaluaciones, notas internas y recaudos emitidos por los servidores.</p>
+            </div>
+            <button onclick="abrirModalNuevaActuacion()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-medium transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                Nueva Actuación
+            </button>
+        </div>
+
+        <div class="divide-y divide-slate-700/50">
+            <div th:if="${actuaciones.empty}" class="py-8 text-center text-slate-500 text-xs">
+                <i data-lucide="file-question" class="w-8 h-8 mx-auto mb-1 opacity-40"></i>
+                No se han registrado actuaciones internas en este expediente.
+            </div>
+
+            <div th:each="act : ${actuaciones}" class="p-4 hover:bg-slate-800/30 transition-colors space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" th:text="${act.tipo}">INFORME</span>
+                        <span class="text-xs font-bold text-slate-200" th:text="${act.oficinaNombre}">Oficina</span>
+                        <span class="text-slate-500 text-xs">•</span>
+                        <span class="text-xs text-slate-400" th:text="${act.usuarioResponsableNombre}">Servidor</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span th:if="${act.visibilidad.name() == 'INTERNA'}" class="px-2 py-0.5 rounded text-[9px] font-semibold bg-slate-700 text-slate-400">INTERNA</span>
+                        <span th:if="${act.visibilidad.name() == 'CIUDADANO'}" class="px-2 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/20 text-emerald-300">VISIBLE A CIUDADANO</span>
+                        <span class="text-[11px] text-slate-400 font-mono" th:text="${#temporals.format(act.fechaActuacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 whitespace-pre-line pl-1" th:text="${act.descripcion}">Detalle de la actuación</p>
+
+                <!-- Documentos anexos de la actuación -->
+                <div th:if="${act.documentos != null && !act.documentos.empty}" class="pt-2 flex flex-wrap gap-2">
+                    <div th:each="doc : ${act.documentos}"
+                         class="inline-flex items-center gap-2 px-2.5 py-1 bg-[#101827] border border-slate-700/80 rounded-lg text-xs text-slate-300">
+                        <i data-lucide="file" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span class="truncate max-w-xs font-medium" th:text="${doc.nombreOriginal}">archivo.pdf</span>
+                        <span class="text-[10px] text-slate-500" th:text="${(doc.tamanoBytes / 1024) + ' KB'}">10 KB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Línea de Tiempo Integral (Timeline) -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-6 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-5 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+            Trazabilidad e Historial Inmutable de Movimientos
+        </h2>
+
+        <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-700">
+            <div th:each="h : ${timeline}" class="relative group">
+                <div class="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full border-2 border-[#202c3d] bg-blue-500 ring-4 ring-[#202c3d]"></div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-200" th:text="${h.accion}">PRESENTACION</span>
+                        <span class="text-slate-500 text-xs">•</span>
+                        <span class="text-[11px] text-slate-400" th:text="${!#strings.isEmpty(h.oficinaNombre) ? h.oficinaNombre : 'Mesa de Partes'}">Oficina</span>
+                        <span class="text-slate-500 text-xs">•</span>
+                        <span class="text-[11px] text-slate-400 font-mono" th:text="${h.fechaMovimiento != null ? #temporals.format(h.fechaMovimiento, 'dd/MM/yyyy HH:mm:ss') : '-'}">Fecha</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1" th:text="${h.observacion}">Detalle</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5" th:if="${!#strings.isEmpty(h.usuarioResponsableNombre)}" th:text="${'Operador: ' + h.usuarioResponsableNombre}">Usuario</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Actuación Interna -->
+    <div id="modalNuevaActuacion" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="file-plus" class="w-5 h-5 text-blue-400"></i>
+                    Registrar Actuación Administrativa
+                </h3>
+                <button onclick="cerrarModalNuevaActuacion()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Actuación <span class="text-rose-400">*</span>:</label>
+                <select id="actTipo" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option th:each="t : ${tiposActuacion}" th:value="${t.name()}" th:text="${t.name()}">INFORME</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Visibilidad:</label>
+                <select id="actVisibilidad" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="INTERNA" selected>INTERNA (Solo personal de la municipalidad)</option>
+                    <option value="CIUDADANO">CIUDADANO (Visible en consulta del administrado)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Descripción y Fundamentación <span class="text-rose-400">*</span>:</label>
+                <textarea id="actDescripcion" rows="4" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Redacte el contenido, dictamen o notas de la actuación..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button onclick="cerrarModalNuevaActuacion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button id="btnGuardarActuacion" onclick="guardarActuacion()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Registrar Actuación
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    const expedienteId = /*[[${expediente.id}]]*/ 1;
+
+    function abrirModalNuevaActuacion() {
+        document.getElementById('actDescripcion').value = '';
+        document.getElementById('modalNuevaActuacion').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalNuevaActuacion() {
+        document.getElementById('modalNuevaActuacion').classList.add('hidden');
+    }
+
+    async function guardarActuacion() {
+        const desc = document.getElementById('actDescripcion').value.trim();
+        const tipo = document.getElementById('actTipo').value;
+        const vis = document.getElementById('actVisibilidad').value;
+
+        if (!desc) {
+            alert('La descripción de la actuación es obligatoria.');
+            return;
+        }
+
+        const btn = document.getElementById('btnGuardarActuacion');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(`/api/mesa-partes/expedientes/${expedienteId}/actuaciones`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                body: JSON.stringify({
+                    tipo: tipo,
+                    descripcion: desc,
+                    visibilidad: vis,
+                    documentoIds: []
+                })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                alert('Actuación registrada satisfactoriamente.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo guardar la actuación.'));
+                btn.disabled = false;
+                btn.textContent = 'Registrar Actuación';
+            }
+        } catch (e) {
+            alert('Error de conexión al registrar la actuación.');
+            btn.disabled = false;
+            btn.textContent = 'Registrar Actuación';
+        }
+    }
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,85 @@
+/* ==========================================================================
+   SIGM-QUINUA — ESTRUCTURA ADMINISTRATIVA (ADMIN SHELL + SIDEBAR + TOPBAR)
+   ========================================================================== */
+
+body.admin-body {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-main);
+    color: var(--text-theme-light);
+}
+
+.admin-shell {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: calc(100vh - var(--topbar-height));
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+#mainSidebar {
+    height: calc(100vh - var(--topbar-height));
+    min-height: calc(100vh - var(--topbar-height));
+    max-height: calc(100vh - var(--topbar-height));
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-theme);
+}
+
+@media (max-width: 1023px) {
+    #mainSidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100vh;
+        min-height: 100vh;
+        max-height: 100vh;
+        z-index: 40;
+    }
+}
+
+#mainContentArea {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: calc(100vh - var(--topbar-height));
+    overflow-y: auto;
+}
+
+/* Comportamiento del Sidebar Administrativo Colapsable */
+.sidebar-expanded {
+    width: var(--sidebar-width-expanded);
+}
+.sidebar-collapsed {
+    width: var(--sidebar-width-collapsed);
+}
+.sidebar-collapsed .sidebar-text,
+.sidebar-collapsed .sidebar-header-text,
+.sidebar-collapsed .sidebar-badge,
+.sidebar-collapsed .sidebar-submenu {
+    display: none !important;
+}
+.sidebar-collapsed .sidebar-icon-center {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Elemento de navegación lateral */
+.nav-item {
+    position: relative;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+.nav-item-active {
+    background-color: rgba(29, 78, 216, 0.24);
+    color: #ffffff;
+    font-weight: 600;
+    border-left: 3px solid var(--sigm-blue-500);
+}
+

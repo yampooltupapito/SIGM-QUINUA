@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Cargos Municipales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="badge-check" class="w-5 h-5 text-blue-500"></i>
+                <span>Catálogo Dinámico de Cargos Institucionales</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Definición de posiciones y niveles jerárquicos del personal de la Municipalidad de Quinua.</p>
+        </div>
+        <div>
+            <button onclick="abrirModal('modalNuevoCargo')" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Cargo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+        <form th:action="@{/admin/cargos}" method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar Cargo por código o nombre</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" name="term" th:value="${term}" placeholder="Ej. GERENTE, SECRETARIO, SERENO, CAJERO..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors">
+                    Buscar
+                </button>
+                <a th:href="@{/admin/cargos}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700/60 uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Nombre del Cargo</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3 text-center">Nivel</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                    <tr th:if="${cargosPage.content.empty}">
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                            <i data-lucide="badge-alert" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            <p>No se encontraron cargos registrados.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="c : ${cargosPage.content}" class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-blue-400" th:text="${c.codigo}">GERENTE_MUNICIPAL</td>
+                        <td class="px-4 py-3 font-semibold text-slate-100" th:text="${c.nombre}">Gerente Municipal</td>
+                        <td class="px-4 py-3 text-slate-400" th:text="${c.descripcion != null ? c.descripcion : 'Sin descripción'}">Máxima autoridad ejecutiva</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold" th:text="${c.nivelJerarquico}">1</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span th:if="${c.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-emerald-400 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Activo</span>
+                            </span>
+                            <span th:unless="${c.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-slate-500 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                <span>Inactivo</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button th:data-id="${c.id}" onclick="abrirEditarCargo(this.dataset.id)" title="Editar Cargo"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button th:if="${c.estado == 'ACTIVO'}" th:data-id="${c.id}" onclick="cambiarEstadoCargo(this.dataset.id, 'desactivar')" title="Desactivar"
+                                        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-right" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                                <button th:unless="${c.estado == 'ACTIVO'}" th:data-id="${c.id}" onclick="cambiarEstadoCargo(this.dataset.id, 'activar')" title="Activar"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-left" class="w-4 h-4 text-slate-500"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO CARGO -->
+    <div id="modalNuevoCargo" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="badge-plus" class="w-4 h-4 text-blue-500"></i>
+                    <span>Registrar Nuevo Cargo</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevoCargo')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formNuevoCargo" data-no-loading="true" onsubmit="guardarNuevoCargo(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Código Único *</label>
+                    <input type="text" id="nc_codigo" required placeholder="Ej. FISCALIZADOR_TRIBUTARIO"
+                           oninput="this.value = this.value.toUpperCase().replace(/\s+/g, '_')"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono uppercase">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Solo letras mayúsculas, números y guiones bajos (_).</span>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre del Cargo *</label>
+                    <input type="text" id="nc_nombre" required placeholder="Ej. Fiscalizador Tributario"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nivel Jerárquico *</label>
+                    <input type="number" id="nc_nivel" required min="1" max="10" value="1"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="nc_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalNuevoCargo')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarNuevoCargo" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cargo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR CARGO -->
+    <div id="modalEditarCargo" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Editar Cargo</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEditarCargo')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formEditarCargo" data-no-loading="true" onsubmit="guardarEdicionCargo(event)" class="p-6 space-y-4">
+                <input type="hidden" id="ec_id">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Código (No editable)</label>
+                    <input type="text" id="ec_codigo" disabled class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre *</label>
+                    <input type="text" id="ec_nombre" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nivel Jerárquico *</label>
+                    <input type="number" id="ec_nivel" required min="1" max="10" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="ec_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalEditarCargo')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarEdicionCargo" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    async function guardarNuevoCargo(e) {
+        e.preventDefault();
+        const codigoNormalizado = document.getElementById("nc_codigo").value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+        document.getElementById("nc_codigo").value = codigoNormalizado;
+
+        const body = {
+            codigo: codigoNormalizado,
+            nombre: document.getElementById("nc_nombre").value.trim(),
+            nivelJerarquico: parseInt(document.getElementById("nc_nivel").value, 10) || 1,
+            descripcion: document.getElementById("nc_descripcion").value.trim() || null
+        };
+
+        const btn = document.getElementById("btnGuardarNuevoCargo");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/cargos", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Cargo registrado exitosamente.", "success");
+            cerrarModal("modalNuevoCargo");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Cargo";
+            }
+        }
+    }
+
+    async function abrirEditarCargo(id) {
+        try {
+            const res = await fetchApi("/api/admin/cargos/" + id);
+            const c = res.data;
+            document.getElementById("ec_id").value = c.id;
+            document.getElementById("ec_codigo").value = c.codigo || "";
+            document.getElementById("ec_nombre").value = c.nombre || "";
+            document.getElementById("ec_nivel").value = c.nivelJerarquico || 1;
+            document.getElementById("ec_descripcion").value = c.descripcion || "";
+            abrirModal("modalEditarCargo");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarEdicionCargo(e) {
+        e.preventDefault();
+        const id = document.getElementById("ec_id").value;
+        const body = {
+            nombre: document.getElementById("ec_nombre").value.trim(),
+            nivelJerarquico: parseInt(document.getElementById("ec_nivel").value, 10) || 1,
+            descripcion: document.getElementById("ec_descripcion").value.trim() || null
+        };
+
+        const btn = document.getElementById("btnGuardarEdicionCargo");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/cargos/" + id, {
+                method: "PUT",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Cargo actualizado correctamente.", "success");
+            cerrarModal("modalEditarCargo");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Cambios";
+            }
+        }
+    }
+
+    async function cambiarEstadoCargo(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} este cargo?`)) return;
+        try {
+            await fetchApi(`/api/admin/cargos/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Cargo ${accion === "activar" ? "activado" : "desactivado"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    window.guardarNuevoCargo = guardarNuevoCargo;
+    window.abrirEditarCargo = abrirEditarCargo;
+    window.guardarEdicionCargo = guardarEdicionCargo;
+    window.cambiarEstadoCargo = cambiarEstadoCargo;
+</script>
+</th:block>
+</body>
+</html>

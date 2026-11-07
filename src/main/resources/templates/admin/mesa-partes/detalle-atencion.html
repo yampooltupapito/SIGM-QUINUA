@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Expediente ' + ${detalle.numeroExpediente} + ' — Atención Integral — SIGM-QUINUA'">Atención de Expediente — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con estado y navegación -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <a th:href="@{/dashboard/mesa-partes/atencion}" class="text-xs text-slate-400 hover:text-slate-200">Atención de Expedientes</a>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-blue-400 font-semibold" th:text="${detalle.numeroExpediente}">EXP-2026-0001</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="folder-check" class="w-6 h-6 text-blue-500"></i>
+                Gestión Integral y Atención del Expediente
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="${detalle.asunto}">Asunto del trámite</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{'/dashboard/mesa-partes/expedientes/' + ${detalle.expedienteId} + '/seguimiento'}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 transition-colors">
+                <i data-lucide="milestone" class="w-4 h-4"></i>
+                Seguimiento 360°
+            </a>
+            <button th:if="${detalle.estadoActual.name() == 'RECIBIDO' or detalle.estadoActual.name() == 'DERIVADO'}"
+                    onclick="abrirModalIniciar()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                Iniciar Atención
+            </button>
+            <button th:if="${detalle.estadoActual.name() == 'RESUELTO' or detalle.estadoActual.name() == 'NOTIFICADO'}"
+                    onclick="abrirModalCierre()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                Cerrar Expediente
+            </button>
+            <button th:if="${detalle.cierre != null and detalle.estadoActual.name() != 'ARCHIVADO'}"
+                    onclick="abrirModalArchivo()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+                Archivar
+            </button>
+            <button th:if="${detalle.estadoActual.name() == 'ARCHIVADO' or detalle.estadoActual.name() == 'RESUELTO'}"
+                    onclick="abrirModalReapertura()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/30 transition-colors">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Reabrir Expediente
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de Estado y Plazos -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4">
+            <span class="text-[10px] font-semibold uppercase text-slate-400">Estado Actual</span>
+            <div class="mt-1 flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                      th:text="${detalle.estadoActual}">EN_ATENCION</span>
+                <span th:if="${detalle.reabierto}" class="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">REABIERTO</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block" th:if="${detalle.resultadoFinal != null}" th:text="'Resultado: ' + ${detalle.resultadoFinal}">Resultado: FAVORABLE</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4">
+            <span class="text-[10px] font-semibold uppercase text-slate-400">Administrado(a)</span>
+            <div class="mt-1 text-sm font-bold text-slate-100 truncate" th:text="${detalle.solicitanteNombre}">Juan Pérez</div>
+            <span class="text-[10px] text-slate-400" th:text="'Documento: ' + ${detalle.solicitanteDocumento}">DNI 12345678</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4">
+            <span class="text-[10px] font-semibold uppercase text-slate-400">Dependencia Responsable</span>
+            <div class="mt-1 text-xs font-bold text-slate-200 truncate" th:text="${detalle.oficinaResponsableNombre}">Gerencia de Desarrollo Urbano</div>
+            <span class="text-[10px] text-blue-400" th:text="'Asignado a: ' + ${detalle.responsableActualNombre}">Ing. Carlos</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4">
+            <span class="text-[10px] font-semibold uppercase text-slate-400">Cómputo LPAG (30 días hábiles)</span>
+            <div class="mt-1">
+                <span th:if="${detalle.diasRestantes != null}"
+                      th:class="${detalle.vencido} ? 'px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30' : 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'"
+                      th:text="${detalle.vencido} ? 'PLAZO VENCIDO' : ${detalle.diasRestantes} + ' días hábiles restantes'">
+                    15 días restantes
+                </span>
+                <span th:unless="${detalle.diasRestantes != null}" class="text-xs text-slate-400">Plazo Ordinario</span>
+            </div>
+            <span class="text-[10px] text-slate-500 mt-1 block" th:if="${detalle.fechaLimite != null}" th:text="'Vence: ' + ${#temporals.format(detalle.fechaLimite, 'dd/MM/yyyy')}">Vence: 20/02/2026</span>
+        </div>
+    </div>
+
+    <!-- Pestañas de Trabajo -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl shadow-sm overflow-hidden">
+        <!-- Barra de pestañas -->
+        <div class="flex items-center border-b border-slate-700/60 overflow-x-auto bg-slate-900/40">
+            <button onclick="cambiarPestana('tab-evaluaciones')" id="btn-tab-evaluaciones"
+                    class="pestana-btn px-4 py-3 text-xs font-semibold border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                1. Evaluaciones Técnicas (<span th:text="${#lists.size(detalle.evaluaciones)}">0</span>)
+            </button>
+            <button onclick="cambiarPestana('tab-propuestas')" id="btn-tab-propuestas"
+                    class="pestana-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                2. Propuestas de Decisión (<span th:text="${#lists.size(detalle.propuestas)}">0</span>)
+            </button>
+            <button onclick="cambiarPestana('tab-decisiones')" id="btn-tab-decisiones"
+                    class="pestana-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="stamp" class="w-4 h-4"></i>
+                3. Actos Formales Emitidos (<span th:text="${#lists.size(detalle.decisiones)}">0</span>)
+            </button>
+            <button onclick="cambiarPestana('tab-notificaciones')" id="btn-tab-notificaciones"
+                    class="pestana-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                4. Notificaciones LPAG (<span th:text="${#lists.size(detalle.notificaciones)}">0</span>)
+            </button>
+            <button onclick="cambiarPestana('tab-cierre')" id="btn-tab-cierre"
+                    class="pestana-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+                5. Cierre y Archivo
+            </button>
+        </div>
+
+        <!-- Contenido Pestaña 1: Evaluaciones Técnicas -->
+        <div id="tab-evaluaciones" class="p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100">Evaluaciones e Informes Técnicos / Legales</h3>
+                    <p class="text-xs text-slate-400">Análisis administrativo y dictámenes previos a la formulación de propuesta.</p>
+                </div>
+                <button onclick="abrirModalCrearEvaluacion()"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Nueva Evaluación
+                </button>
+            </div>
+
+            <div th:if="${#lists.isEmpty(detalle.evaluaciones)}" class="text-center py-10 text-slate-400">
+                <i data-lucide="clipboard-x" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-xs">No se han registrado evaluaciones técnicas en este expediente.</p>
+            </div>
+
+            <div class="space-y-3" th:unless="${#lists.isEmpty(detalle.evaluaciones)}">
+                <div th:each="eval : ${detalle.evaluaciones}" class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                      th:text="${eval.tipoEvaluacion}">TECNICA</span>
+                                <span th:class="${eval.estado.name() == 'FINALIZADA'} ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                                      th:text="${eval.estado}">BORRADOR</span>
+                                <span class="text-[10px] text-slate-500" th:text="${#temporals.format(eval.fechaEvaluacion, 'dd/MM/yyyy HH:mm')}">15/01/2026</span>
+                            </div>
+                            <h4 class="text-xs font-bold text-slate-200 mt-2" th:text="'Evaluador: ' + ${eval.usuarioEvaluadorNombre}">Ing. Carlos Mendoza</h4>
+                        </div>
+                        <div class="flex items-center gap-2" th:if="${eval.estado.name() == 'BORRADOR'}">
+                            <button th:data-id="${eval.id}"
+                                    onclick="abrirModalAdjuntarDoc(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors flex items-center gap-1">
+                                <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Adjuntar Informe
+                            </button>
+                            <button th:data-id="${eval.id}"
+                                    onclick="finalizarEvaluacion(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> Finalizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-xs text-slate-300 space-y-2">
+                        <div>
+                            <strong class="text-slate-400">Descripción:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${eval.descripcion}">Descripción del análisis</p>
+                        </div>
+                        <div>
+                            <strong class="text-slate-400">Conclusiones:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${eval.conclusiones}">Conclusiones obtenidas</p>
+                        </div>
+                        <div th:if="${eval.recomendacion != null}">
+                            <strong class="text-slate-400">Recomendaciones:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${eval.recomendacion}">Recomendación técnica</p>
+                        </div>
+                    </div>
+
+                    <!-- Documentos adjuntos a la evaluación -->
+                    <div th:if="${not #lists.isEmpty(eval.documentos)}" class="mt-3 pt-3 border-t border-slate-800">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase">Documentos Adjuntos</span>
+                        <div class="mt-1 flex flex-wrap gap-2">
+                            <a th:each="doc : ${eval.documentos}"
+                               th:href="@{'/api/documentos/' + ${doc.documentoId} + '/descargar'}" target="_blank"
+                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 text-slate-200 hover:bg-slate-700 text-[11px] border border-slate-700 transition-colors">
+                                <i data-lucide="file" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span th:text="${doc.nombreOriginal}">informe-tecnico.pdf</span>
+                                <span class="text-[9px] text-slate-500 font-mono" th:text="'(SHA: ' + ${#strings.substring(doc.hashSha256, 0, 8)} + '...)'"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 2: Propuestas de Decisión -->
+        <div id="tab-propuestas" class="p-5 space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100">Proyectos y Propuestas de Decisión</h3>
+                    <p class="text-xs text-slate-400">Formulación técnica del sentido de la decisión (Favorable, Desfavorable, etc.) para visado del despacho.</p>
+                </div>
+                <button onclick="abrirModalCrearPropuesta()"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Elaborar Propuesta
+                </button>
+            </div>
+
+            <div th:if="${#lists.isEmpty(detalle.propuestas)}" class="text-center py-10 text-slate-400">
+                <i data-lucide="file-x" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-xs">No se han registrado propuestas de decisión en este expediente.</p>
+            </div>
+
+            <div class="space-y-3" th:unless="${#lists.isEmpty(detalle.propuestas)}">
+                <div th:each="prop : ${detalle.propuestas}" class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                                      th:text="${prop.tipoDecision}">RESOLUCION_SUBGERENCIAL</span>
+                                <span th:class="${prop.resultadoPropuesto.name() == 'FAVORABLE'} ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                                      th:text="'Sentido: ' + ${prop.resultadoPropuesto}">Sentido: FAVORABLE</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"
+                                      th:text="${prop.estado}">BORRADOR</span>
+                            </div>
+                            <h4 class="text-xs font-bold text-slate-200 mt-2" th:text="'Proyectista: ' + ${prop.usuarioElaboradorNombre}">Ing. Carlos Mendoza</h4>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button th:if="${prop.estado.name() == 'BORRADOR' or prop.estado.name() == 'OBSERVADA'}"
+                                    th:data-id="${prop.id}"
+                                    onclick="enviarPropuestaRevision(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Elevar a Revisión
+                            </button>
+                            <button th:if="${prop.estado.name() == 'APROBADA_INTERNAMENTE'}"
+                                    th:data-id="${prop.id}"
+                                    th:data-tipo="${prop.tipoDecision}"
+                                    th:data-resultado="${prop.resultadoPropuesto}"
+                                    onclick="abrirModalFormalizarDecision(this.getAttribute('data-id'), this.getAttribute('data-tipo'), this.getAttribute('data-resultado'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="stamp" class="w-3.5 h-3.5"></i> Emitir Acto Formal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-xs text-slate-300 space-y-2">
+                        <div>
+                            <strong class="text-slate-400">Fundamentación Legal y Fáctica:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${prop.fundamento}">Fundamentación</p>
+                        </div>
+                        <div>
+                            <strong class="text-slate-400">Parte Dispositiva Propuesta:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${prop.descripcion}">Parte resolutiva</p>
+                        </div>
+                    </div>
+
+                    <!-- Revisiones registradas -->
+                    <div th:if="${not #lists.isEmpty(prop.revisiones)}" class="mt-3 pt-3 border-t border-slate-800 space-y-1.5">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase">Historial de Revisiones</span>
+                        <div th:each="rev : ${prop.revisiones}" class="text-[11px] bg-slate-950/40 p-2 rounded border border-slate-800/80">
+                            <div class="flex items-center justify-between text-slate-400 text-[10px]">
+                                <span th:text="${rev.usuarioRevisorNombre} + ' (' + ${rev.oficinaNombre} + ')'">Jefe de Oficina</span>
+                                <span th:text="${#temporals.format(rev.fechaRevision, 'dd/MM/yyyy HH:mm')}">16/01/2026</span>
+                            </div>
+                            <div class="mt-1 font-semibold" th:class="${rev.accion.name() == 'APROBADA_INTERNAMENTE'} ? 'text-emerald-400' : 'text-amber-400'" th:text="${rev.accion}">APROBADA</div>
+                            <p class="text-slate-300 text-[10px] mt-0.5" th:text="${rev.observaciones}">Observación de visado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 3: Actos Formales Emitidos -->
+        <div id="tab-decisiones" class="p-5 space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100">Decisiones y Resoluciones Formales Emitidas</h3>
+                    <p class="text-xs text-slate-400">Actos administrativos formalmente expedidos por la autoridad municipal competente.</p>
+                </div>
+                <button onclick="abrirModalRegistrarDecisionDirecta()"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Registrar Decisión
+                </button>
+            </div>
+
+            <div th:if="${#lists.isEmpty(detalle.decisiones)}" class="text-center py-10 text-slate-400">
+                <i data-lucide="award" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-xs">No se registran resoluciones o decisiones emitidas para este expediente.</p>
+            </div>
+
+            <div class="space-y-3" th:unless="${#lists.isEmpty(detalle.decisiones)}">
+                <div th:each="dec : ${detalle.decisiones}" class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                      th:text="${dec.tipoDecision}">RESOLUCION</span>
+                                <span class="font-bold text-sm text-slate-100" th:text="${dec.numeroDocumento}">RES-0001-2026-MDQ/GDU</span>
+                                <span th:class="${dec.estadoEmision.name() == 'EMITIDO'} ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                                      th:text="${dec.estadoEmision}">BORRADOR</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1" th:text="'Autoridad: ' + ${dec.autoridadCompetenteNombre} + ' (' + ${dec.cargoAutoridad} + ')'">Gerente</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button th:if="${dec.documentoId == null}"
+                                    th:data-id="${dec.id}"
+                                    onclick="generarPdfDecision(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Generar PDF Oficial
+                            </button>
+                            <button th:if="${dec.estadoEmision.name() != 'EMITIDO' and dec.documentoId != null}"
+                                    th:data-id="${dec.id}"
+                                    th:data-numero="${dec.numeroDocumento}"
+                                    onclick="abrirModalRegistrarEmision(this.getAttribute('data-id'), this.getAttribute('data-numero'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="check-check" class="w-3.5 h-3.5"></i> Registrar Emisión Formal
+                            </button>
+                            <a th:href="@{'/dashboard/mesa-partes/decisiones/' + ${dec.id} + '/descargar-pdf'}" target="_blank"
+                                class="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors flex items-center gap-1">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Descargar PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-xs text-slate-300 space-y-1.5">
+                        <div>
+                            <strong class="text-slate-400">Resultado:</strong>
+                            <span class="font-bold text-emerald-400 ml-1" th:text="${dec.resultado}">FAVORABLE</span>
+                        </div>
+                        <div>
+                            <strong class="text-slate-400">Fundamentación:</strong>
+                            <p class="whitespace-pre-line mt-0.5 text-slate-200" th:text="${dec.fundamento}">Fundamentación</p>
+                        </div>
+                        <div th:if="${dec.evidenciaFormalizacion != null}">
+                            <strong class="text-slate-400">Evidencia de Formalización:</strong>
+                            <p class="text-slate-300 text-[10px]" th:text="${dec.evidenciaFormalizacion}">Cotejo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 4: Notificaciones LPAG -->
+        <div id="tab-notificaciones" class="p-5 space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100">Comunicaciones y Notificaciones Administrativas</h3>
+                    <p class="text-xs text-slate-400">Gestión de acuses, cédulas y constancias de notificación válida conforme a Ley 27444.</p>
+                </div>
+                <button onclick="abrirModalRegistrarNotificacion()"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Registrar Cédula Notificación
+                </button>
+            </div>
+
+            <div th:if="${#lists.isEmpty(detalle.notificaciones)}" class="text-center py-10 text-slate-400">
+                <i data-lucide="bell-off" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-xs">No se han registrado notificaciones para este expediente.</p>
+            </div>
+
+            <div class="space-y-3" th:unless="${#lists.isEmpty(detalle.notificaciones)}">
+                <div th:each="notif : ${detalle.notificaciones}" class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                      th:text="${notif.medioNotificacion}">CASILLA_ELECTRONICA</span>
+                                <span th:class="${notif.esLegalmenteValida} ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                                      th:text="${notif.esLegalmenteValida} ? 'NOTIFICACIÓN VÁLIDA' : ${notif.estadoNotificacion}">PENDIENTE</span>
+                            </div>
+                            <h4 class="text-xs font-bold text-slate-200 mt-2" th:text="'Destinatario: ' + ${notif.destinatarioNombre}">Juan Pérez</h4>
+                            <div class="text-[10px] text-slate-400" th:text="'Documento Notificado: ' + ${notif.numeroDocumentoDecision}">RES-0001-2026</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button th:if="${not notif.esLegalmenteValida}"
+                                    th:data-id="${notif.id}"
+                                    onclick="registrarIntentoEnvio(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors flex items-center gap-1">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Registrar Intento
+                            </button>
+                            <button th:if="${not notif.esLegalmenteValida}"
+                                    th:data-id="${notif.id}"
+                                    onclick="abrirModalAcreditarNotificacion(this.getAttribute('data-id'))"
+                                    class="px-2.5 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors flex items-center gap-1">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Acreditar Acuse Legal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-xs text-slate-300 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                            <span class="text-slate-400">Fecha Práctica Válida:</span>
+                            <span class="text-slate-200 ml-1" th:text="${notif.fechaPracticaValida != null} ? ${#temporals.format(notif.fechaPracticaValida, 'dd/MM/yyyy HH:mm')} : 'Pendiente de entrega'">Pendiente</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">N° Acuse / Guía:</span>
+                            <span class="text-slate-200 ml-1 font-mono" th:text="${notif.numeroAcuseRecibo != null} ? ${notif.numeroAcuseRecibo} : '-'">-</span>
+                        </div>
+                        <div th:if="${notif.observaciones != null}" class="sm:col-span-2">
+                            <span class="text-slate-400">Observaciones:</span>
+                            <p class="text-slate-300 text-[10px] mt-0.5" th:text="${notif.observaciones}">Detalle</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Pestaña 5: Cierre y Archivo -->
+        <div id="tab-cierre" class="p-5 space-y-4 hidden">
+            <h3 class="text-sm font-bold text-slate-100">Estado Conclusivo y Archivo Administrativo</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Tarjeta de Cierre -->
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                        <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+                        Cierre Administrativo del Procedimiento
+                    </h4>
+                    <div th:if="${detalle.cierre != null}" class="mt-3 space-y-2 text-xs">
+                        <div>
+                            <span class="text-slate-400">Tipo de Cierre:</span>
+                            <span class="font-bold text-amber-400 ml-1" th:text="${detalle.cierre.tipoCierre}">ATENCION_CONCLUIDA</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Fecha de Cierre:</span>
+                            <span class="text-slate-200 ml-1" th:text="${#temporals.format(detalle.cierre.fechaCierre, 'dd/MM/yyyy HH:mm')}">16/01/2026</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Responsable Cierre:</span>
+                            <span class="text-slate-200 ml-1" th:text="${detalle.cierre.usuarioCierreNombre}">Jefe</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Motivo:</span>
+                            <p class="text-slate-300 text-[11px] mt-0.5" th:text="${detalle.cierre.motivoCierre}">Motivo</p>
+                        </div>
+                    </div>
+                    <div th:unless="${detalle.cierre != null}" class="mt-3 text-center py-6 text-slate-500 text-xs">
+                        El expediente aún no cuenta con acta de cierre formal.
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Archivo -->
+                <div class="bg-slate-900/60 border border-slate-700/60 rounded-xl p-4">
+                    <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                        <i data-lucide="archive" class="w-4 h-4 text-purple-400"></i>
+                        Archivo Pasivo Institucional
+                    </h4>
+                    <div th:if="${detalle.archivo != null}" class="mt-3 space-y-2 text-xs">
+                        <div>
+                            <span class="text-slate-400">Código Archivador:</span>
+                            <span class="font-bold text-purple-300 ml-1" th:text="${detalle.archivo.codigoArchivador}">ARCH-2026-001</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Ubicación Física:</span>
+                            <span class="text-slate-200 ml-1" th:text="${detalle.archivo.ubicacionFisica}">Estante 3, Fila B</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Tomo / Folio:</span>
+                            <span class="text-slate-200 ml-1" th:text="${detalle.archivo.tomoFolio}">Tomo I - Folio 150</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Fecha de Archivo:</span>
+                            <span class="text-slate-200 ml-1" th:text="${#temporals.format(detalle.archivo.fechaArchivo, 'dd/MM/yyyy HH:mm')}">16/01/2026</span>
+                        </div>
+                    </div>
+                    <div th:unless="${detalle.archivo != null}" class="mt-3 text-center py-6 text-slate-500 text-xs">
+                        El expediente permanece en archivo activo de despacho.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales para cada operación (Centrados) -->
+
+    <!-- Modal 1: Iniciar Atención -->
+    <div id="modalIniciar" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="play" class="w-4 h-4 text-blue-400"></i>
+                Iniciar Atención
+            </h3>
+            <p class="text-xs text-slate-300 mt-2">
+                ¿Desea cambiar el estado a <strong>EN ATENCIÓN</strong> para iniciar el análisis técnico?
+            </p>
+            <textarea id="txtIniciarObs" rows="3" class="w-full mt-3 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Indicaciones iniciales..."></textarea>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarIniciar()" class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Crear Evaluación -->
+    <div id="modalCrearEvaluacion" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-lg w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-400"></i>
+                Registrar Evaluación Técnica / Legal
+            </h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Evaluación:</label>
+                <select id="selTipoEvaluacion" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                    <option th:each="tipo : ${tiposEvaluacion}" th:value="${tipo}" th:text="${tipo}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Descripción del Análisis:</label>
+                <textarea id="txtEvalDescripcion" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Detalle técnico analizado..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Conclusiones:</label>
+                <textarea id="txtEvalConclusiones" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Conclusiones alcanzadas..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Recomendación (opcional):</label>
+                <textarea id="txtEvalRecomendacion" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Recomendaciones..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarCrearEvaluacion()" class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Guardar Evaluación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Adjuntar Documento a Evaluación -->
+    <div id="modalAdjuntarDoc" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="paperclip" class="w-4 h-4 text-blue-400"></i>
+                Adjuntar Documento a Evaluación
+            </h3>
+            <input type="hidden" id="hdnEvalIdDoc">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Documento:</label>
+                <input type="text" id="txtTipoDocAdj" value="INFORME_TECNICO" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Archivo (PDF, Word, etc.):</label>
+                <input type="file" id="fileDocAdj" class="w-full text-xs text-slate-300">
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarAdjuntarDoc()" class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Subir y Vincular</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Crear Propuesta de Decisión -->
+    <div id="modalCrearPropuesta" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-lg w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                Elaborar Proyecto de Decisión
+            </h3>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Acto:</label>
+                    <select id="selTipoDecisionProp" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option th:each="t : ${tiposDecision}" th:value="${t}" th:text="${t}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sentido Propuesto:</label>
+                    <select id="selResultadoProp" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option th:each="r : ${resultadosDecision}" th:value="${r}" th:text="${r}"></option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Fundamento Legal / Fáctico:</label>
+                <textarea id="txtFundamentoProp" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Base normativa y hechos evaluados..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Parte Dispositiva / Resolutiva:</label>
+                <textarea id="txtDescripcionProp" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Artículo 1.- Declarar..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarCrearPropuesta()" class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Guardar Propuesta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Formalizar / Registrar Decisión -->
+    <div id="modalFormalizarDecision" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="stamp" class="w-4 h-4 text-emerald-400"></i>
+                Registrar / Formalizar Acto Administrativo
+            </h3>
+            <input type="hidden" id="hdnPropuestaIdFormalizar">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Acto:</label>
+                    <select id="hdnTipoDecFormalizar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option th:each="t : ${tiposDecision}" th:value="${t}" th:text="${t}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Resultado:</label>
+                    <select id="hdnResultadoFormalizar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option th:each="r : ${resultadosDecision}" th:value="${r}" th:text="${r}"></option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Número Documental (en blanco para autogenerar):</label>
+                <input type="text" id="txtNumDocDecision" placeholder="Ej: RES-0012-2026-MDQ/GDU" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Fundamento Final:</label>
+                <textarea id="txtFundamentoFinalDecision" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Sustento técnico y jurídico de la resolución..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarFormalizarDecision()" class="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">Guardar Decisión</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 6: Registrar Emisión Formal (Firma Acreditada) -->
+    <div id="modalRegistrarEmision" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+                Acreditar Emisión Formal
+            </h3>
+            <input type="hidden" id="hdnDecisionIdEmision">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Número de Documento Oficial:</label>
+                <input type="text" id="txtNumDocEmision" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Evidencia de Formalización (Firma manuscrita cotejada, libro de resoluciones):</label>
+                <textarea id="txtEvidenciaEmision" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Ej: Firmado por el Gerente Ing. Carlos Mendoza y visado en Libro de Resoluciones Tomo 2026, Folio 45."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarRegistrarEmision()" class="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">Registrar y Resolver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 7: Registrar Notificación -->
+    <div id="modalRegistrarNotif" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="send" class="w-4 h-4 text-purple-400"></i>
+                Registrar Cédula de Notificación
+            </h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Destinatario:</label>
+                <input type="text" id="txtNotifDestinatario" th:value="${detalle.solicitanteNombre}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Medio Autorizado:</label>
+                <select id="selNotifMedio" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                    <option th:each="m : ${mediosNotificacion}" th:value="${m}" th:text="${m}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Dirección / Correo / Casilla:</label>
+                <input type="text" id="txtNotifDireccion" placeholder="Dirección física o email institucional" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarRegistrarNotificacion()" class="px-4 py-1.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Registrar Cédula</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 8: Acreditar Acuse Notificación -->
+    <div id="modalAcreditarNotif" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                Acreditar Notificación Legal Válida
+            </h3>
+            <input type="hidden" id="hdnNotifIdAcreditar">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">N° de Acuse / Guía de Notificación:</label>
+                <input type="text" id="txtAcuseNumero" placeholder="Ej: GUIA-NOTIF-2026-9923" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Archivo de Cargo Escaneado (PDF/Imagen):</label>
+                <input type="file" id="fileCargoNotif" class="w-full text-xs text-slate-300">
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarAcreditarNotificacion()" class="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">Acreditar Acuse</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 9: Cierre de Expediente -->
+    <div id="modalCierre" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+                Cerrar Expediente Administrativo
+            </h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Causal / Tipo de Cierre:</label>
+                <select id="selTipoCierre" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                    <option th:each="tc : ${tiposCierre}" th:value="${tc}" th:text="${tc}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo y Justificación de Cierre:</label>
+                <textarea id="txtMotivoCierre" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Motivo administrativo formal (mínimo 10 caracteres)..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarCierre()" class="px-4 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Registrar Cierre</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 10: Archivar Expediente -->
+    <div id="modalArchivo" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="archive" class="w-4 h-4 text-purple-400"></i>
+                Remisión al Archivo Pasivo
+            </h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Código de Archivador / Caja:</label>
+                <input type="text" id="txtCodArchivador" placeholder="Ej: CAJA-2026-04" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Ubicación Física:</label>
+                <input type="text" id="txtUbicacionArchivo" placeholder="Ej: Archivo Central - Módulo 2, Balda 4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tomo / Folios:</label>
+                <input type="text" id="txtTomoFolio" placeholder="Ej: Tomo I (Folios 1-85)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de Archivo:</label>
+                <textarea id="txtMotivoArchivo" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Procedimiento concluido definitivamente..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarArchivo()" class="px-4 py-1.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Archivar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 11: Reapertura Legal -->
+    <div id="modalReapertura" class="modal-atencion fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full mx-auto my-auto p-5 shadow-2xl space-y-3">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-400"></i>
+                Reapertura Administrativa Extraordinaria
+            </h3>
+            <p class="text-xs text-slate-300">
+                La reapertura dejará sin efecto el archivamiento y reincorporará el expediente al estado <strong>EN ATENCIÓN</strong>.
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Acto de Reapertura / Referencia:</label>
+                <input type="text" id="txtActoReapertura" placeholder="Ej: RESOLUCION-ALCALDIA-045-2026-MDQ" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo Legal / Justificación (mínimo 15 caracteres):</label>
+                <textarea id="txtMotivoLegalReap" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200" placeholder="Se reabre por mandato judicial o recurso administrativo..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" onclick="cerrarModales()" class="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-lg">Cancelar</button>
+                <button type="button" onclick="ejecutarReapertura()" class="px-4 py-1.5 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg">Efectuar Reapertura</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const expedienteId = /*[[${detalle.expedienteId}]]*/ 0;
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+
+        function cambiarPestana(tabId) {
+            document.querySelectorAll('.pestana-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+            document.getElementById('btn-' + tabId).classList.remove('border-transparent', 'text-slate-400');
+            document.getElementById('btn-' + tabId).classList.add('border-blue-500', 'text-blue-400');
+
+            ['tab-evaluaciones', 'tab-propuestas', 'tab-decisiones', 'tab-notificaciones', 'tab-cierre'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+        }
+
+        function cerrarModales() {
+            document.querySelectorAll('.modal-atencion').forEach(m => {
+                if (window.cerrarModal && m.id) {
+                    window.cerrarModal(m.id);
+                } else {
+                    m.classList.add('hidden');
+                }
+            });
+        }
+
+        function mostrarModalAtencion(id) {
+            if (window.abrirModal) {
+                window.abrirModal(id);
+            } else {
+                document.getElementById(id).classList.remove('hidden');
+            }
+        }
+
+        function abrirModalIniciar() { mostrarModalAtencion('modalIniciar'); }
+        function abrirModalCrearEvaluacion() { mostrarModalAtencion('modalCrearEvaluacion'); }
+        function abrirModalCrearPropuesta() { mostrarModalAtencion('modalCrearPropuesta'); }
+        function abrirModalRegistrarNotificacion() { mostrarModalAtencion('modalRegistrarNotif'); }
+        function abrirModalCierre() { mostrarModalAtencion('modalCierre'); }
+        function abrirModalArchivo() { mostrarModalAtencion('modalArchivo'); }
+        function abrirModalReapertura() { mostrarModalAtencion('modalReapertura'); }
+
+        function abrirModalAdjuntarDoc(evalId) {
+            document.getElementById('hdnEvalIdDoc').value = evalId;
+            mostrarModalAtencion('modalAdjuntarDoc');
+        }
+
+        function abrirModalRegistrarDecisionDirecta() {
+            document.getElementById('hdnPropuestaIdFormalizar').value = '';
+            document.getElementById('txtNumDocDecision').value = '';
+            document.getElementById('txtFundamentoFinalDecision').value = '';
+            mostrarModalAtencion('modalFormalizarDecision');
+        }
+
+        function abrirModalFormalizarDecision(propId, tipoDec, resultado) {
+            document.getElementById('hdnPropuestaIdFormalizar').value = propId;
+            if (tipoDec) document.getElementById('hdnTipoDecFormalizar').value = tipoDec;
+            if (resultado) document.getElementById('hdnResultadoFormalizar').value = resultado;
+            document.getElementById('txtFundamentoFinalDecision').value = 'Conforme a la propuesta visada #' + propId;
+            mostrarModalAtencion('modalFormalizarDecision');
+        }
+
+        function abrirModalRegistrarEmision(decId, numDoc) {
+            document.getElementById('hdnDecisionIdEmision').value = decId;
+            document.getElementById('txtNumDocEmision').value = numDoc || '';
+            mostrarModalAtencion('modalRegistrarEmision');
+        }
+
+        function abrirModalAcreditarNotificacion(notifId) {
+            document.getElementById('hdnNotifIdAcreditar').value = notifId;
+            mostrarModalAtencion('modalAcreditarNotif');
+        }
+
+        async function ejecutarIniciar() {
+            const obs = document.getElementById('txtIniciarObs').value;
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/iniciar-atencion', {
+                    method: 'POST',
+                    body: JSON.stringify({ indicaciones: obs })
+                });
+                window.mostrarToast('Atención iniciada formalmente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarCrearEvaluacion() {
+            const payload = {
+                tipoEvaluacion: document.getElementById('selTipoEvaluacion').value,
+                descripcion: document.getElementById('txtEvalDescripcion').value,
+                conclusiones: document.getElementById('txtEvalConclusiones').value,
+                recomendacion: document.getElementById('txtEvalRecomendacion').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/evaluaciones', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Evaluación registrada correctamente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function finalizarEvaluacion(evalId) {
+            if (!confirm('¿Confirma que desea finalizar esta evaluación técnica?')) return;
+            try {
+                await window.fetchApi('/api/mesa-partes/evaluaciones/' + evalId + '/finalizar', {
+                    method: 'PUT'
+                });
+                window.mostrarToast('Evaluación finalizada.', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarAdjuntarDoc() {
+            const evalId = document.getElementById('hdnEvalIdDoc').value;
+            const file = document.getElementById('fileDocAdj').files[0];
+            const tipo = document.getElementById('txtTipoDocAdj').value;
+            if (!file) { window.mostrarToast('Seleccione un archivo para adjuntar.', 'warning'); return; }
+
+            const fd = new FormData();
+            fd.append('archivo', file);
+            fd.append('tipoDocumento', tipo);
+
+            try {
+                const res = await fetch('/api/mesa-partes/evaluaciones/' + evalId + '/documentos', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken },
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Error al adjuntar documento');
+                window.mostrarToast('Documento adjuntado correctamente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {
+                window.mostrarToast(e.message, 'error');
+            }
+        }
+
+        async function ejecutarCrearPropuesta() {
+            const payload = {
+                tipoDecision: document.getElementById('selTipoDecisionProp').value,
+                resultadoPropuesto: document.getElementById('selResultadoProp').value,
+                fundamento: document.getElementById('txtFundamentoProp').value,
+                descripcion: document.getElementById('txtDescripcionProp').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/propuestas', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Propuesta de decisión guardada.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function enviarPropuestaRevision(propId) {
+            if (!confirm('¿Desea remitir esta propuesta a revisión de jefatura?')) return;
+            try {
+                await window.fetchApi('/api/mesa-partes/propuestas/' + propId + '/enviar-revision', {
+                    method: 'POST'
+                });
+                window.mostrarToast('Propuesta enviada a revisión.', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarFormalizarDecision() {
+            const propId = document.getElementById('hdnPropuestaIdFormalizar').value;
+            const payload = {
+                propuestaId: propId ? parseInt(propId, 10) : null,
+                tipoDecision: document.getElementById('hdnTipoDecFormalizar').value,
+                resultado: document.getElementById('hdnResultadoFormalizar').value,
+                fundamento: document.getElementById('txtFundamentoFinalDecision').value,
+                numeroDocumento: document.getElementById('txtNumDocDecision').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/decisiones', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Acto administrativo registrado.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function generarPdfDecision(decId) {
+            try {
+                await window.fetchApi('/api/mesa-partes/decisiones/' + decId + '/generar-documento', {
+                    method: 'POST'
+                });
+                window.mostrarToast('Documento PDF oficial compilado.', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarRegistrarEmision() {
+            const decId = document.getElementById('hdnDecisionIdEmision').value;
+            const payload = {
+                numeroDocumento: document.getElementById('txtNumDocEmision').value,
+                evidenciaFormalizacion: document.getElementById('txtEvidenciaEmision').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/decisiones/' + decId + '/registrar-emision', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Emisión formal registrada y expediente resuelto.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarRegistrarNotificacion() {
+            const payload = {
+                destinatarioNombre: document.getElementById('txtNotifDestinatario').value,
+                medioNotificacion: document.getElementById('selNotifMedio').value,
+                destinatarioDireccion: document.getElementById('txtNotifDireccion').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/notificaciones', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Cédula de notificación registrada.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function registrarIntentoEnvio(notifId) {
+            const obs = prompt('Ingrese observaciones del intento de notificación:');
+            if (obs === null) return;
+            try {
+                await window.fetchApi('/api/mesa-partes/notificaciones/' + notifId + '/intento?observaciones=' + encodeURIComponent(obs), {
+                    method: 'POST'
+                });
+                window.mostrarToast('Intento de notificación registrado.', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarAcreditarNotificacion() {
+            const notifId = document.getElementById('hdnNotifIdAcreditar').value;
+            const acuse = document.getElementById('txtAcuseNumero').value;
+            const file = document.getElementById('fileCargoNotif').files[0];
+            if (!acuse) { window.mostrarToast('Ingrese el número de acuse', 'warning'); return; }
+
+            const fd = new FormData();
+            fd.append('numeroAcuseRecibo', acuse);
+            if (file) fd.append('cargoPdf', file);
+
+            try {
+                const res = await fetch('/api/mesa-partes/notificaciones/' + notifId + '/acreditar', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken },
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Error al acreditar notificación');
+                window.mostrarToast('Notificación acreditada legalmente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {
+                window.mostrarToast(e.message, 'error');
+            }
+        }
+
+        async function ejecutarCierre() {
+            const payload = {
+                tipoCierre: document.getElementById('selTipoCierre').value,
+                motivoCierre: document.getElementById('txtMotivoCierre').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/cerrar', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Expediente cerrado administrativamente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarArchivo() {
+            const payload = {
+                codigoArchivador: document.getElementById('txtCodArchivador').value,
+                ubicacionFisica: document.getElementById('txtUbicacionArchivo').value,
+                tomoFolio: document.getElementById('txtTomoFolio').value,
+                motivoArchivo: document.getElementById('txtMotivoArchivo').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/archivar', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Expediente remitido al archivo pasivo.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+
+        async function ejecutarReapertura() {
+            const payload = {
+                actoReaperturaReferencia: document.getElementById('txtActoReapertura').value,
+                motivoLegal: document.getElementById('txtMotivoLegalReap').value
+            };
+            try {
+                await window.fetchApi('/api/mesa-partes/expedientes/' + expedienteId + '/reabrir', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                window.mostrarToast('Expediente reabierto satisfactoriamente.', 'success');
+                cerrarModales();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {}
+        }
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

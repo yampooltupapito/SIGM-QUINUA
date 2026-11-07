@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Derivaciones Recibidas en Despacho — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">Despacho</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Recepción de Derivaciones</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="inbox" class="w-6 h-6 text-amber-400"></i>
+                Derivaciones Recibidas en Despacho
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Expedientes remitidos por otras unidades orgánicas pendientes de aceptación formal o devolución.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/derivaciones}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="send" class="w-4 h-4 text-blue-400"></i>
+                Derivaciones Enviadas
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/panel-oficina}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30 transition-colors">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                Panel de Oficina
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Estado -->
+    <div class="flex items-center justify-between bg-[#202c3d] border border-slate-700/70 rounded-xl p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-medium text-slate-400 mr-2">Filtrar:</span>
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}"
+               th:classappend="${estadoSel == null} ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Todas</a>
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas(estado='PENDIENTE')}"
+               th:classappend="${estadoSel != null && estadoSel.name() == 'PENDIENTE'} ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-amber-300'"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Pendientes de Aceptación
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas(estado='RECIBIDA')}"
+               th:classappend="${estadoSel != null && estadoSel.name() == 'RECIBIDA'} ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-emerald-300'"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Aceptadas</a>
+        </div>
+        <span class="text-xs text-slate-400" th:text="${derivaciones.totalElements + ' expedientes remitidos'}">0</span>
+    </div>
+
+    <!-- Tabla de Derivaciones Recibidas -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60 font-semibold">
+                <tr>
+                    <th class="py-3 px-4">Expediente</th>
+                    <th class="py-3 px-4">Oficina Remitente</th>
+                    <th class="py-3 px-4">Motivo e Indicaciones</th>
+                    <th class="py-3 px-4">Fecha de Envío</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${derivaciones.empty}">
+                    <td colspan="6" class="py-10 text-center text-slate-500">
+                        <i data-lucide="check-check" class="w-10 h-10 mx-auto mb-2 opacity-40 text-emerald-500"></i>
+                        <p class="font-medium text-slate-400">Bandeja de despacho al día</p>
+                        <p class="text-[11px]">No hay transferencias pendientes de recepción en esta unidad orgánica.</p>
+                    </td>
+                </tr>
+                <tr th:each="d : ${derivaciones.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3.5 px-4">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${d.expedienteId})}"
+                           class="font-mono font-bold text-blue-400 hover:underline" th:text="${d.numeroExpediente}">MPV-2026-00001</a>
+                        <p class="text-[11px] text-slate-300 truncate max-w-xs font-medium" th:text="${d.asunto}">Asunto</p>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-500"></i>
+                            <span class="text-slate-200 font-medium" th:text="${d.oficinaOrigenNombre}">Origen</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400" th:text="${'Derivado por: ' + d.usuarioDerivadorNombre}">Remitente</p>
+                    </td>
+                    <td class="py-3.5 px-4 max-w-sm">
+                        <p class="text-slate-200" th:text="${d.motivo}">Motivo</p>
+                        <p th:if="${d.indicaciones != null}" class="text-[11px] text-amber-300/80 mt-0.5" th:text="${'Indicaciones: ' + d.indicaciones}"></p>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap text-slate-400" th:text="${#temporals.format(d.fechaDerivacion, 'dd/MM/yyyy HH:mm')}">
+                        01/01/2026 10:00
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <span th:if="${d.estado.name() == 'PENDIENTE'}" class="px-2.5 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">POR RECIBIR</span>
+                        <span th:if="${d.estado.name() == 'RECIBIDA'}" class="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">ACEPTADA</span>
+                        <span th:if="${d.estado.name() == 'RECHAZADA'}" class="px-2.5 py-1 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">RECHAZADA</span>
+                        <span th:if="${d.estado.name() == 'DEVUELTA'}" class="px-2.5 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">DEVUELTA</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
+                        <button th:if="${d.estado.name() == 'PENDIENTE'}"
+                                th:data-id="${d.id}"
+                                th:data-num="${d.numeroExpediente}"
+                                onclick="abrirModalRecepcionDerivacion(this.getAttribute('data-id'), this.getAttribute('data-num'))"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg text-xs transition-colors shadow-sm">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            Aceptar Recepción
+                        </button>
+                        <button th:if="${d.estado.name() == 'PENDIENTE'}"
+                                th:data-id="${d.id}"
+                                th:data-num="${d.numeroExpediente}"
+                                onclick="abrirModalDevolverDerivacion(this.getAttribute('data-id'), this.getAttribute('data-num'))"
+                                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-lg text-xs transition-colors">
+                            <i data-lucide="corner-up-left" class="w-3.5 h-3.5"></i>
+                            Devolver / Rechazar
+                        </button>
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${d.expedienteId})}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            Ver Expediente
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Aceptar Recepción de Derivación -->
+    <div id="modalRecepcionDerivacion" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                    Aceptar Recepción de Derivación
+                </h3>
+                <button onclick="cerrarModalRecepcionDerivacion()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300">
+                Está a punto de aceptar formalmente el expediente <strong id="recExpedienteNumero" class="font-mono text-emerald-400"></strong> en la unidad orgánica. El expediente pasará al estado <strong class="text-blue-400">EN_ATENCION</strong>.
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones internas al recibir (opcional):</label>
+                <textarea id="recObservaciones" rows="3" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="Ingrese anotaciones internas..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button onclick="cerrarModalRecepcionDerivacion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button id="btnConfirmarRecepcion" onclick="confirmarRecepcionDerivacion()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Confirmar Recepción
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Devolver / Rechazar Derivación -->
+    <div id="modalDevolverDerivacion" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+                    Devolver / Rechazar Derivación
+                </h3>
+                <button onclick="cerrarModalDevolverDerivacion()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300">
+                El expediente <strong id="devExpedienteNumero" class="font-mono text-rose-400"></strong> será retornado a la oficina remitente. El motivo es estrictamente obligatorio por auditoría.
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Acción a realizar:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-[#101827] border border-slate-700 cursor-pointer text-xs text-slate-300">
+                        <input type="radio" name="accionDev" value="devolver" checked class="text-purple-600 focus:ring-0">
+                        <span>Devolver a Origen</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-lg bg-[#101827] border border-slate-700 cursor-pointer text-xs text-slate-300">
+                        <input type="radio" name="accionDev" value="rechazar" class="text-rose-600 focus:ring-0">
+                        <span>Rechazar por Incompetencia</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo obligatorio <span class="text-rose-400">*</span>:</label>
+                <textarea id="devMotivo" rows="3" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500" placeholder="Fundamente la razón del rechazo o devolución..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button onclick="cerrarModalDevolverDerivacion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button id="btnConfirmarDevolucion" onclick="confirmarDevolucionDerivacion()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+                    Confirmar Retorno
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    let derivacionActualId = null;
+
+    function abrirModalRecepcionDerivacion(id, numero) {
+        derivacionActualId = id;
+        document.getElementById('recExpedienteNumero').textContent = numero;
+        document.getElementById('recObservaciones').value = '';
+        document.getElementById('modalRecepcionDerivacion').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalRecepcionDerivacion() {
+        document.getElementById('modalRecepcionDerivacion').classList.add('hidden');
+    }
+
+    function abrirModalDevolverDerivacion(id, numero) {
+        derivacionActualId = id;
+        document.getElementById('devExpedienteNumero').textContent = numero;
+        document.getElementById('devMotivo').value = '';
+        document.getElementById('modalDevolverDerivacion').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalDevolverDerivacion() {
+        document.getElementById('modalDevolverDerivacion').classList.add('hidden');
+    }
+
+    async function confirmarRecepcionDerivacion() {
+        if (!derivacionActualId) return;
+        const btn = document.getElementById('btnConfirmarRecepcion');
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+
+        const obs = document.getElementById('recObservaciones').value;
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(`/api/mesa-partes/derivaciones/${derivacionActualId}/recibir`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                body: JSON.stringify({ observaciones: obs })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                alert('Derivación aceptada con éxito. El expediente ahora está en atención.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo aceptar la derivación.'));
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Recepción';
+            }
+        } catch (e) {
+            alert('Error de conexión al procesar la recepción.');
+            btn.disabled = false;
+            btn.textContent = 'Confirmar Recepción';
+        }
+    }
+
+    async function confirmarDevolucionDerivacion() {
+        if (!derivacionActualId) return;
+        const motivo = document.getElementById('devMotivo').value.trim();
+        if (!motivo) {
+            alert('Debe ingresar un motivo obligatorio para el rechazo o devolución.');
+            return;
+        }
+
+        const accion = document.querySelector('input[name="accionDev"]:checked')?.value || 'devolver';
+        const endpoint = accion === 'rechazar' ? 'rechazar' : 'devolver';
+
+        const btn = document.getElementById('btnConfirmarDevolucion');
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(`/api/mesa-partes/derivaciones/${derivacionActualId}/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                body: JSON.stringify({ motivo: motivo, observaciones: '' })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                alert('Expediente devuelto exitosamente a la oficina de origen.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo procesar la devolución.'));
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Retorno';
+            }
+        } catch (e) {
+            alert('Error de conexión al procesar la devolución.');
+            btn.disabled = false;
+            btn.textContent = 'Confirmar Retorno';
+        }
+    }
+</script>
+</th:block>
+</body>
+</html>

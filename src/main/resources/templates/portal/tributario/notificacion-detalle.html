@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Detalle de Notificación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <a th:href="@{/portal/tributario/notificaciones}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center gap-1 mb-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Notificaciones
+                    </a>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight" th:text="${notificacion.asunto}">Asunto de la Notificación</h2>
+                    <p class="text-xs text-slate-500 font-mono" th:text="'Código: ' + ${notificacion.codigoNotificacion}">NOTIF-001</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a th:if="${notificacion.tieneDocumentoAdjunto}" th:href="@{'/portal/tributario/notificaciones/' + ${notificacion.id} + '/pdf'}" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                        <i data-lucide="download" class="w-4 h-4"></i> Descargar Cédula / Documento (PDF)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Ficha Detallada -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Tipo de Comunicación:</span>
+                        <span class="font-bold text-slate-800 text-sm" th:text="${notificacion.tipoNombre}">Aviso de Vencimiento</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Naturaleza Jurídica:</span>
+                        <span th:if="${notificacion.formal}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 inline-block mt-0.5">ACTO FORMAL TRIBUTARIO</span>
+                        <span th:if="${!notificacion.formal}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-block mt-0.5">COMUNICACIÓN INFORMATIVA</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha de Emisión:</span>
+                        <span class="font-bold text-slate-800 text-sm" th:text="${#temporals.format(notificacion.fechaEmision, 'dd/MM/yyyy HH:mm:ss')}">28/02/2026 10:00:00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-t border-slate-100 pt-4">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Medio de Notificación Previsto:</span>
+                        <span class="font-medium text-slate-700" th:text="${notificacion.medioEntrega}">NOTIFICACION_PERSONAL</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Estado de Validez Legal:</span>
+                        <span class="font-bold text-slate-800" th:text="${notificacion.estadoValidezLegal != null ? notificacion.estadoValidezLegal : 'PENDIENTE_NOTIFICACION_FORMAL'}">PENDIENTE</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4" th:if="${notificacion.observaciones != null}">
+                    <span class="text-slate-400 block text-[11px]">Detalles o Observaciones:</span>
+                    <p class="text-slate-700 text-xs mt-1 leading-relaxed" th:text="${notificacion.observaciones}">Texto de la notificación.</p>
+                </div>
+            </div>
+
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2">
+                <i data-lucide="scale" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed text-[11px]">
+                    <strong>Constancia de Consulta Digital:</strong> El acceso a esta vista ha sido registrado en la pista de auditoría del portal para su seguimiento personal. Sin embargo, no convalida la entrega legal de actos determinativos que requieran formalidades del Art. 104 del Código Tributario (acuse de recibo fehaciente en domicilio fiscal o notificación por correo certificado).
+                </div>
+            </div>
+</div>
+</body>
+</html>

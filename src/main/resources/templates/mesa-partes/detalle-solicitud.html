@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Detalle de Solicitud — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE LA PÁGINA -->
+    <section class="bg-gradient-to-b from-[#101827] to-slate-900 text-white py-10 border-b border-slate-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/mesa-partes/mis-solicitudes}" class="hover:text-white transition-colors">Mis Solicitudes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold" th:text="${expediente.numeroExpediente}">MPV-2026-000001</span>
+            </nav>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">Expediente Administrativo</span>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-1" th:text="${expediente.numeroExpediente}">MPV-2026-000001</h1>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl truncate" th:text="${expediente.asunto}">Asunto del trámite</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a th:if="${expediente.estadoActual != 'BORRADOR'}"
+                       th:href="@{'/mesa-partes/expedientes/' + ${expediente.uuid} + '/constancia'}"
+                       class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-sm transition-colors">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                        Constancia PDF
+                    </a>
+                    <a th:href="@{/mesa-partes/mis-solicitudes}" class="inline-flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CUERPO PRINCIPAL -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- RESUMEN DE ESTADO Y DATOS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Ficha de Datos Generales (2 cols) -->
+            <div class="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+                        Datos del Expediente
+                    </h2>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200"
+                          th:text="${expediente.estadoActual}">
+                        PRESENTADO
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 font-semibold block text-[11px]">Tipo de Trámite:</span>
+                        <span class="font-bold text-slate-900" th:text="${expediente.tipoTramite != null ? expediente.tipoTramite.nombre : '-'}">Trámite</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 font-semibold block text-[11px]">Unidad Orgánica Responsable:</span>
+                        <span class="font-bold text-slate-900" th:text="${expediente.oficinaResponsable != null ? expediente.oficinaResponsable.nombre : '-'}">Oficina</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 font-semibold block text-[11px]">Fecha de Presentación:</span>
+                        <span class="font-bold text-slate-800 font-mono" th:text="${expediente.fechaPresentacion != null ? #temporals.format(expediente.fechaPresentacion, 'dd/MM/yyyy HH:mm') : '-'}">15/10/2026</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 font-semibold block text-[11px]">Fecha Límite Estimada:</span>
+                        <span class="font-bold text-slate-800 font-mono" th:text="${expediente.fechaLimite != null ? #temporals.format(expediente.fechaLimite, 'dd/MM/yyyy') : 'En calificación'}">30/11/2026</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 space-y-1.5 text-xs">
+                    <span class="text-slate-400 font-semibold block text-[11px]">Asunto / Petitorio:</span>
+                    <p class="font-bold text-slate-900 text-sm leading-relaxed" th:text="${expediente.asunto}">Asunto</p>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 space-y-1.5 text-xs">
+                    <span class="text-slate-400 font-semibold block text-[11px]">Descripción / Fundamento:</span>
+                    <p class="text-slate-700 whitespace-pre-line leading-relaxed" th:text="${expediente.descripcion}">Descripción</p>
+                </div>
+            </div>
+
+            <!-- Ficha de Solicitante y Resumen (1 col) -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                        Identificación
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Solicitante:</span>
+                            <span class="font-bold text-slate-900" th:text="${expediente.solicitante != null ? expediente.solicitante.nombreCompleto : '-'}">Nombres</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Documento:</span>
+                            <span class="font-bold text-slate-800" th:text="${expediente.solicitante != null ? (expediente.solicitante.tipoDocumento + ': ' + expediente.solicitante.numeroDocumento) : '-'}">DNI</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Canal de Ingreso:</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" th:text="${expediente.canalIngreso}">VIRTUAL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-center space-y-2">
+                    <span class="text-[11px] font-semibold text-slate-500">¿Requiere presentar una subsanación?</span>
+                    <p class="text-[10px] text-slate-400">Si su expediente presenta observaciones formales, el sistema habilitará el botón de descargo.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- DOCUMENTOS ADJUNTOS -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="paperclip" class="w-4 h-4 text-blue-600"></i>
+                Documentos Asociados al Expediente
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-600 font-bold">
+                        <tr>
+                            <th class="px-4 py-2.5">Documento</th>
+                            <th class="px-4 py-2.5">Tipo Relación</th>
+                            <th class="px-4 py-2.5">Fecha</th>
+                            <th class="px-4 py-2.5 text-right">Huella Criptográfica SHA-256</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <th:block th:if="${expediente.documentos == null or expediente.documentos.isEmpty()}">
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-400">
+                                    No hay documentos adjuntos registrados.
+                                </td>
+                            </tr>
+                        </th:block>
+                        <th:block th:each="doc : ${expediente.documentos}">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3 font-medium text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="file-check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                                    <span th:text="${doc.nombreOriginal}">archivo.pdf</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200"
+                                          th:text="${doc.tipoRelacion}">ANEXO</span>
+                                </td>
+                                <td class="px-4 py-3 text-slate-500 font-mono text-[11px]"
+                                    th:text="${doc.fechaAsociacion != null ? #temporals.format(doc.fechaAsociacion, 'dd/MM/yyyy HH:mm') : '-'}">
+                                    15/10/2026
+                                </td>
+                                <td class="px-4 py-3 text-right text-slate-400 font-mono text-[10px] truncate max-w-xs"
+                                    th:text="${doc.hashSha256}">
+                                    hash...
+                                </td>
+                            </tr>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- OBSERVACIONES FORMULADAS Y SUBSANACIÓN (PROMPT 14) -->
+        <div th:if="${expediente.observaciones != null and !expediente.observaciones.isEmpty()}"
+             class="bg-white rounded-3xl border border-rose-200 p-6 sm:p-7 shadow-sm space-y-5">
+            <div class="flex items-center justify-between border-b border-rose-100 pb-4">
+                <h2 class="text-sm font-bold text-rose-900 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                    Observaciones y Requerimientos de Subsanación
+                </h2>
+                <span th:if="${expediente.estadoActual == 'OBSERVADO'}"
+                      class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
+                    PLAZO DE SUBSANACIÓN VIGENTE
+                </span>
+            </div>
+
+            <div class="space-y-4">
+                <div th:each="obs : ${expediente.observaciones}" class="bg-rose-50/50 p-4 rounded-2xl border border-rose-200/80 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1 border-b border-rose-200/60 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-rose-900" th:text="${'Tipo: ' + (obs.tipoObservacion != null ? obs.tipoObservacion : 'FORMA')}">Tipo: FORMA</span>
+                            <span th:if="${obs.requisitoNombre != null}" class="text-slate-600" th:text="'(' + ${obs.requisitoNombre} + ')'">(Requisito)</span>
+                        </div>
+                        <div class="flex items-center space-x-2 font-mono text-[11px]">
+                            <span class="text-slate-500" th:text="${#temporals.format(obs.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/10/2026</span>
+                            <span th:if="${obs.estado != null and obs.estado.name() == 'PENDIENTE'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-800">PENDIENTE</span>
+                            <span th:if="${obs.estado != null and obs.estado.name() == 'SUBSANADA'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-800">SUBSANADA</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-800 whitespace-pre-line leading-relaxed" th:text="${obs.descripcion}">Detalle del requerimiento formulado.</p>
+
+                    <div th:if="${obs.fechaLimite != null}" class="flex items-center space-x-1.5 text-xs text-rose-700 font-mono font-semibold">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                        <span>Fecha límite para responder: </span>
+                        <span th:text="${#temporals.format(obs.fechaLimite, 'dd/MM/yyyy')}">25/10/2026</span>
+                    </div>
+
+                    <!-- Subsanaciones registradas -->
+                    <div th:if="${obs.subsanaciones != null and !obs.subsanaciones.isEmpty()}" class="mt-3 pt-3 border-t border-rose-200/60 bg-white p-3 rounded-xl space-y-1 text-xs">
+                        <span class="text-[11px] font-bold uppercase text-emerald-700">Respuesta Registrada:</span>
+                        <div th:each="sub : ${obs.subsanaciones}">
+                            <p class="text-slate-800" th:text="${sub.respuestaCiudadano}">Descargo presentado</p>
+                            <span class="text-[10px] text-slate-400 font-mono" th:text="${#temporals.format(sub.fechaSubsanacion, 'dd/MM/yyyy HH:mm')}">16/10/2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Respuesta / Subsanación si el expediente está OBSERVADO -->
+            <div th:if="${expediente.estadoActual == 'OBSERVADO'}" class="mt-4 pt-4 border-t border-rose-200 space-y-3">
+                <h3 class="text-xs font-bold text-slate-900 uppercase">Presentar Respuesta de Subsanación</h3>
+                <p class="text-xs text-slate-600">Ingrese su descargo aclaratorio para levantar las observaciones formuladas por la Municipalidad.</p>
+
+                <form id="formSubsanar" onsubmit="enviarSubsanacion(event)" class="space-y-3">
+                    <textarea id="txtRespuestaCiudadano" rows="3" required
+                              placeholder="Escriba aquí su descargo, aclaración o detalle de los documentos adicionales..."
+                              class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600"></textarea>
+
+                    <div class="flex items-center justify-end">
+                        <button type="submit" id="btnEnviarSubsanacion"
+                                class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-colors flex items-center space-x-1.5">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span>Enviar Subsanación a la Municipalidad</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- HISTORIAL DE MOVIMIENTOS Y ACTUACIONES -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="git-commit" class="w-4 h-4 text-blue-600"></i>
+                Historial de Actuaciones y Trazabilidad Inmutable
+            </h2>
+
+            <div class="space-y-4 pt-2">
+                <th:block th:if="${expediente.historial == null or expediente.historial.isEmpty()}">
+                    <p class="text-xs text-slate-400 italic">No se registran movimientos adicionales.</p>
+                </th:block>
+                <div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    <th:block th:each="mov : ${expediente.historial}">
+                        <div class="relative">
+                            <div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-blue-100"></div>
+                            <div class="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-bold text-slate-900" th:text="${mov.accion}">PRESENTACION_VIRTUAL</span>
+                                    <span class="font-mono text-[10px] text-slate-400"
+                                          th:text="${mov.fechaMovimiento != null ? #temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm') : '-'}">
+                                        15/10/2026
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-600" th:text="${mov.observacion}">Detalle de la actuación administrativa</p>
+                                <div class="text-[10px] text-slate-400 pt-1 flex items-center gap-2">
+                                    <span th:text="${'Unidad: ' + (mov.oficinaNombre != null ? mov.oficinaNombre : 'Mesa de Partes')}">Mesa de Partes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Script de Subsanación Ciudadana -->
+    <script th:inline="javascript">
+        const expedienteId = /*[[${expediente.id}]]*/ 1;
+
+        async function enviarSubsanacion(e) {
+            e.preventDefault();
+            const txt = document.getElementById('txtRespuestaCiudadano');
+            const btn = document.getElementById('btnEnviarSubsanacion');
+            const respuesta = txt.value.trim();
+
+            if (!respuesta) {
+                alert('Debe ingresar el detalle de su descargo o subsanación.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Enviando...';
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+                const res = await fetch(`/api/mesa-partes/expedientes/${expedienteId}/subsanar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { [header]: token } : {})
+                    },
+                    body: JSON.stringify({
+                        respuestaCiudadano: respuesta
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Error al presentar la subsanación');
+                }
+
+                alert('Subsanación presentada con éxito. El expediente ha retornado para evaluación municipal.');
+                window.location.reload();
+            } catch (err) {
+                alert('No se pudo enviar la subsanación: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i><span>Enviar Subsanación a la Municipalidad</span>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    </script>
+</div>
+</body>
+</html>

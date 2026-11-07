@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Mis Predios | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Mis Predios Registrados</h2>
+                    <p class="text-xs text-slate-500">Inmuebles urbanos y rústicos asociados a su código de contribuyente en Quinua</p>
+                </div>
+                <div class="text-xs text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                    Total: <strong class="text-slate-800" th:text="${predios != null ? predios.size() : 0}">0</strong> predio(s)
+                </div>
+            </div>
+
+            <!-- Listado de Tarjetas de Predios -->
+            <div th:if="${predios == null || predios.empty}" class="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400">
+                <i data-lucide="home" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+                <h3 class="text-sm font-bold text-slate-700">No se encontraron predios asociados</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                    No registra inmuebles bajo el código de contribuyente activo. Si adquirió un inmueble recientemente, presente su Declaración Jurada en la Oficina de Rentas.
+                </p>
+            </div>
+
+            <div th:unless="${predios == null || predios.empty}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div th:each="p : ${predios}" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                                  th:text="${p.tipoPredio}">URBANO</span>
+                            <span th:if="${p.esPrincipal}" class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700">Principal</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-900 line-clamp-2" th:text="${p.direccionCompleta}">Jr. Sucre N° 120, Quinua</h3>
+                        <div class="text-[11px] text-slate-500 font-mono mt-1" th:text="'Código: ' + ${p.codigoPredio}">PRED-001</div>
+
+                        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 text-[11px]">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Participación:</span>
+                                <strong class="text-slate-800" th:text="${p.porcentajeParticipacion} + '%'">100%</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Área Terreno:</span>
+                                <strong class="text-slate-800" th:text="${p.areaTerreno != null ? p.areaTerreno + ' m²' : '—'}">120 m²</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Autovalúo Total:</span>
+                                <strong class="text-slate-800" th:text="'S/ ' + ${#numbers.formatDecimal(p.autoavaluoTotal != null ? p.autoavaluoTotal : 0, 1, 'COMMA', 2, 'POINT')}">S/ 45,000.00</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Catastro:</span>
+                                <span class="text-slate-600 truncate block font-mono" th:text="${p.codigoCatastral != null ? p.codigoCatastral : 'Sin asignar'}">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+                        <a th:href="@{/portal/tributario/predios/{id}(id=${p.id})}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ficha Tributaria
+                        </a>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

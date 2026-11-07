@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE SEARCH BAR (Buscador con icono Lucide)
+     ========================================================================== -->
+<div th:fragment="searchBar(id, name, value, placeholder)" class="relative w-full">
+    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" aria-hidden="true"></i>
+    <input type="search"
+           th:id="${!#strings.isEmpty(id) ? id : 'inputSearch'}"
+           th:name="${!#strings.isEmpty(name) ? name : 'q'}"
+           th:value="${value}"
+           th:placeholder="${!#strings.isEmpty(placeholder) ? placeholder : 'Buscar por código, documento o nombre...'}"
+           class="sigm-input pl-9 pr-4"/>
+</div>
+
+</body>
+</html>
+

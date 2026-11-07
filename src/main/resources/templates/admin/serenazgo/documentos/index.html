@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Evidencias y Gestión Documental — Serenazgo Quinua</title>
+</head>
+<body>
+<div layout:fragment="contenido" th:with="moduloActivo='serenazgo', submenuActivo='documentos'">
+    <div class="space-y-6">
+
+        <!-- Notificaciones de éxito o error -->
+        <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm font-medium" th:text="${mensajeExito}"></span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm font-medium" th:text="${mensajeError}"></span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Encabezado Principal -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-[#1e293b]/70 border border-slate-700/60 p-5 rounded-2xl shadow-sm backdrop-blur-sm">
+            <div>
+                <div class="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">
+                    <i data-lucide="shield" class="w-4 h-4"></i>
+                    <span>Módulo 3: Seguridad Ciudadana y Serenazgo</span>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                    <span>Gestión documental de Seguridad Ciudadana</span>
+                </h1>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Registro, protección y seguimiento de fotografías, videos y documentos asociados a actuaciones municipales.
+                </p>
+            </div>
+            <div class="flex items-center space-x-2.5">
+                <a th:href="@{/dashboard/serenazgo/documentos/exportar/excel(busqueda=${filtro.busqueda}, tipoDocumento=${filtro.tipoDocumento}, estado=${filtro.estado}, origenDocumento=${filtro.origenDocumento})}"
+                   sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_EXPORTAR')"
+                   class="inline-flex items-center space-x-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600/50 rounded-xl text-xs font-medium transition shadow-sm"
+                   title="Exportar reporte en formato Excel">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Exportar Excel</span>
+                </a>
+                <a th:href="@{/dashboard/serenazgo/documentos/nuevo}"
+                   sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_CREAR')"
+                   class="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-medium transition shadow-sm shadow-blue-600/30">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <span>Cargar Archivo / Evidencia</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Indicadores Reales (KPIs) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Archivos</span>
+                <span class="text-xl font-bold text-slate-100 mt-1 block" th:text="${stats.totalDocumentos}">0</span>
+                <span class="text-[10px] text-slate-400">Acervo digital</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider block">Fotografías</span>
+                <span class="text-xl font-bold text-blue-400 mt-1 block" th:text="${stats.totalFotografias}">0</span>
+                <span class="text-[10px] text-slate-400">Imágenes de campo</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider block">Videos</span>
+                <span class="text-xl font-bold text-purple-400 mt-1 block" th:text="${stats.totalVideos}">0</span>
+                <span class="text-[10px] text-slate-400">Grabaciones / clips</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block">En Revisión</span>
+                <span class="text-xl font-bold text-amber-400 mt-1 block" th:text="${stats.totalEnRevision}">0</span>
+                <span class="text-[10px] text-slate-400">Auditoría previa</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">Validados</span>
+                <span class="text-xl font-bold text-emerald-400 mt-1 block" th:text="${stats.totalValidados}">0</span>
+                <span class="text-[10px] text-slate-400">Sustento Ley 31297</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm">
+                <span class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider block">Restringidos</span>
+                <span class="text-xl font-bold text-purple-400 mt-1 block" th:text="${stats.totalRestringidos}">0</span>
+                <span class="text-[10px] text-slate-400">Protección datos</span>
+            </div>
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-3 shadow-sm"
+                 th:classappend="${stats.totalIntegridadNoCoincidente > 0} ? 'border-rose-500/50 bg-rose-500/10' : ''">
+                <span class="text-[10px] font-semibold uppercase tracking-wider block"
+                      th:classappend="${stats.totalIntegridadNoCoincidente > 0} ? 'text-rose-400' : 'text-slate-400'">Integridad SHA</span>
+                <span class="text-xl font-bold mt-1 block"
+                      th:classappend="${stats.totalIntegridadNoCoincidente > 0} ? 'text-rose-400' : 'text-slate-100'"
+                      th:text="${stats.totalIntegridadNoCoincidente}">0</span>
+                <span class="text-[10px]"
+                      th:classappend="${stats.totalIntegridadNoCoincidente > 0} ? 'text-rose-300 font-bold' : 'text-slate-400'">No coincidentes</span>
+            </div>
+        </div>
+
+        <!-- Filtros Avanzados -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-4 shadow-sm">
+            <form th:action="@{/dashboard/serenazgo/documentos}" method="get" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Búsqueda rápida</label>
+                        <div class="relative">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+                            <input type="text" name="busqueda" th:value="${filtro.busqueda}"
+                                   placeholder="Código, nombre de archivo..."
+                                   class="w-full bg-[#101827] border border-slate-700 text-slate-100 text-xs rounded-xl pl-9 pr-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Tipo Documental</label>
+                        <select name="tipoDocumento" class="w-full bg-[#101827] border border-slate-700 text-slate-100 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-blue-500">
+                            <option value="">Todos los tipos</option>
+                            <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.descripcion}" th:selected="${filtro.tipoDocumento == t}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Estado Administrativo</label>
+                        <select name="estado" class="w-full bg-[#101827] border border-slate-700 text-slate-100 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-blue-500">
+                            <option value="">Todos los estados</option>
+                            <option th:each="e : ${estados}" th:value="${e}" th:text="${e.descripcion}" th:selected="${filtro.estado == e}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Confidencialidad</label>
+                        <select name="nivelConfidencialidad" class="w-full bg-[#101827] border border-slate-700 text-slate-100 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-blue-500">
+                            <option value="">Cualquier nivel</option>
+                            <option th:each="n : ${niveles}" th:value="${n}" th:text="${n.descripcion}" th:selected="${filtro.nivelConfidencialidad == n}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Integridad Digital</label>
+                        <select name="resultadoIntegridad" class="w-full bg-[#101827] border border-slate-700 text-slate-100 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-blue-500">
+                            <option value="">Cualquier resultado</option>
+                            <option th:each="r : ${resultadosIntegridad}" th:value="${r}" th:text="${r.descripcion}" th:selected="${filtro.resultadoIntegridad == r}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/40">
+                    <div class="flex items-center space-x-3 text-xs text-slate-400">
+                        <div class="flex items-center space-x-1.5">
+                            <label class="text-[10px]">Desde:</label>
+                            <input type="date" name="desde" th:value="${filtro.desde}" class="bg-[#101827] border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200"/>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <label class="text-[10px]">Hasta:</label>
+                            <input type="date" name="hasta" th:value="${filtro.hasta}" class="bg-[#101827] border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200"/>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a th:href="@{/dashboard/serenazgo/documentos}" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
+                            Limpiar
+                        </a>
+                        <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
+                            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                            <span>Aplicar Filtros</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabla Principal de Evidencias y Documentos -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                    <tr class="border-b border-slate-700/70 bg-[#1e293b]/50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                        <th class="py-3 px-4">Código / Tipo</th>
+                        <th class="py-3 px-4">Nombre Original</th>
+                        <th class="py-3 px-4">Tamaño</th>
+                        <th class="py-3 px-4">Huella SHA-256</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4">Integridad</th>
+                        <th class="py-3 px-4">Fecha Carga</th>
+                        <th class="py-3 px-4">Vinculación</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40 text-xs">
+                    <tr th:if="${pagina.empty}" class="text-center">
+                        <td colspan="9" class="py-12 text-slate-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i data-lucide="folder-x" class="w-8 h-8 text-slate-500"></i>
+                                <span class="font-medium">No se encontraron documentos ni evidencias registrados.</span>
+                                <span class="text-[11px] text-slate-500">Utilice el botón de carga para registrar un nuevo archivo de respaldo.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:each="doc : ${pagina.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                    <i th:attr="data-lucide=${doc.tipoDocumentoIcono}" class="w-3.5 h-3.5"></i>
+                                </span>
+                                <div>
+                                    <a th:href="@{/dashboard/serenazgo/documentos/{id}(id=${doc.id})}"
+                                       class="font-mono font-bold text-blue-400 hover:text-blue-300"
+                                       th:text="${doc.codigo}">DOC-SEG-2026-00001</a>
+                                    <span class="block text-[10px] text-slate-400" th:text="${doc.tipoDocumentoDesc}">Fotografía</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 max-w-[200px] truncate" th:title="${doc.nombreOriginal}">
+                            <span class="font-medium text-slate-200 block truncate" th:text="${doc.nombreOriginal}">evidencia_01.jpg</span>
+                            <span class="text-[10px] text-slate-500 font-mono" th:text="${doc.mimeType}">image/jpeg</span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300 font-mono text-[11px]" th:text="${doc.tamanoFormateado}">
+                            1.24 MB
+                        </td>
+                        <td class="py-3 px-4 font-mono text-[10px] text-slate-400 max-w-[140px] truncate" th:title="${doc.hashSha256}">
+                            <span th:text="${doc.hashSha256}">e3b0c44298fc1c14...</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block"
+                                  th:classappend="${doc.estadoBadgeClase}"
+                                  th:text="${doc.estadoDesc}">Registrado</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-flex items-center space-x-1"
+                                  th:classappend="${doc.verificacionBadgeClase}">
+                                <i data-lucide="check" class="w-2.5 h-2.5" th:if="${doc.ultimoResultadoVerificacion.name() == 'COINCIDENTE'}"></i>
+                                <i data-lucide="alert-triangle" class="w-2.5 h-2.5" th:if="${doc.ultimoResultadoVerificacion.name() == 'NO_COINCIDENTE'}"></i>
+                                <span th:text="${doc.ultimoResultadoVerificacionDesc}">Verificado</span>
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-400 text-[11px]">
+                            <span th:text="${doc.fechaHoraCargaFormateada}">26/10/2026 09:30</span>
+                            <span class="block text-[10px] text-slate-500" th:text="${doc.usuarioCargaNombre}">admin</span>
+                        </td>
+                        <td class="py-3 px-4 text-[11px]">
+                            <div th:if="${doc.registroAsociadoCodigo != null}">
+                                <a th:href="@{${doc.registroAsociadoUrl}}" class="text-indigo-400 hover:text-indigo-300 font-medium">
+                                    <span th:text="${doc.registroAsociadoTipo} + ': ' + ${doc.registroAsociadoCodigo}"></span>
+                                </a>
+                            </div>
+                            <span th:if="${doc.registroAsociadoCodigo == null}" class="text-slate-500 text-[10px]">Sin vinculación</span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <a th:href="@{/dashboard/serenazgo/documentos/{id}(id=${doc.id})}"
+                               class="p-1.5 inline-flex items-center rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700"
+                               title="Ver Ficha Técnica">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/documentos/{id}/descargar(id=${doc.id})}"
+                               sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_DESCARGAR')"
+                               class="p-1.5 inline-flex items-center rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700"
+                               title="Descargar Archivo">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div th:if="${pagina.totalPages > 1}" class="px-5 py-3 border-t border-slate-700/60 bg-[#1e293b]/40 flex items-center justify-between text-xs text-slate-400">
+                <span>Mostrando página <strong class="text-slate-200" th:text="${pagina.number + 1}">1</strong> de <strong class="text-slate-200" th:text="${pagina.totalPages}">10</strong> (<span th:text="${pagina.totalElements}">0</span> registros)</span>
+                <div class="flex items-center space-x-1">
+                    <a th:if="${!pagina.first}" th:href="@{/dashboard/serenazgo/documentos(page=${pagina.number - 1}, busqueda=${filtro.busqueda}, tipoDocumento=${filtro.tipoDocumento}, estado=${filtro.estado})}" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Anterior</a>
+                    <a th:if="${!pagina.last}" th:href="@{/dashboard/serenazgo/documentos(page=${pagina.number + 1}, busqueda=${filtro.busqueda}, tipoDocumento=${filtro.tipoDocumento}, estado=${filtro.estado})}" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Siguiente</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Descargo Legal Institucional -->
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-start space-x-3 text-xs text-slate-400">
+            <i data-lucide="info" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+                <strong class="text-slate-200 block mb-0.5">Aviso de Respaldo Administrativo Municipal (Ley N° 31297 / Ley N° 27933):</strong>
+                <p>
+                    Los documentos y archivos administrados en este módulo constituyen material de respaldo municipal. La comprobación criptográfica SHA-256 acredita la integridad binaria frente al registro inicial en base de datos, mas no sustituye ni certifica por sí misma peritajes forenses judiciales ni procedimientos de cadena de custodia penal reservados a la Policía Nacional del Perú y al Ministerio Público.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

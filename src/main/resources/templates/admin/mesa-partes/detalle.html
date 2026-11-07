@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Expediente ' + ${expediente.numeroExpediente != null ? expediente.numeroExpediente : 'Borrador'} + ' — Revisión Institucional'">Detalle de Expediente</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado del Expediente y Acciones -->
+    <div class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+                <a th:href="@{/dashboard/mesa-partes/bandeja}" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Volver a la Bandeja</span>
+                </a>
+                <span class="text-slate-600">•</span>
+                <span class="text-xs text-slate-400" th:text="${expediente.tipoTramiteNombre}">Licencia de Funcionamiento</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+                <h1 class="text-xl font-bold font-mono text-slate-100"
+                    th:text="${expediente.numeroExpediente != null ? expediente.numeroExpediente : 'EXPEDIENTE EN BORRADOR'}">
+                    MPV-2026-000001
+                </h1>
+
+                <!-- Estado -->
+                <span th:if="${expediente.estadoActual != null and expediente.estadoActual.name() == 'PRESENTADO'}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    PRESENTADO
+                </span>
+                <span th:if="${expediente.estadoActual != null and expediente.estadoActual.name() == 'RECIBIDO'}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    RECIBIDO
+                </span>
+                <span th:if="${expediente.estadoActual != null and (expediente.estadoActual.name() == 'EN_REVISION' or expediente.estadoActual.name() == 'EN_ATENCION' or expediente.estadoActual.name() == 'DERIVADO')}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                      th:text="${#strings.replace(expediente.estadoActual.name(), '_', ' ')}">
+                    EN REVISIÓN
+                </span>
+                <span th:if="${expediente.estadoActual != null and expediente.estadoActual.name() == 'OBSERVADO'}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    OBSERVADO
+                </span>
+                <span th:if="${expediente.estadoActual != null and expediente.estadoActual.name() == 'EN_SUBSANACION'}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    SUBSANADO
+                </span>
+                <span th:if="${expediente.estadoActual != null and (expediente.estadoActual.name() == 'RESUELTO' or expediente.estadoActual.name() == 'NOTIFICADO' or expediente.estadoActual.name() == 'CERRADO')}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30"
+                      th:text="${expediente.estadoActual.name()}">
+                    RESUELTO
+                </span>
+                <span th:if="${expediente.estadoActual != null and (expediente.estadoActual.name() == 'ARCHIVADO' or expediente.estadoActual.name() == 'RECHAZADO' or expediente.estadoActual.name() == 'ANULADO' or expediente.estadoActual.name() == 'BORRADOR')}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700"
+                      th:text="${expediente.estadoActual.name()}">
+                    ARCHIVADO
+                </span>
+
+                <!-- Prioridad -->
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer hover:opacity-80"
+                      onclick="abrirModalPrioridad()"
+                      title="Haga clic para modificar la prioridad"
+                      th:classappend="${expediente.prioridad != null and expediente.prioridad.name() == 'URGENTE'} ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : (${expediente.prioridad != null and expediente.prioridad.name() == 'ALTA'} ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700')">
+                    <span class="flex items-center space-x-1">
+                        <span th:text="${'Prioridad: ' + (expediente.prioridad != null ? expediente.prioridad : 'NORMAL')}">Prioridad: NORMAL</span>
+                        <i data-lucide="edit-3" class="w-3 h-3 text-slate-400"></i>
+                    </span>
+                </span>
+            </div>
+
+            <p class="text-xs text-slate-300 font-medium" th:text="${expediente.asunto}">Asunto del Expediente</p>
+        </div>
+
+        <!-- Botones de Acción Superior -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón Recibir -->
+            <button th:if="${expediente.estadoActual != null and expediente.estadoActual.name() == 'PRESENTADO'}"
+                    onclick="abrirModalRecepcion()"
+                    class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span>Registrar Recepción</span>
+            </button>
+
+            <!-- Botón Nueva Observación -->
+            <button onclick="abrirModalObservacion()"
+                    class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors flex items-center space-x-1.5">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Formular Observación</span>
+            </button>
+
+            <!-- Botón Derivar Expediente -->
+            <button th:if="${expediente.estadoActual != null and expediente.estadoActual.name() != 'BORRADOR' and expediente.estadoActual.name() != 'PRESENTADO' and expediente.estadoActual.name() != 'ARCHIVADO' and expediente.estadoActual.name() != 'ANULADO'}"
+                    onclick="abrirModalDerivacionDetalle()"
+                    class="px-3.5 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 text-xs font-semibold transition-colors flex items-center space-x-1.5">
+                <i data-lucide="send" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Derivar a Oficina</span>
+            </button>
+
+            <!-- Botón Seguimiento 360° -->
+            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}/seguimiento(id=${expediente.id})}"
+               class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors flex items-center space-x-1.5"
+               title="Ver recorrido y trazabilidad entre oficinas">
+                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Seguimiento 360°</span>
+            </a>
+
+            <!-- Botón Ver / Descargar Constancia de Recepción -->
+            <button type="button"
+                    th:if="${expediente.estadoActual != null and expediente.estadoActual.name() != 'BORRADOR' and expediente.estadoActual.name() != 'PRESENTADO'}"
+                    th:data-id="${expediente.id}"
+                    th:data-numero="${expediente.numeroExpediente}"
+                    onclick="abrirVistaPreviaConstanciaDetalle(this.dataset.id, this.dataset.numero)"
+                    class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold transition-colors flex items-center space-x-1.5">
+                <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+                <span>Constancia de Recepción (PDF)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-slate-700/80 flex items-center space-x-6 text-xs font-semibold">
+        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id}, tab='general')}"
+           class="pb-3 border-b-2 flex items-center space-x-1.5 transition-colors"
+           th:classappend="${tabActiva == 'general'} ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span>Información General</span>
+        </a>
+
+        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id}, tab='documentos')}"
+           class="pb-3 border-b-2 flex items-center space-x-1.5 transition-colors"
+           th:classappend="${tabActiva == 'documentos'} ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+            <i data-lucide="paperclip" class="w-4 h-4"></i>
+            <span>Documentos Adjuntos</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px]" th:text="${documentos != null ? documentos.size() : 0}">0</span>
+        </a>
+
+        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id}, tab='requisitos')}"
+           class="pb-3 border-b-2 flex items-center space-x-1.5 transition-colors"
+           th:classappend="${tabActiva == 'requisitos'} ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span>Verificación de Requisitos</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px]" th:text="${requisitos != null ? requisitos.size() : 0}">0</span>
+        </a>
+
+        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id}, tab='observaciones')}"
+           class="pb-3 border-b-2 flex items-center space-x-1.5 transition-colors"
+           th:classappend="${tabActiva == 'observaciones'} ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>Observaciones</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px]" th:text="${observaciones != null ? observaciones.size() : 0}">0</span>
+        </a>
+
+        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${expediente.id}, tab='historial')}"
+           class="pb-3 border-b-2 flex items-center space-x-1.5 transition-colors"
+           th:classappend="${tabActiva == 'historial'} ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Historial de Movimientos</span>
+        </a>
+    </div>
+
+    <!-- Pestaña 1: Información General -->
+    <div th:if="${tabActiva == 'general'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Columna Izquierda: Datos del Expediente -->
+        <div class="md:col-span-2 space-y-4">
+            <div class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-blue-400"></i>
+                    <span>Detalle de la Solicitud</span>
+                </h3>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Asunto</label>
+                    <p class="text-sm font-medium text-slate-100 mt-0.5" th:text="${expediente.asunto}">Asunto</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Descripción o Fundamentación</label>
+                    <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 text-xs text-slate-200 whitespace-pre-line mt-1"
+                         th:text="${!#strings.isEmpty(expediente.descripcion) ? expediente.descripcion : 'Sin descripción adicional'}">
+                        Descripción detallada
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase">Tipo de Trámite</label>
+                        <p class="text-xs text-slate-200 mt-0.5" th:text="${expediente.tipoTramiteNombre}">Trámite</p>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase">Oficina Responsable</label>
+                        <p class="text-xs text-slate-200 mt-0.5" th:text="${expediente.oficinaResponsableNombre}">Oficina</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trazabilidad de Prioridad -->
+            <div th:if="${cambiosPrioridad != null && !cambiosPrioridad.empty}" class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                    <span>Historial de Prioridades</span>
+                </h3>
+                <div class="divide-y divide-slate-800 text-xs">
+                    <div th:each="cp : ${cambiosPrioridad}" class="py-2 flex items-center justify-between">
+                        <div>
+                            <span class="font-medium text-slate-200" th:text="${cp.prioridadAnterior + ' → ' + cp.prioridadNueva}">NORMAL → URGENTE</span>
+                            <p class="text-[11px] text-slate-400" th:text="${cp.motivo}">Motivo de urgencia</p>
+                        </div>
+                        <div class="text-right font-mono text-[11px] text-slate-400">
+                            <span th:text="${#temporals.format(cp.fechaCambio, 'dd/MM/yyyy HH:mm')}">15/10/2026</span>
+                            <p class="text-[10px] text-slate-500" th:text="${cp.usuarioNombre}">admin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Administrado y Fechas -->
+        <div class="space-y-4">
+            <!-- Datos del Solicitante -->
+            <div class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
+                    <span>Datos del Administrado</span>
+                </h3>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Nombre Completo</label>
+                    <p class="text-xs font-bold text-slate-100 mt-0.5" th:text="${expediente.solicitanteNombreCompleto}">Juan Pérez</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Documento</label>
+                    <p class="text-xs font-mono text-slate-200 mt-0.5"
+                       th:text="${!#strings.isEmpty(expediente.solicitanteNumeroDocumento) ? 'DOC: ' + expediente.solicitanteNumeroDocumento : '-'}">DNI: 45892314</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Canal de Presentación</label>
+                    <p class="text-xs text-blue-400 font-semibold mt-0.5" th:text="${expediente.canalIngreso}">VIRTUAL</p>
+                </div>
+            </div>
+
+            <!-- Tiempos y Plazos Legales -->
+            <div class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                    <span>Fechas y Cómputo Legal</span>
+                </h3>
+
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Presentación:</span>
+                        <span class="font-mono text-slate-200"
+                              th:text="${expediente.fechaPresentacion != null ? #temporals.format(expediente.fechaPresentacion, 'dd/MM/yyyy HH:mm') : 'No presentada'}">-</span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Recepción Formal:</span>
+                        <span class="font-mono font-bold text-blue-400"
+                              th:text="${expediente.fechaRecepcion != null ? #temporals.format(expediente.fechaRecepcion, 'dd/MM/yyyy HH:mm') : 'Pendiente'}">Pendiente</span>
+                    </div>
+
+                    <div class="flex items-center justify-between" th:if="${expediente.fechaLimite != null}">
+                        <span class="text-slate-400">Fecha Límite:</span>
+                        <span class="font-mono text-amber-400"
+                              th:text="${#temporals.format(expediente.fechaLimite, 'dd/MM/yyyy')}">-</span>
+                    </div>
+
+                    <div class="flex items-center justify-between" th:if="${expediente.fechaCierre != null}">
+                        <span class="text-slate-400">Fecha de Cierre:</span>
+                        <span class="font-mono text-slate-200"
+                              th:text="${#temporals.format(expediente.fechaCierre, 'dd/MM/yyyy HH:mm')}">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Documentos Adjuntos -->
+    <div th:if="${tabActiva == 'documentos'}" class="bg-card rounded-xl border border-slate-700/60 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Documentos Recaudos Vinculados</h3>
+            <span class="text-xs text-slate-400" th:text="${documentos != null ? documentos.size() + ' archivo(s)' : '0 archivos'}">0 archivos</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-slate-900/60 border-b border-slate-800 text-[11px] font-bold uppercase text-slate-400">
+                    <th class="py-3 px-4">#</th>
+                    <th class="py-3 px-4">Documento</th>
+                    <th class="py-3 px-4">Tipo Relación</th>
+                    <th class="py-3 px-4">Formato / Tamaño</th>
+                    <th class="py-3 px-4">Integridad (Hash SHA-256)</th>
+                    <th class="py-3 px-4">Fecha Carga</th>
+                    <th class="py-3 px-4 text-center">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                <tr th:if="${documentos == null || documentos.empty}">
+                    <td colspan="7" class="py-8 text-center text-slate-400">No hay documentos vinculados al expediente.</td>
+                </tr>
+
+                <tr th:each="doc, iter : ${documentos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-mono text-slate-500" th:text="${iter.count}">1</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="file" class="w-4 h-4 text-blue-400 flex-shrink-0"></i>
+                            <span class="font-medium text-slate-200" th:text="${doc.nombreOriginal}">archivo.pdf</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                              th:text="${doc.tipoRelacion}">ANEXO</span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                        <span th:text="${doc.extension != null ? doc.extension.toUpperCase() : 'PDF'}">PDF</span>
+                        <span th:if="${doc.tamanoBytes != null}" th:text="' (' + ${#numbers.formatDecimal(doc.tamanoBytes / 1024.0, 1, 1)} + ' KB)'"> (120 KB)</span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-xs truncate"
+                        th:text="${doc.hashSha256 != null ? doc.hashSha256 : '-'}">
+                        a1b2c3...
+                    </td>
+                    <td class="py-3 px-4 font-mono text-[11px] text-slate-400"
+                        th:text="${doc.fechaAsociacion != null ? #temporals.format(doc.fechaAsociacion, 'dd/MM/yyyy HH:mm') : '-'}">
+                        15/10/2026
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <a th:if="${doc.documentoId != null}"
+                           th:href="@{/api/documentos/{id}/descargar(id=${doc.documentoId})}"
+                           target="_blank"
+                           class="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600/30 hover:text-blue-400 border border-slate-700 text-slate-300 inline-flex items-center space-x-1 transition-colors">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>Descargar</span>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pestaña 3: Verificación de Requisitos -->
+    <div th:if="${tabActiva == 'requisitos'}" class="bg-card rounded-xl border border-slate-700/60 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Checklist de Requisitos Documentales</h3>
+                <p class="text-[11px] text-slate-400">Verifique el cumplimiento de cada requisito legal y técnico configurado para el trámite.</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-slate-900/60 border-b border-slate-800 text-[11px] font-bold uppercase text-slate-400">
+                    <th class="py-3 px-4">Requisito</th>
+                    <th class="py-3 px-4">Descripción</th>
+                    <th class="py-3 px-4">Obligatorio</th>
+                    <th class="py-3 px-4">Documento Asociado</th>
+                    <th class="py-3 px-4">Estado de Verificación</th>
+                    <th class="py-3 px-4">Revisor / Fecha</th>
+                    <th class="py-3 px-4 text-center">Calificar</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                <tr th:if="${requisitos == null || requisitos.empty}">
+                    <td colspan="7" class="py-8 text-center text-slate-400">No se han configurado requisitos documentales para este trámite.</td>
+                </tr>
+
+                <tr th:each="r : ${requisitos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-semibold text-slate-200" th:text="${r.nombreRequisito}">Copia de DNI</td>
+                    <td class="py-3 px-4 text-slate-400 max-w-xs truncate" th:text="${r.descripcionRequisito}">Documento vigente</td>
+                    <td class="py-3 px-4">
+                        <span th:if="${r.obligatorio}" class="text-[10px] font-bold text-rose-400 uppercase">Obligatorio</span>
+                        <span th:unless="${r.obligatorio}" class="text-[10px] text-slate-400">Opcional</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span th:if="${r.nombreDocumento != null}" class="text-blue-400 font-mono text-[11px]" th:text="${r.nombreDocumento}">adjunto.pdf</span>
+                        <span th:unless="${r.nombreDocumento != null}" class="text-slate-500 italic text-[11px]">No adjuntado</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span th:if="${r.estadoRevision.name() == 'CONFORME'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            CONFORME
+                        </span>
+                        <span th:if="${r.estadoRevision.name() == 'OBSERVADO'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                            OBSERVADO
+                        </span>
+                        <span th:if="${r.estadoRevision.name() == 'PENDIENTE_REVISION'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            PENDIENTE
+                        </span>
+                        <span th:if="${r.estadoRevision.name() == 'NO_APLICA'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400">
+                            NO APLICA
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-[11px] text-slate-400">
+                        <span th:text="${r.usuarioRevisorNombre != null ? r.usuarioRevisorNombre : '-'}">-</span>
+                        <p class="text-[10px] text-slate-500" th:if="${r.fechaRevision != null}"
+                           th:text="${#temporals.format(r.fechaRevision, 'dd/MM/yyyy HH:mm')}"></p>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <button type="button"
+                                th:data-id="${r.requisitoId}"
+                                th:data-nombre="${r.nombreRequisito}"
+                                th:data-estado="${r.estadoRevision.name()}"
+                                onclick="abrirModalVerificarRequisito(this.dataset.id, this.dataset.nombre, this.dataset.estado)"
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600/30 hover:text-blue-400 border border-slate-700 text-slate-300 inline-flex items-center space-x-1 transition-colors">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            <span>Evaluar</span>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pestaña 4: Observaciones -->
+    <div th:if="${tabActiva == 'observaciones'}" class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Observaciones Formuladas</h3>
+            <button onclick="abrirModalObservacion()"
+                    class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Nueva Observación</span>
+            </button>
+        </div>
+
+        <div th:if="${observaciones == null || observaciones.empty}" class="bg-card p-8 rounded-xl border border-slate-700/60 text-center text-slate-400 text-xs">
+            <i data-lucide="check-circle" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i>
+            <p class="font-medium text-slate-200">No existen observaciones registradas sobre este expediente.</p>
+            <p class="text-[11px] text-slate-500">Todos los recaudos y actuaciones se encuentran conformes.</p>
+        </div>
+
+        <div th:each="obs : ${observaciones}" class="bg-card p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span th:if="${obs.visibilidad != null && obs.visibilidad.name() == 'INTERNA'}"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                        INTERNA (Solo Funcionarios)
+                    </span>
+                    <span th:if="${obs.visibilidad != null && obs.visibilidad.name() == 'CIUDADANO'}"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        NOTIFICADA AL CIUDADANO
+                    </span>
+
+                    <span class="text-xs font-bold text-slate-200" th:text="${'Tipo: ' + (obs.tipoObservacion != null ? obs.tipoObservacion : 'FORMA')}">Tipo: FORMA</span>
+                    <span th:if="${obs.requisitoNombre != null}" class="text-xs text-slate-400" th:text="'(' + ${obs.requisitoNombre} + ')'">(Requisito)</span>
+                </div>
+
+                <div class="flex items-center space-x-2 text-xs">
+                    <span th:if="${obs.estado.name() == 'PENDIENTE'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        PENDIENTE DE SUBSANAR
+                    </span>
+                    <span th:if="${obs.estado.name() == 'SUBSANADA'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        SUBSANADA
+                    </span>
+                    <span class="text-slate-500 font-mono text-[11px]" th:text="${#temporals.format(obs.fechaRegistro, 'dd/MM/yyyy HH:mm')}">15/10/2026</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-200 whitespace-pre-line" th:text="${obs.descripcion}">Detalle de la observación</p>
+
+            <div th:if="${obs.fechaLimite != null}" class="text-[11px] text-amber-300/90 flex items-center space-x-1.5 font-mono">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Plazo legal para subsanar vence el: </span>
+                <strong th:text="${#temporals.format(obs.fechaLimite, 'dd/MM/yyyy')}">25/10/2026</strong>
+            </div>
+
+            <!-- Respuestas / Subsanaciones presentadas -->
+            <div th:if="${obs.subsanaciones != null && !obs.subsanaciones.empty}" class="mt-3 pt-3 border-t border-slate-800 bg-slate-900/40 p-3 rounded-lg space-y-2">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Respuesta / Subsanación Presentada:</p>
+                <div th:each="sub : ${obs.subsanaciones}" class="text-xs text-slate-200">
+                    <p th:text="${sub.respuestaCiudadano}">Descargo del ciudadano</p>
+                    <p class="text-[10px] text-slate-400 mt-1 font-mono">
+                        Presentada el <span th:text="${#temporals.format(sub.fechaSubsanacion, 'dd/MM/yyyy HH:mm')}">16/10/2026</span>
+                        por <span th:text="${sub.usuarioSubsanadorNombre}">ciudadano</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 5: Historial de Movimientos -->
+    <div th:if="${tabActiva == 'historial'}" class="bg-card p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-6">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+            <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+            <span>Línea de Tiempo y Trazabilidad Oficial</span>
+        </h3>
+
+        <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-700">
+            <div th:each="h : ${historial}" class="relative">
+                <span class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-slate-900 shadow"></span>
+                <div class="bg-slate-900/60 p-3.5 rounded-lg border border-slate-800 space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-200" th:text="${h.accion}">PRESENTACION_SOLICITUD</span>
+                        <span class="font-mono text-slate-400 text-[11px]"
+                              th:text="${h.fechaMovimiento != null ? #temporals.format(h.fechaMovimiento, 'dd/MM/yyyy HH:mm') : '-'}">15/10/2026 10:30</span>
+                    </div>
+
+                    <p class="text-xs text-slate-300" th:text="${h.observacion}">Expediente presentado formalmente</p>
+
+                    <div class="flex items-center space-x-3 text-[10px] text-slate-500 pt-1 font-mono">
+                        <span th:if="${h.usuarioResponsableNombre != null}" th:text="'Responsable: ' + ${h.usuarioResponsableNombre}">Responsable: admin</span>
+                        <span th:if="${h.oficinaNombre != null}" th:text="'Oficina: ' + ${h.oficinaNombre}">Oficina: Rentas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formular Observación -->
+    <div id="modalObservacion" class="modal-container fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg mx-auto my-auto overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+                    <span>Formular Observación Administrativa</span>
+                </h3>
+                <button type="button" onclick="cerrarModalObservacion()" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formObservacion" onsubmit="enviarObservacion(event)" data-no-loading="true" class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Observación</label>
+                        <select id="obsTipo" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="FORMA">De Forma</option>
+                            <option value="FONDO">De Fondo</option>
+                            <option value="DOCUMENTAL">Documental</option>
+                            <option value="TECNICA">Técnica</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Visibilidad</label>
+                        <select id="obsVisibilidad" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500" onchange="toggleVisibilidadObs()">
+                            <option value="CIUDADANO">Dirigida al Ciudadano</option>
+                            <option value="INTERNA">Interna (Solo Funcionarios)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="divSubsanacionCheck" class="flex items-center space-x-2">
+                    <input type="checkbox" id="obsSolicitarSubsanacion" class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" checked>
+                    <label for="obsSolicitarSubsanacion" class="text-xs text-slate-300">Requerir subsanación al administrado (cambia estado a OBSERVADO)</label>
+                </div>
+
+                <div id="divDiasPlazo">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Plazo de Subsanación (Días Hábiles)</label>
+                    <input type="number" id="obsDiasPlazo" value="10" min="2" max="30"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción Detallada de la Observación *</label>
+                    <textarea id="obsDescripcion" rows="4" required
+                              placeholder="Indique con claridad los motivos, fundamentos y recaudos faltantes..."
+                              class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalObservacion()"
+                            class="px-4 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarObs"
+                            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Registrar Observación</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Modificar Prioridad -->
+    <div id="modalPrioridad" class="modal-container fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-md mx-auto my-auto overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="flag" class="w-4 h-4 text-blue-400"></i>
+                    <span>Modificar Prioridad del Expediente</span>
+                </h3>
+                <button type="button" onclick="cerrarModalPrioridad()" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form onsubmit="actualizarPrioridad(event)" data-no-loading="true" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nueva Prioridad</label>
+                    <select id="selPrioridad" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="p : ${prioridades}" th:value="${p.name()}" th:text="${p.name()}"
+                                th:selected="${expediente.prioridad != null and expediente.prioridad.name() == p.name()}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo o Justificación del Cambio *</label>
+                    <textarea id="motivoPrioridad" rows="3" required
+                              placeholder="Ej. Solicitud vinculada a trámite judicial con plazo perentorio..."
+                              class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalPrioridad()"
+                            class="px-4 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarPrioridad"
+                            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Actualizar Prioridad</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Evaluar Requisito -->
+    <div id="modalVerificarReq" class="modal-container fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-md mx-auto my-auto overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Evaluar Requisito Documental</span>
+                </h3>
+                <button type="button" onclick="cerrarModalVerificarRequisito()" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form onsubmit="guardarEvaluacionRequisito(event)" data-no-loading="true" class="p-5 space-y-4">
+                <input type="hidden" id="verifRequisitoId">
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase">Requisito a Calificar:</label>
+                    <p id="verifNombreReq" class="text-xs font-bold text-slate-100 mt-0.5">Copia de DNI</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado de la Revisión</label>
+                    <select id="verifEstado" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="CONFORME">CONFORME (Cumple requisitos)</option>
+                        <option value="OBSERVADO">OBSERVADO (Incompleto o no legible)</option>
+                        <option value="NO_APLICA">NO APLICA (Exonerado)</option>
+                        <option value="PENDIENTE_REVISION">PENDIENTE DE REVISIÓN</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Notas u Observaciones del Requisito</label>
+                    <textarea id="verifNotas" rows="3"
+                              placeholder="Observaciones técnicas sobre el documento..."
+                              class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalVerificarRequisito()"
+                            class="px-4 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarEvaluacionReq"
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Guardar Calificación</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Derivación de Expediente -->
+    <div id="modalDerivacionDetalle" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full mx-auto my-auto p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="send" class="w-5 h-5 text-blue-400"></i>
+                    Derivar Expediente a otra Oficina
+                </h3>
+                <button type="button" onclick="cerrarModalDerivacionDetalle()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Oficina Actual (Remitente):</label>
+                <input type="text" readonly th:value="${expediente.oficinaResponsableNombre != null ? expediente.oficinaResponsableNombre : 'Mesa de Partes General'}" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-400 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Oficina Destinataria <span class="text-rose-400">*</span>:</label>
+                <select id="derivOficinaDestinoId" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Seleccione dependencia destino...</option>
+                    <option th:each="of : ${oficinas}"
+                            th:if="${expediente.oficinaResponsableId == null or of.id != expediente.oficinaResponsableId}"
+                            th:value="${of.id}"
+                            th:text="${of.codigo + ' - ' + of.nombre}">Oficina</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de la Derivación <span class="text-rose-400">*</span>:</label>
+                <textarea id="derivMotivo" rows="3" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Fundamente el pase o remisión del expediente..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Indicaciones o Instrucciones Internas (opcional):</label>
+                <textarea id="derivIndicaciones" rows="2" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500" placeholder="Instrucciones para la oficina receptora..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModalDerivacionDetalle()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button type="button" id="btnConfirmarDerivacionDetalle" onclick="confirmarDerivacionDetalle()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Confirmar Derivación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Vista Previa de Constancia de Recepción (PDF) -->
+    <div id="modalVistaPreviaConstancia" class="modal-container fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-4xl mx-auto my-auto overflow-hidden flex flex-col" style="height: 85vh;">
+            <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/70">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 flex-shrink-0">
+                        <i data-lucide="file-check" class="w-4 h-4"></i>
+                    </span>
+                    <h3 id="tituloVistaPreviaConstanciaDetalle" class="text-sm font-bold text-slate-100 truncate">
+                        Constancia de Recepción Administrativa
+                    </h3>
+                </div>
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                    <a id="btnAbrirPestanaConstanciaDetalle" href="#" target="_blank"
+                       class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Abrir en pestaña</span>
+                    </a>
+                    <a id="btnDescargarConstanciaPdfDetalle" href="#" download="Constancia-Recepcion.pdf"
+                       class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Descargar PDF</span>
+                    </a>
+                    <button type="button" onclick="cerrarVistaPreviaConstanciaDetalle()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 bg-slate-950 relative">
+                <iframe id="iframeConstanciaRecepcionDetalle" src="about:blank" class="w-full h-full border-0" title="Vista Previa de Constancia de Recepción"></iframe>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts Modulares de Detalle Administrativo -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        const expedienteId = /*[[${expediente.id}]]*/ 1;
+
+        function abrirVistaPreviaConstanciaDetalle(id, numero) {
+            const urlInline = `/dashboard/mesa-partes/expedientes/${id}/constancia-recepcion`;
+            const urlDownload = `/dashboard/mesa-partes/expedientes/${id}/constancia-recepcion?download=true`;
+            document.getElementById('tituloVistaPreviaConstanciaDetalle').textContent =
+                'Constancia Oficial de Recepción — ' + (numero || ('Expediente #' + id));
+            document.getElementById('btnAbrirPestanaConstanciaDetalle').href = urlInline;
+            const btnDesc = document.getElementById('btnDescargarConstanciaPdfDetalle');
+            btnDesc.href = urlDownload;
+            btnDesc.setAttribute('download', 'Constancia-Recepcion-' + (numero || id) + '.pdf');
+            document.getElementById('iframeConstanciaRecepcionDetalle').src = urlInline;
+            abrirModal('modalVistaPreviaConstancia');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarVistaPreviaConstanciaDetalle() {
+            document.getElementById('iframeConstanciaRecepcionDetalle').src = 'about:blank';
+            cerrarModal('modalVistaPreviaConstancia');
+        }
+
+        // Modal Observación
+        function abrirModalObservacion() {
+            abrirModal('modalObservacion');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarModalObservacion() {
+            cerrarModal('modalObservacion');
+        }
+
+        function toggleVisibilidadObs() {
+            const vis = document.getElementById('obsVisibilidad').value;
+            const divSub = document.getElementById('divSubsanacionCheck');
+            const divDias = document.getElementById('divDiasPlazo');
+            if (vis === 'INTERNA') {
+                divSub.classList.add('hidden');
+                divDias.classList.add('hidden');
+            } else {
+                divSub.classList.remove('hidden');
+                divDias.classList.remove('hidden');
+            }
+        }
+
+        async function enviarObservacion(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('obsTipo').value;
+            const visibilidad = document.getElementById('obsVisibilidad').value;
+            const solicitarSub = document.getElementById('obsSolicitarSubsanacion').checked && visibilidad === 'CIUDADANO';
+            const dias = parseInt(document.getElementById('obsDiasPlazo').value) || 10;
+            const desc = document.getElementById('obsDescripcion').value.trim();
+
+            const btn = document.getElementById('btnGuardarObs');
+            btn.disabled = true;
+            btn.innerHTML = 'Guardando...';
+
+            try {
+                await fetchApi(`/api/mesa-partes/expedientes/${expedienteId}/observaciones`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        tipoObservacion: tipo,
+                        visibilidad: visibilidad,
+                        descripcion: desc,
+                        solicitarSubsanacion: solicitarSub,
+                        diasPlazoSubsanacion: dias
+                    })
+                });
+                mostrarToast('Observación registrada correctamente.', 'success');
+                cerrarModalObservacion();
+                setTimeout(() => {
+                    window.location.href = `/dashboard/mesa-partes/expedientes/${expedienteId}?tab=observaciones`;
+                }, 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Registrar Observación</span>';
+            }
+        }
+
+        // Modal Prioridad
+        function abrirModalPrioridad() {
+            abrirModal('modalPrioridad');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarModalPrioridad() {
+            cerrarModal('modalPrioridad');
+        }
+
+        async function actualizarPrioridad(e) {
+            e.preventDefault();
+            const prioridad = document.getElementById('selPrioridad').value;
+            const motivo = document.getElementById('motivoPrioridad').value.trim();
+            const btn = document.getElementById('btnGuardarPrioridad');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Actualizando...';
+
+            try {
+                await fetchApi(`/api/mesa-partes/expedientes/${expedienteId}/prioridad`, {
+                    method: 'POST',
+                    body: JSON.stringify({ prioridad, motivo })
+                });
+                mostrarToast('Prioridad actualizada correctamente.', 'success');
+                cerrarModalPrioridad();
+                setTimeout(() => window.location.reload(), 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Actualizar Prioridad</span>';
+            }
+        }
+
+        // Modal Evaluar Requisito
+        function abrirModalVerificarRequisito(requisitoId, nombre, estadoActual) {
+            document.getElementById('verifRequisitoId').value = requisitoId;
+            document.getElementById('verifNombreReq').textContent = nombre;
+            document.getElementById('verifEstado').value = estadoActual;
+            document.getElementById('verifNotas').value = '';
+            abrirModal('modalVerificarReq');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarModalVerificarRequisito() {
+            cerrarModal('modalVerificarReq');
+        }
+
+        async function guardarEvaluacionRequisito(e) {
+            e.preventDefault();
+            const reqId = document.getElementById('verifRequisitoId').value;
+            const estado = document.getElementById('verifEstado').value;
+            const notas = document.getElementById('verifNotas').value.trim();
+            const btn = document.getElementById('btnGuardarEvaluacionReq');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Guardando...';
+
+            try {
+                await fetchApi(`/api/mesa-partes/expedientes/${expedienteId}/requisitos/${reqId}/verificar`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        estadoRevision: estado,
+                        observaciones: notas
+                    })
+                });
+                mostrarToast('Requisito evaluado correctamente.', 'success');
+                cerrarModalVerificarRequisito();
+                setTimeout(() => window.location.reload(), 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Guardar Calificación</span>';
+            }
+        }
+
+        // Modal Recepción Rápida desde Detalle
+        async function abrirModalRecepcion() {
+            if (!confirm('¿Confirma la recepción administrativa formal de este expediente?')) return;
+            try {
+                await fetchApi(`/api/mesa-partes/expedientes/${expedienteId}/recibir`, {
+                    method: 'POST'
+                });
+                mostrarToast('Expediente recibido formalmente. Estado actualizado a RECIBIDO.', 'success');
+                setTimeout(() => window.location.reload(), 700);
+            } catch (err) {}
+        }
+
+        // Modal Derivación
+        function abrirModalDerivacionDetalle() {
+            document.getElementById('derivMotivo').value = '';
+            document.getElementById('derivIndicaciones').value = '';
+            abrirModal('modalDerivacionDetalle');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarModalDerivacionDetalle() {
+            cerrarModal('modalDerivacionDetalle');
+        }
+
+        async function confirmarDerivacionDetalle() {
+            const oficinaDestinoId = document.getElementById('derivOficinaDestinoId').value;
+            const motivo = document.getElementById('derivMotivo').value.trim();
+            const indicaciones = document.getElementById('derivIndicaciones').value.trim();
+
+            if (!oficinaDestinoId) {
+                mostrarToast('Debe seleccionar la oficina destinataria.', 'warning');
+                return;
+            }
+            if (!motivo) {
+                mostrarToast('Debe fundamentar el motivo de la derivación.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmarDerivacionDetalle');
+            btn.disabled = true;
+            btn.textContent = 'Derivando...';
+
+            try {
+                await fetchApi(`/api/mesa-partes/expedientes/${expedienteId}/derivar`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        oficinaDestinoId: parseInt(oficinaDestinoId, 10),
+                        motivo: motivo,
+                        indicaciones: indicaciones
+                    })
+                });
+                mostrarToast('Expediente derivado satisfactoriamente.', 'success');
+                cerrarModalDerivacionDetalle();
+                setTimeout(() => window.location.reload(), 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Derivación';
+            }
+        }
+
+        window.abrirVistaPreviaConstanciaDetalle = abrirVistaPreviaConstanciaDetalle;
+        window.cerrarVistaPreviaConstanciaDetalle = cerrarVistaPreviaConstanciaDetalle;
+        window.abrirModalObservacion = abrirModalObservacion;
+        window.cerrarModalObservacion = cerrarModalObservacion;
+        window.toggleVisibilidadObs = toggleVisibilidadObs;
+        window.enviarObservacion = enviarObservacion;
+        window.abrirModalPrioridad = abrirModalPrioridad;
+        window.cerrarModalPrioridad = cerrarModalPrioridad;
+        window.actualizarPrioridad = actualizarPrioridad;
+        window.abrirModalVerificarRequisito = abrirModalVerificarRequisito;
+        window.cerrarModalVerificarRequisito = cerrarModalVerificarRequisito;
+        window.guardarEvaluacionRequisito = guardarEvaluacionRequisito;
+        window.abrirModalRecepcion = abrirModalRecepcion;
+        window.abrirModalDerivacionDetalle = abrirModalDerivacionDetalle;
+        window.cerrarModalDerivacionDetalle = cerrarModalDerivacionDetalle;
+        window.confirmarDerivacionDetalle = confirmarDerivacionDetalle;
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Ficha Técnica: ' + concepto.codigo + ' — SIGM-QUINUA'}">Ficha Técnica de Concepto — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Éxito o Error -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeExito}">Operación completada con éxito.</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Barra de Navegación y Acciones -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/conceptos}" class="hover:text-blue-400">Conceptos Tributarios</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="font-mono text-indigo-400" th:text="${concepto.codigo}">IMP_PREDIAL</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2">
+                    <span class="font-mono text-indigo-400" th:text="${concepto.codigo}">IMP_PREDIAL</span>
+                    <span class="text-slate-500 font-normal">|</span>
+                    <span th:text="${concepto.nombre}">Impuesto Predial Anual</span>
+                </h1>
+                <span th:class="${'px-2.5 py-0.5 rounded-full text-xs font-semibold border ' + concepto.badgeClass}"
+                      th:text="${concepto.estadoDesc}">Activo</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300"
+                      th:text="${concepto.naturalezaTributariaDesc}">Impuesto</span>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/tributaria/conceptos/{id}/exportar/pdf(id=${concepto.id})}"
+               target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5 border border-slate-700">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Ficha PDF</span>
+            </a>
+
+            <a th:href="@{/dashboard/tributaria/conceptos/{id}/editar(id=${concepto.id})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_CONCEPTOS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5 border border-slate-700">
+                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                <span>Editar Concepto</span>
+            </a>
+
+            <button type="button" onclick="document.getElementById('modalNuevaConfiguracion').classList.remove('hidden')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_CONCEPTOS_CONFIGURAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nueva Versión / Período</span>
+            </button>
+
+            <a th:href="@{/dashboard/tributaria/conceptos}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center space-x-1 border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Selección de Versión / Período Activo -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i data-lucide="git-branch" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Versión en Visualización</span>
+                <div class="flex items-center space-x-2">
+                    <span th:if="${conf != null}" class="font-bold text-white text-sm"
+                          th:text="${'Versión ' + conf.numeroVersion + ' — Ejercicio Fiscal ' + conf.anioPeriodo}">Versión 1 — Ejercicio 2026</span>
+                    <span th:unless="${conf != null}" class="text-slate-400 text-sm italic">Sin versiones configuradas</span>
+                    
+                    <span th:if="${conf != null}" th:class="${'px-2 py-0.5 rounded text-[10px] font-bold border ' + conf.badgeClass}"
+                          th:text="${conf.estadoDesc}">Borrador</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selector de Versión -->
+        <div class="flex items-center space-x-2">
+            <form th:action="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id})}" method="get" class="flex items-center space-x-2">
+                <input type="hidden" name="tab" th:value="${tabActivo}">
+                <select name="versionId" onchange="this.form.submit()"
+                        class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <option th:each="cfg : ${concepto.configuraciones}"
+                            th:value="${cfg.id}"
+                            th:text="${'v' + cfg.numeroVersion + ' (' + cfg.anioPeriodo + ') — ' + cfg.estadoDesc}"
+                            th:selected="${conf != null && conf.id == cfg.id}"></option>
+                </select>
+            </form>
+
+            <button th:if="${#lists.size(concepto.configuraciones) >= 2}"
+                    type="button" onclick="document.getElementById('modalCompararVersiones').classList.remove('hidden')"
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 flex items-center space-x-1"
+                    title="Comparar dos versiones">
+                <i data-lucide="git-compare" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span class="hidden sm:inline">Comparar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas (Tabs) -->
+    <div class="border-b border-theme flex space-x-1 overflow-x-auto text-xs">
+        <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='general', versionId=${conf != null ? conf.id : null})}"
+           th:class="${tabActivo == 'general' ? 'px-4 py-2.5 font-bold text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2' : 'px-4 py-2.5 font-medium text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors'}">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Datos Generales</span>
+        </a>
+        <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='parametros', versionId=${conf != null ? conf.id : null})}"
+           th:class="${tabActivo == 'parametros' ? 'px-4 py-2.5 font-bold text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2' : 'px-4 py-2.5 font-medium text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors'}">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            <span>Parámetros y Alícuotas</span>
+            <span th:if="${conf != null}" class="ml-1.5 px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded-full text-[10px]"
+                  th:text="${#lists.size(conf.parametros)}">0</span>
+        </a>
+        <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='configuraciones', versionId=${conf != null ? conf.id : null})}"
+           th:class="${tabActivo == 'configuraciones' ? 'px-4 py-2.5 font-bold text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2' : 'px-4 py-2.5 font-medium text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors'}">
+            <i data-lucide="git-pull-request" class="w-4 h-4"></i>
+            <span>Ciclo de Vida y Versiones</span>
+            <span class="ml-1.5 px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded-full text-[10px]"
+                  th:text="${#lists.size(concepto.configuraciones)}">0</span>
+        </a>
+        <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='calendario', versionId=${conf != null ? conf.id : null})}"
+           th:class="${tabActivo == 'calendario' ? 'px-4 py-2.5 font-bold text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2' : 'px-4 py-2.5 font-medium text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors'}">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+            <span>Calendario de Cuotas</span>
+            <span class="ml-1.5 px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded-full text-[10px]"
+                  th:text="${#lists.size(calendario)}">0</span>
+        </a>
+        <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='historial', versionId=${conf != null ? conf.id : null})}"
+           th:class="${tabActivo == 'historial' ? 'px-4 py-2.5 font-bold text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2' : 'px-4 py-2.5 font-medium text-slate-400 hover:text-slate-200 flex items-center space-x-2 transition-colors'}">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Auditoría de Cambios</span>
+        </a>
+    </div>
+
+    <!-- CONTENIDO DE LAS PESTAÑAS -->
+
+    <!-- TAB 1: DATOS GENERALES -->
+    <div th:if="${tabActivo == 'general'}" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Tarjeta 1: Ficha Jurídica -->
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2">
+                    <i data-lucide="file-check" class="w-4 h-4"></i>
+                    <span>Información Jurídica y Tributaria</span>
+                </h3>
+
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400">Código Oficial</dt>
+                        <dd class="font-mono font-bold text-white text-sm" th:text="${concepto.codigo}">IMP_PREDIAL</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Naturaleza Jurídica</dt>
+                        <dd class="font-medium text-white" th:text="${concepto.naturalezaTributariaDesc}">Impuesto</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Tipo de Concepto</dt>
+                        <dd class="font-medium text-white" th:text="${concepto.tipoConceptoDesc}">Impuesto Predial</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Periodicidad de Cobro</dt>
+                        <dd class="font-medium text-white" th:text="${concepto.periodicidadDesc}">Anual</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Afectación Predial Directa</dt>
+                        <dd>
+                            <span th:if="${concepto.aplicaAPredio}" class="text-emerald-400 font-semibold">Sí (Afecta predios distritales)</span>
+                            <span th:unless="${concepto.aplicaAPredio}" class="text-slate-400">No (Tasa / Trámite independiente)</span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Clasificador Presupuestal</dt>
+                        <dd class="font-mono text-slate-300" th:text="${concepto.cuentaPresupuestal != null ? concepto.cuentaPresupuestal : 'No asignado'}">1.1.2.1.1.1</dd>
+                    </div>
+                </dl>
+
+                <div>
+                    <dt class="text-slate-400 text-xs mb-1">Materia Gravada / Hecho Imponible</dt>
+                    <p class="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-lg border border-slate-800"
+                       th:text="${concepto.descripcion != null && !concepto.descripcion.isBlank() ? concepto.descripcion : 'Sin descripción técnica registrada.'}">
+                        Grava el valor de los predios urbanos y rústicos en el ámbito de la jurisdicción distrital de Quinua.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: Marco Normativo y Vigencia -->
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>Norma Legal Base y Vigencia</span>
+                </h3>
+
+                <dl class="space-y-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400">Norma Legal de Origen</dt>
+                        <dd class="mt-1">
+                            <span th:if="${concepto.normaLegalNumero != null}" class="font-medium text-indigo-300 block">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 inline mr-1 text-indigo-400"></i>
+                                <span th:text="${concepto.normaLegalNumero}">D.S. 156-2004-EF</span>
+                            </span>
+                            <span th:if="${concepto.normaLegalDescripcion != null}" class="text-slate-400 text-[11px] block mt-0.5"
+                                  th:text="${concepto.normaLegalDescripcion}">Texto Único Ordenado de la Ley de Tributación Municipal</span>
+                            <span th:if="${concepto.normaLegalNumero == null}" class="text-slate-500 italic">No vinculada a norma formal específica</span>
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                        <div>
+                            <dt class="text-slate-400">Fecha Inicio Vigencia</dt>
+                            <dd class="font-medium text-white" th:text="${concepto.fechaInicioVigencia}">01/01/2026</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-400">Fecha Fin Vigencia</dt>
+                            <dd class="font-medium text-white" th:text="${concepto.fechaFinVigencia != null ? concepto.fechaFinVigencia : 'Indeterminada'}">Indeterminada</dd>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800">
+                        <dt class="text-slate-400">Estado en Catálogo Maestro</dt>
+                        <dd class="mt-1">
+                            <span th:class="${'px-2.5 py-1 rounded text-xs font-bold border ' + concepto.badgeClass}"
+                                  th:text="${concepto.estadoDesc}">ACTIVO</span>
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: PARÁMETROS Y ALÍCUOTAS -->
+    <div th:if="${tabActivo == 'parametros'}" class="space-y-4">
+        <div th:if="${conf == null}" class="bg-card border border-theme rounded-xl p-8 text-center text-slate-400">
+            <i data-lucide="sliders" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
+            <p class="text-xs">No hay versiones de configuración disponibles para este concepto.</p>
+        </div>
+
+        <div th:if="${conf != null}" class="space-y-4">
+            <!-- Barra superior de parámetros -->
+            <div class="bg-card border border-theme rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-medium text-slate-300">
+                        Parámetros configurados en <span class="font-bold text-white" th:text="${'v' + conf.numeroVersion + ' (' + conf.anioPeriodo + ')'}">v1 (2026)</span>:
+                    </span>
+                    <span th:if="${conf.isEditable()}" class="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded text-[10px] font-semibold">
+                        Modo Edición Habilitado (Borrador)
+                    </span>
+                    <span th:unless="${conf.isEditable()}" class="px-2 py-0.5 bg-slate-800 border border-slate-700 text-slate-400 rounded text-[10px] font-semibold flex items-center space-x-1">
+                        <i data-lucide="lock" class="w-3 h-3 text-slate-500"></i>
+                        <span>Inmutable (Aprobado / Activo)</span>
+                    </span>
+                </div>
+
+                <div class="flex items-center space-x-2" th:if="${conf.isEditable()}">
+                    <button type="button" onclick="document.getElementById('modalAgregarParametro').classList.remove('hidden')"
+                            sec:authorize="hasAnyAuthority('TRIBUTARIA_CONCEPTOS_CONFIGURAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                            class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Agregar Parámetro</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Parámetros -->
+            <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+                <div th:if="${conf.parametros.isEmpty()}" class="p-8 text-center text-slate-400 text-xs">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2 text-amber-500/80"></i>
+                    <p class="font-semibold text-slate-300">Esta versión aún no tiene parámetros registrados.</p>
+                    <p class="text-slate-500 mt-1">Haga clic en "Agregar Parámetro" para definir alícuotas, tramos UIT o importes fijos.</p>
+                </div>
+
+                <div th:unless="${conf.parametros.isEmpty()}" class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Ord.</th>
+                                <th class="px-4 py-3">Código</th>
+                                <th class="px-4 py-3">Denominación del Parámetro</th>
+                                <th class="px-4 py-3">Tipo Dato</th>
+                                <th class="px-4 py-3">Valor Configurado</th>
+                                <th class="px-4 py-3">Unidad</th>
+                                <th class="px-4 py-3">Origen Normativo</th>
+                                <th class="px-4 py-3">Obligatorio</th>
+                                <th class="px-4 py-3 text-right" th:if="${conf.isEditable()}">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-theme">
+                            <tr th:each="p : ${conf.parametros}" class="hover:bg-slate-800/40 transition-colors">
+                                <td class="px-4 py-3 text-slate-500" th:text="${p.ordenVisual}">1</td>
+                                <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${p.codigo}">TRAMO_HASTA_15_UIT</td>
+                                <td class="px-4 py-3 font-medium text-white">
+                                    <span th:text="${p.nombre}">Alícuota Tramo Hasta 15 UIT</span>
+                                    <p th:if="${p.descripcion != null}" class="text-[10px] text-slate-400 mt-0.5" th:text="${p.descripcion}"></p>
+                                </td>
+                                <td class="px-4 py-3 text-slate-300" th:text="${p.tipoDatoDesc}">Decimal</td>
+                                <td class="px-4 py-3 font-bold font-mono text-emerald-400 text-sm" th:text="${p.valorFormateado}">0.20 %</td>
+                                <td class="px-4 py-3 text-slate-300" th:text="${p.unidadDesc}">Porcentaje</td>
+                                <td class="px-4 py-3 text-slate-400 text-[11px]" th:text="${p.origenNormativo != null ? p.origenNormativo : '-'}">Art. 13 LTM</td>
+                                <td class="px-4 py-3">
+                                    <span th:if="${p.esObligatorio}" class="text-rose-400 font-bold">Sí</span>
+                                    <span th:unless="${p.esObligatorio}" class="text-slate-500">Opcional</span>
+                                </td>
+                                <td class="px-4 py-3 text-right" th:if="${conf.isEditable()}">
+                                    <form th:action="@{/dashboard/tributaria/conceptos/configuraciones/{cid}/parametros/{pid}/eliminar(cid=${conf.id}, pid=${p.id})}"
+                                          method="post" onsubmit="return confirm('¿Está seguro de eliminar este parámetro?');" class="inline">
+                                        <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+                                        <button type="submit" class="p-1 text-slate-500 hover:text-rose-400 transition-colors" title="Eliminar Parámetro">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: CICLO DE VIDA Y VERSIONES -->
+    <div th:if="${tabActivo == 'configuraciones'}" class="space-y-4">
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-theme flex items-center justify-between">
+                <div>
+                    <h3 class="text-xs font-semibold text-white uppercase tracking-wider">Historial de Versiones Normativas</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Control de ciclo de vida: Borrador → En Revisión → Aprobado → Activo → Inactivo</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modalNuevaConfiguracion').classList.remove('hidden')"
+                        sec:authorize="hasAnyAuthority('TRIBUTARIA_CONCEPTOS_CONFIGURAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>Nueva Configuración</span>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Versión</th>
+                            <th class="px-4 py-3">Año / Período</th>
+                            <th class="px-4 py-3">Estado</th>
+                            <th class="px-4 py-3">Norma de Sustento</th>
+                            <th class="px-4 py-3">Vigencia Temporal</th>
+                            <th class="px-4 py-3">Parámetros</th>
+                            <th class="px-4 py-3">Creador</th>
+                            <th class="px-4 py-3 text-right">Acciones de Flujo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="cfg : ${concepto.configuraciones}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-indigo-400">
+                                <a th:href="@{/dashboard/tributaria/conceptos/{id}(id=${concepto.id}, tab='parametros', versionId=${cfg.id})}"
+                                   class="hover:underline" th:text="${'v' + cfg.numeroVersion}">v1</a>
+                            </td>
+                            <td class="px-4 py-3 font-bold text-white" th:text="${cfg.anioPeriodo}">2026</td>
+                            <td class="px-4 py-3">
+                                <span th:class="${'px-2.5 py-0.5 rounded text-[10px] font-bold border ' + cfg.badgeClass}"
+                                      th:text="${cfg.estadoDesc}">Borrador</span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-300 font-mono" th:text="${cfg.normaNumero}">Ord. 001-2026</td>
+                            <td class="px-4 py-3 text-slate-400" th:text="${cfg.fechaInicioVigencia}">01/01/2026</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${cfg.cantidadParametros + ' parámetros'}">3 parámetros</td>
+                            <td class="px-4 py-3 text-slate-400" th:text="${cfg.usuarioCreador}">admin</td>
+                            <td class="px-4 py-3 text-right space-x-1">
+                                <!-- Enviar a revisión si está en borrador -->
+                                <form th:if="${cfg.estado.name() == 'BORRADOR'}"
+                                      th:action="@{/dashboard/tributaria/conceptos/configuraciones/{cid}/revision(cid=${cfg.id})}"
+                                      method="post" class="inline">
+                                    <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+                                    <button type="submit" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[11px] font-medium"
+                                            title="Enviar a revisión técnica y legal">
+                                        Revisar
+                                    </button>
+                                </form>
+
+                                <!-- Aprobar si está en revisión o borrador -->
+                                <button th:if="${cfg.estado.name() == 'EN_REVISION' || cfg.estado.name() == 'BORRADOR'}"
+                                        type="button" th:data-cid="${cfg.id}" onclick="abrirModalAprobar(this.getAttribute('data-cid'))"
+                                        class="px-2 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[11px] font-medium"
+                                        title="Aprobar formalmente con resolución">
+                                    Aprobar
+                                </button>
+
+                                <!-- Activar si está aprobado -->
+                                <form th:if="${cfg.estado.name() == 'APROBADO'}"
+                                      th:action="@{/dashboard/tributaria/conceptos/configuraciones/{cid}/activar(cid=${cfg.id})}"
+                                      method="post" onsubmit="return confirm('¿Confirma la activación de esta versión para determinación tributaria?');" class="inline">
+                                    <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+                                    <button type="submit" class="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[11px] font-bold"
+                                            title="Activar versión y poner en vigor">
+                                        Activar
+                                    </button>
+                                </form>
+
+                                <!-- Desactivar si está activo -->
+                                <button th:if="${cfg.estado.name() == 'ACTIVO'}"
+                                        type="button" th:data-cid="${cfg.id}" onclick="abrirModalDesactivar(this.getAttribute('data-cid'))"
+                                        class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded text-[11px] font-medium"
+                                        title="Desactivar versión">
+                                    Desactivar
+                                </button>
+
+                                <!-- Generar nueva versión si está aprobada o activa -->
+                                <form th:if="${cfg.estado.name() == 'APROBADO' || cfg.estado.name() == 'ACTIVO'}"
+                                      th:action="@{/dashboard/tributaria/conceptos/configuraciones/{cid}/nueva-version(cid=${cfg.id})}"
+                                      method="post" class="inline">
+                                    <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+                                    <button type="submit" class="px-2 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded text-[11px] font-medium"
+                                            title="Generar nueva versión en borrador a partir de esta">
+                                        Nueva Versión
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: CALENDARIO DE CUOTAS -->
+    <div th:if="${tabActivo == 'calendario'}" class="space-y-4">
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+                <h3 class="text-xs font-semibold text-white uppercase tracking-wider">Cronograma Oficial de Cuotas y Vencimientos</h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Fechas límite de pago sin intereses moratorios y bonificaciones por pronto pago</p>
+            </div>
+            <button th:if="${conf != null}"
+                    type="button" onclick="document.getElementById('modalProgramarCuota').classList.remove('hidden')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_CONCEPTOS_CONFIGURAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Programar Cuota</span>
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${calendario.isEmpty()}" class="p-8 text-center text-slate-400 text-xs">
+                <i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="font-semibold text-slate-300">No hay cuotas programadas en este período.</p>
+                <p class="text-slate-500 mt-1">Haga clic en "Programar Cuota" para añadir las fechas de vencimiento.</p>
+            </div>
+
+            <div th:unless="${calendario.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Cuota</th>
+                            <th class="px-4 py-3">Descripción</th>
+                            <th class="px-4 py-3">Fecha Vencimiento</th>
+                            <th class="px-4 py-3">Descuento Pronto Pago</th>
+                            <th class="px-4 py-3">Estado</th>
+                            <th class="px-4 py-3">Prórroga</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="cuota : ${calendario}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-bold font-mono text-indigo-400" th:text="${'Cuota ' + cuota.numeroCuota}">Cuota 1</td>
+                            <td class="px-4 py-3 font-medium text-white" th:text="${cuota.descripcionCuota}">Primer Trimestre</td>
+                            <td class="px-4 py-3 text-emerald-400 font-bold" th:text="${cuota.fechaVencimiento}">28/02/2026</td>
+                            <td class="px-4 py-3">
+                                <span th:if="${cuota.permiteDescuento}" class="text-amber-400 font-semibold"
+                                      th:text="${cuota.porcentajeDescuento + ' %'}">10 %</span>
+                                <span th:unless="${cuota.permiteDescuento}" class="text-slate-500">Sin descuento</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span th:class="${'px-2 py-0.5 rounded text-[10px] font-semibold border ' + cuota.badgeClass}"
+                                      th:text="${cuota.estadoDesc}">Programado</span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-400 text-[11px]" th:text="${cuota.resolucionProrroga != null ? cuota.resolucionProrroga : '-'}">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: AUDITORÍA DE CAMBIOS (HISTORIAL) -->
+    <div th:if="${tabActivo == 'historial'}" class="space-y-4">
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="text-xs font-semibold text-white uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+                <span>Trazabilidad y Auditoría de la Versión</span>
+            </h3>
+
+            <div th:if="${conf == null || conf.historial.isEmpty()}" class="p-6 text-center text-slate-400 text-xs">
+                No hay registros de auditoría para la versión seleccionada.
+            </div>
+
+            <div th:if="${conf != null && !conf.historial.isEmpty()}" class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+                <div th:each="h : ${conf.historial}" class="relative">
+                    <span class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-indigo-500 ring-4 ring-slate-900"></span>
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+                        <div class="flex items-center justify-between text-[11px] mb-1">
+                            <span class="font-bold text-indigo-300" th:text="${h.accionDesc}">Creación de Versión</span>
+                            <span class="text-slate-500" th:text="${#temporals.format(h.fechaRegistro, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 10:00:00</span>
+                        </div>
+                        <p class="text-xs text-white" th:text="${h.motivo}">Creación inicial de borrador.</p>
+                        <div class="flex items-center space-x-4 text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+                            <span>Usuario: <strong class="text-slate-300" th:text="${h.usuarioRegistro}">admin</strong></span>
+                            <span th:if="${h.resolucionSustento != null}">Sustento: <strong class="text-slate-300" th:text="${h.resolucionSustento}"></strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: CREAR NUEVA CONFIGURACIÓN / PERÍODO -->
+    <div id="modalNuevaConfiguracion" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="git-branch" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Crear Nueva Configuración / Período</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalNuevaConfiguracion').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/conceptos/{id}/configuraciones(id=${concepto.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Período / Ejercicio Fiscal <span class="text-rose-400">*</span></label>
+                    <select name="periodoId" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" required>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${'Ejercicio ' + p.anio + ' — UIT S/ ' + p.uitVigente}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Norma Tributaria de Sustento</label>
+                    <select name="normaId" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="">(Sin norma vinculada)</option>
+                        <option th:each="n : ${normas}" th:value="${n.id}" th:text="${n.numeroNorma + ' - ' + n.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Inicio Vigencia <span class="text-rose-400">*</span></label>
+                        <input type="date" name="fechaInicioVigencia" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Fin Vigencia</label>
+                        <input type="date" name="fechaFinVigencia" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo / Justificación</label>
+                    <textarea name="descripcionMotivo" rows="2" placeholder="Motivo de la emisión de la configuración..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalNuevaConfiguracion').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">Crear Borrador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: AGREGAR PARÁMETRO A LA VERSIÓN -->
+    <div id="modalAgregarParametro" th:if="${conf != null && conf.isEditable()}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Agregar Parámetro o Alícuota</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalAgregarParametro').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/conceptos/configuraciones/{cid}/parametros(cid=${conf.id})}" method="post" class="space-y-4">
+                <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Código Parámetro <span class="text-rose-400">*</span></label>
+                        <input type="text" name="codigo" placeholder="Ej. TRAMO_1_ALICUOTA" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-mono text-white uppercase focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Denominación <span class="text-rose-400">*</span></label>
+                        <input type="text" name="nombre" placeholder="Ej. Alícuota Hasta 15 UIT" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Dato <span class="text-rose-400">*</span></label>
+                        <select name="tipoDato" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option th:each="td : ${tiposDato}" th:value="${td}" th:text="${td.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Unidad de Medida <span class="text-rose-400">*</span></label>
+                        <select name="unidad" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option th:each="un : ${unidades}" th:value="${un}" th:text="${un.descripcion}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Valor Cuantitativo Decimal (o Alícuota)</label>
+                    <input type="number" step="0.000001" name="valorDecimal" placeholder="Ej. 0.002 (para 0.2%) ó 25.50" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-mono text-emerald-400 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Origen Normativo / Artículo</label>
+                    <input type="text" name="origenNormativo" placeholder="Ej. D.S. 156-2004-EF, Art. 13" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalAgregarParametro').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">Guardar Parámetro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: APROBAR VERSIÓN FORMALMENTE -->
+    <div id="modalAprobarVersion" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="award" class="w-4 h-4 text-blue-400"></i>
+                    <span>Aprobar Configuración Formalmente</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalAprobarVersion').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formAprobarVersion" method="post" class="space-y-4">
+                <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Resolución de Alcaldía / Acuerdo de Aprobación <span class="text-rose-400">*</span></label>
+                    <input type="text" name="resolucionAprobacion" placeholder="Ej. Ordenanza Municipal N° 004-2026-MDQ" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Informe Técnico / Legal de Sustento</label>
+                    <textarea name="motivo" rows="2" placeholder="Sustento de conformidad técnica y legal..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalAprobarVersion').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Confirmar Aprobación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: DESACTIVAR CONFIGURACIÓN -->
+    <div id="modalDesactivarVersion" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="power-off" class="w-4 h-4 text-rose-400"></i>
+                    <span>Desactivar Versión</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalDesactivarVersion').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formDesactivarVersion" method="post" class="space-y-4">
+                <input type="hidden" name="conceptoId" th:value="${concepto.id}">
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo Justificado de Cese / Desactivación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" placeholder="Indique la causa o resolución que dispone la desactivación..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-rose-500" required></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalDesactivarVersion').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold">Desactivar Versión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: PROGRAMAR CUOTA EN CALENDARIO -->
+    <div id="modalProgramarCuota" th:if="${conf != null}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="calendar-plus" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Programar Cuota en Calendario</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalProgramarCuota').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/conceptos/{id}/calendario(id=${concepto.id})}" method="post" class="space-y-4">
+                <input type="hidden" name="periodoId" th:value="${conf.periodoId}">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Número de Cuota <span class="text-rose-400">*</span></label>
+                        <input type="number" name="numeroCuota" min="1" max="12" value="1" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Vencimiento <span class="text-rose-400">*</span></label>
+                        <input type="date" name="fechaVencimiento" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Descripción de la Cuota <span class="text-rose-400">*</span></label>
+                    <input type="text" name="descripcionCuota" placeholder="Ej. Pago Trimestral I o Pago al Contado" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex items-center space-x-2 pt-6">
+                        <input type="checkbox" id="chkDesc" name="permiteDescuento" value="true" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-700 rounded">
+                        <label for="chkDesc" class="text-xs text-slate-300 cursor-pointer">Descuento pronto pago</label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">% Descuento</label>
+                        <input type="number" step="0.01" name="porcentajeDescuento" placeholder="Ej. 10.00" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-emerald-400 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalProgramarCuota').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">Guardar Cuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: COMPARADOR DE VERSIONES -->
+    <div id="modalCompararVersiones" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="git-compare" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Comparar Dos Versiones Normativas</span>
+                </h3>
+                <button type="button" onclick="document.getElementById('modalCompararVersiones').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/conceptos/configuraciones/comparar}" method="get" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Versión Base (Anterior) <span class="text-rose-400">*</span></label>
+                    <select name="versionBaseId" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" required>
+                        <option th:each="cfg : ${concepto.configuraciones}" th:value="${cfg.id}" th:text="${'v' + cfg.numeroVersion + ' (' + cfg.anioPeriodo + ') — ' + cfg.estadoDesc}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Versión a Comparar (Nueva) <span class="text-rose-400">*</span></label>
+                    <select name="versionComparadaId" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" required>
+                        <option th:each="cfg : ${concepto.configuraciones}" th:value="${cfg.id}" th:text="${'v' + cfg.numeroVersion + ' (' + cfg.anioPeriodo + ') — ' + cfg.estadoDesc}"></option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="document.getElementById('modalCompararVersiones').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">Ver Diferencias</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts auxiliares para modales -->
+    <script>
+        function abrirModalAprobar(cid) {
+            var form = document.getElementById('formAprobarVersion');
+            form.action = '/dashboard/tributaria/conceptos/configuraciones/' + cid + '/aprobar';
+            document.getElementById('modalAprobarVersion').classList.remove('hidden');
+        }
+
+        function abrirModalDesactivar(cid) {
+            var form = document.getElementById('formDesactivarVersion');
+            form.action = '/dashboard/tributaria/conceptos/configuraciones/' + cid + '/desactivar';
+            document.getElementById('modalDesactivarVersion').classList.remove('hidden');
+        }
+    </script>
+
+</div>
+</body>
+</html>

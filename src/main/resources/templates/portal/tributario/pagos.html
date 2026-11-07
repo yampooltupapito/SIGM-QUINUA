@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Mis Pagos Realizados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Historial de Pagos Realizados</h2>
+                    <p class="text-xs text-slate-500">Operaciones de recaudación confirmadas e ingresadas formalmente a la Caja Municipal</p>
+                </div>
+            </div>
+
+            <!-- Tabla de Pagos -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Código / Recibo</th>
+                                <th class="py-3 px-4">Fecha y Hora</th>
+                                <th class="py-3 px-4">Medio de Pago</th>
+                                <th class="py-3 px-4 text-right">Monto Total (S/)</th>
+                                <th class="py-3 px-4 text-center">Estado</th>
+                                <th class="py-3 px-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${pagosPage == null || pagosPage.empty}">
+                                <td colspan="6" class="text-center py-10 text-slate-400">
+                                    <i data-lucide="wallet" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    No registra pagos tributarios efectuados.
+                                </td>
+                            </tr>
+                            <tr th:each="pago : ${pagosPage}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-900 block" th:text="${pago.reciboNumero != null ? pago.reciboNumero : pago.codigoPago}">REC-2026-0001</span>
+                                    <span class="text-[11px] font-mono text-slate-400" th:text="${pago.codigoPago}">PAGO-001</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-slate-700" th:text="${#temporals.format(pago.fechaPago, 'dd/MM/yyyy HH:mm')}">28/02/2026 11:30</td>
+                                <td class="py-3.5 px-4 font-medium text-slate-600" th:text="${pago.medioPago}">EFECTIVO</td>
+                                <td class="py-3.5 px-4 text-right font-black text-emerald-600" th:text="'S/ ' + ${#numbers.formatDecimal(pago.montoTotal, 1, 'POINT', 2, 'POINT')}">S/ 150.00</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <span th:if="${pago.estado == 'CONFIRMADO' or pago.estado == 'APLICADO'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CONFIRMADO</span>
+                                    <span th:if="${pago.estado == 'ANULADO'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">ANULADO</span>
+                                    <span th:if="${pago.estado != 'CONFIRMADO' and pago.estado != 'APLICADO' and pago.estado != 'ANULADO'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" th:text="${pago.estado}">PENDIENTE</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <div class="inline-flex items-center gap-1">
+                                        <a th:href="@{'/portal/tributario/pagos/' + ${pago.id}}" class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Detalle">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                        <a th:if="${pago.reciboId != null}" th:href="@{'/portal/tributario/recibos/' + ${pago.reciboId} + '/pdf'}" class="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors" title="Descargar Recibo Oficial (PDF)">
+                                            <i data-lucide="download" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div th:if="${pagosPage != null && pagosPage.totalPages > 1}" class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                    <div>Página <span class="font-bold text-slate-800" th:text="${pagosPage.number + 1}">1</span> de <span class="font-bold text-slate-800" th:text="${pagosPage.totalPages}">1</span></div>
+                    <div class="flex gap-1">
+                        <a th:if="${pagosPage.hasPrevious()}" th:href="@{/portal/tributario/pagos(page=${pagosPage.number - 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Anterior</a>
+                        <a th:if="${pagosPage.hasNext()}" th:href="@{/portal/tributario/pagos(page=${pagosPage.number + 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Siguiente</a>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

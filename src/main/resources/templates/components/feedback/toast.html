@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     CONTENEDOR DE NOTIFICACIONES FLOTANTES (Toast Container)
+     ========================================================================== -->
+<div th:fragment="toastContainer"
+     id="toastContainer"
+     role="region"
+     aria-live="assertive"
+     aria-label="Notificaciones del sistema"
+     style="z-index: 99999;"
+     class="fixed top-20 right-6 z-50 flex flex-col space-y-2.5 max-w-md pointer-events-none"></div>
+
+</body>
+</html>
+

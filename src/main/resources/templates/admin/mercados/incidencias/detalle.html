@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Incidencia ' + ${incidencia.codigoIncidencia} + ' | SIGM-QUINUA'">Detalle de Incidencia | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Éxito / Error -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span class="font-medium" th:text="${mensajeExito}">Operación completada con éxito</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white font-bold px-1">&times;</button>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="font-medium" th:text="${mensajeError}">Ocurrió un error en la operación</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white font-bold px-1">&times;</button>
+    </div>
+
+    <!-- Encabezado con estado y acciones operativas -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/incidencias}" class="hover:text-blue-400">Incidencias</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${incidencia.codigoIncidencia}">INC-MER-2026-000001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight" th:text="${incidencia.codigoIncidencia}">
+                    INC-MER-2026-000001
+                </h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                      th:classappend="${incidencia.prioridad.badgeClass}"
+                      th:text="'Prioridad ' + ${incidencia.prioridad.label}">Prioridad Media</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                      th:classappend="${incidencia.estado.badgeClass}"
+                      th:text="${incidencia.estado.label}">Registrada</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="'Reportado en: ' + ${incidencia.mercadoNombre} + ' | ' + ${#temporals.format(incidencia.fechaReporte, 'dd/MM/yyyy HH:mm')}">
+                Reportado en Mercado Central | 17/10/2026
+            </p>
+        </div>
+
+        <!-- Botones de Gestión Operativa -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Asignar Responsable -->
+            <button type="button" onclick="abrirModal('modalAsignar')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' and incidencia.estado.name() != 'DESCARTADA' and incidencia.estado.name() != 'RESUELTA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Asignar
+            </button>
+
+            <!-- Registrar Actuación -->
+            <button type="button" onclick="abrirModal('modalActuacion')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' and incidencia.estado.name() != 'DESCARTADA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_ATENDER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Nueva Actuación
+            </button>
+
+            <!-- Resolver Incidencia -->
+            <button type="button" onclick="abrirModal('modalResolver')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' and incidencia.estado.name() != 'DESCARTADA' and incidencia.estado.name() != 'RESUELTA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_RESOLVER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Resolver
+            </button>
+
+            <!-- Cerrar / Descartar -->
+            <button type="button" onclick="abrirModal('modalCerrar')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' and incidencia.estado.name() != 'DESCARTADA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_CERRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                Cerrar / Descartar
+            </button>
+
+            <!-- Derivar a Presunta Infracción -->
+            <button type="button" onclick="abrirModal('modalInfraccion')"
+                    sec:authorize="hasAuthority('MERCADOS_INFRACCION_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Evaluar Infracción
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="flex border-b border-slate-700/60 overflow-x-auto text-xs">
+            <button type="button" onclick="cambiarTab('general')" id="tab-btn-general" class="tab-btn px-5 py-3 font-semibold text-blue-400 border-b-2 border-blue-500 whitespace-nowrap">
+                Información General
+            </button>
+            <button type="button" onclick="cambiarTab('actuaciones')" id="tab-btn-actuaciones" class="tab-btn px-5 py-3 font-medium text-slate-400 hover:text-white whitespace-nowrap">
+                Actuaciones (<span th:text="${#lists.size(incidencia.actuaciones)}">0</span>)
+            </button>
+            <button type="button" onclick="cambiarTab('evidencias')" id="tab-btn-evidencias" class="tab-btn px-5 py-3 font-medium text-slate-400 hover:text-white whitespace-nowrap">
+                Evidencias (<span th:text="${#lists.size(incidencia.evidencias)}">0</span>)
+            </button>
+            <button type="button" onclick="cambiarTab('infracciones')" id="tab-btn-infracciones" class="tab-btn px-5 py-3 font-medium text-slate-400 hover:text-white whitespace-nowrap">
+                Presuntas Infracciones (<span th:text="${#lists.size(incidencia.presuntasInfracciones)}">0</span>)
+            </button>
+        </div>
+
+        <div class="p-6">
+            <!-- Pestaña 1: Información General -->
+            <div id="tab-general" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#101827] p-5 rounded-xl border border-slate-800 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-2">Datos del Reporte</h3>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Tipo de Incidencia:</span>
+                            <span class="text-slate-200 font-semibold" th:text="${incidencia.tipoIncidenciaNombre}">Infraestructura</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Origen:</span>
+                            <span class="text-slate-200" th:text="${incidencia.origen.label}">Personal Municipal</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Fecha de Reporte:</span>
+                            <span class="text-slate-200" th:text="${#temporals.format(incidencia.fechaReporte, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Responsable Asignado:</span>
+                            <span class="text-slate-200 font-semibold" th:text="${incidencia.responsableNombre != null ? incidencia.responsableNombre : 'Sin asignar'}">jquispe</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Oficina Responsable:</span>
+                            <span class="text-slate-200" th:text="${incidencia.oficinaResponsableNombre != null ? incidencia.oficinaResponsableNombre : 'N/A'}">Subgerencia de Mercados</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#101827] p-5 rounded-xl border border-slate-800 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-2">Ubicación y Administrado</h3>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Mercado:</span>
+                            <span class="text-slate-200 font-semibold" th:text="${incidencia.mercadoNombre}">Mercado Central</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Sector / Pabellón:</span>
+                            <span class="text-slate-200" th:text="${(incidencia.sectorNombre != null ? incidencia.sectorNombre : 'General') + ' / ' + (incidencia.pabellonNombre != null ? incidencia.pabellonNombre : 'General')}">Sector A / Pabellón 1</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Puesto Comercial:</span>
+                            <span class="text-slate-200" th:text="${incidencia.puestoNumero != null ? 'Puesto ' + incidencia.puestoNumero : 'Áreas comunes'}">Puesto 12</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Comerciante Titular:</span>
+                            <span class="text-slate-200" th:text="${incidencia.comercianteNombre != null ? incidencia.comercianteNombre : 'No aplica'}">Juan Pérez</span>
+                        </div>
+                        <div class="flex justify-between text-xs" sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_VER')">
+                            <span class="text-slate-400">Reportante (Protegido):</span>
+                            <span class="text-slate-300 italic" th:text="${incidencia.esAnonimo ? 'Anónimo / Reserva Institucional' : incidencia.reportanteNombre}">Anónimo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción Completa -->
+                <div class="bg-[#101827] p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Descripción de los Hechos</h3>
+                    <p class="text-xs text-slate-200 leading-relaxed whitespace-pre-line" th:text="${incidencia.descripcion}">
+                        Descripción pormenorizada de los hechos reportados...
+                    </p>
+                </div>
+
+                <!-- Resolución si está resuelta -->
+                <div th:if="${incidencia.motivoResolucion != null}" class="bg-emerald-950/20 border border-emerald-800/40 p-5 rounded-xl">
+                    <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Medidas de Resolución Adoptadas
+                    </h3>
+                    <p class="text-xs text-slate-300 mt-2 whitespace-pre-line" th:text="${incidencia.motivoResolucion}"></p>
+                    <span class="text-[10px] text-slate-400 block mt-2" th:text="'Fecha de resolución: ' + ${#temporals.format(incidencia.fechaResolucion, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Actuaciones Cronológicas -->
+            <div id="tab-actuaciones" class="tab-content hidden space-y-4">
+                <div th:if="${#lists.isEmpty(incidencia.actuaciones)}" class="p-8 text-center text-slate-500 text-xs">
+                    No se han registrado actuaciones aún.
+                </div>
+                <div class="relative border-l border-slate-700 ml-4 space-y-6">
+                    <div th:each="act : ${incidencia.actuaciones}" class="ml-6 relative">
+                        <span class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-blue-500 border-2 border-[#1e293b]"></span>
+                        <div class="bg-[#101827] p-4 rounded-xl border border-slate-800">
+                            <div class="flex justify-between items-start text-xs mb-1">
+                                <span class="font-bold text-slate-200" th:text="${act.tipoActuacionLabel}">Registro Inicial</span>
+                                <span class="text-slate-400 text-[10px]" th:text="${#temporals.format(act.fecha, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                            </div>
+                            <p class="text-xs text-slate-300 mt-1" th:text="${act.descripcion}">Descripción de la actuación...</p>
+                            <span class="text-[10px] text-slate-500 block mt-2" th:text="'Registrado por: ' + ${act.responsableNombre}">Por operador</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Evidencias -->
+            <div id="tab-evidencias" class="tab-content hidden space-y-4">
+                <div class="flex justify-end">
+                    <button type="button" onclick="abrirModal('modalEvidencia')"
+                            sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_EVIDENCIA_GESTIONAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-colors shadow">
+                        + Adjuntar Evidencia
+                    </button>
+                </div>
+                <div th:if="${#lists.isEmpty(incidencia.evidencias)}" class="p-8 text-center text-slate-500 text-xs">
+                    No hay evidencias probatorias registradas para esta incidencia.
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div th:each="ev : ${incidencia.evidencias}" class="bg-[#101827] p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <div class="flex items-center gap-2 truncate">
+                                    <svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span class="text-xs font-bold text-slate-200 truncate" th:text="${ev.nombreArchivo}">foto_01.jpg</span>
+                                </div>
+                                <a th:href="@{'/dashboard/mercados/incidencias/evidencias/' + ${ev.id} + '/descargar'}"
+                                   target="_blank"
+                                   class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 text-[11px] font-medium rounded-lg transition-colors border border-slate-700 shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Ver / Descargar
+                                </a>
+                            </div>
+                            <p class="text-xs text-slate-400" th:text="${ev.descripcion != null and !ev.descripcion.isBlank() ? ev.descripcion : 'Sin descripción'}"></p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500">
+                            <span class="font-mono">SHA-256: <span th:text="${ev.hashSha256 != null ? #strings.substring(ev.hashSha256, 0, 12) + '...' : '-'}">e3b0c44...</span></span>
+                            <span th:text="${#temporals.format(ev.fechaRegistro, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 4: Presuntas Infracciones -->
+            <div id="tab-infracciones" class="tab-content hidden space-y-4">
+                <div th:if="${#lists.isEmpty(incidencia.presuntasInfracciones)}" class="p-8 text-center text-slate-500 text-xs">
+                    Esta incidencia no ha sido tipificada ni derivada como presunta infracción.
+                </div>
+                <div th:each="inf : ${incidencia.presuntasInfracciones}" class="bg-[#101827] p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-xs text-white" th:text="${inf.codigo}">INF-MER-2026-000001</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                                  th:classappend="${inf.estadoEvaluacion.badgeClass}"
+                                  th:text="${inf.estadoEvaluacion.label}">En Evaluación</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-1" th:text="${inf.tipificacionDescripcion != null ? inf.tipificacionDescripcion : inf.descripcionHechos}"></p>
+                    </div>
+                    <a th:href="@{'/dashboard/mercados/infracciones/' + ${inf.id}}" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded-lg">
+                        Ver Evaluación
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: Asignar Responsable -->
+    <div id="modalAsignar" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Asignar Responsable a Incidencia
+                </h3>
+                <button type="button" onclick="cerrarModal('modalAsignar')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/asignar'}" method="post" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario Responsable <span class="text-rose-400">*</span></label>
+                    <select name="responsableId" required class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none">
+                        <option value="">Seleccione Usuario Responsable</option>
+                        <option th:each="u : ${usuarios}" th:value="${u.id}" th:text="${u.username}" th:selected="${incidencia.responsableId != null and incidencia.responsableId == u.id}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Oficina Competente</label>
+                    <select name="oficinaResponsableId" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none">
+                        <option value="">(Opcional) Seleccione Oficina</option>
+                        <option th:each="o : ${oficinas}" th:value="${o.id}" th:text="${o.nombre}" th:selected="${incidencia.oficinaResponsableId != null and incidencia.oficinaResponsableId == o.id}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Prioridad Operativa</label>
+                    <select name="prioridad" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none">
+                        <option th:each="p : ${prioridades}" th:value="${p.name()}" th:text="${p.label}" th:selected="${p == incidencia.prioridad}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Instrucciones / Observaciones</label>
+                    <textarea name="observaciones" rows="2" placeholder="Indicaciones u orientaciones para la atención..." class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalAsignar')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors">Guardar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Nueva Actuación -->
+    <div id="modalActuacion" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Registrar Nueva Actuación
+                </h3>
+                <button type="button" onclick="cerrarModal('modalActuacion')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/actuaciones'}" method="post" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Actuación <span class="text-rose-400">*</span></label>
+                    <select name="tipoActuacion" required class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-indigo-500 focus:outline-none">
+                        <option th:each="ta : ${tiposActuacion}" th:value="${ta.name()}" th:text="${ta.label}" th:selected="${ta.name() == 'DILIGENCIA_CAMPO'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Actualizar Estado de la Incidencia</label>
+                    <select name="nuevoEstado" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-indigo-500 focus:outline-none">
+                        <option value="">(Sin cambio de estado actual)</option>
+                        <option th:each="e : ${estados}" th:value="${e.name()}" th:text="${e.label}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción de las Acciones <span class="text-rose-400">*</span></label>
+                    <textarea name="descripcion" required minlength="5" rows="3" placeholder="Detalle pormenorizado de las acciones u observaciones realizadas..." class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalActuacion')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-colors">Guardar Actuación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Resolver Incidencia -->
+    <div id="modalResolver" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Resolver Incidencia
+                </h3>
+                <button type="button" onclick="cerrarModal('modalResolver')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/resolver'}" method="post" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Medidas de Resolución Adoptadas <span class="text-rose-400">*</span></label>
+                    <textarea name="motivoResolucion" required minlength="10" rows="4" placeholder="Especifique con detalle técnico y legal las medidas que subsanaron y resolvieron la incidencia..." class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-emerald-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalResolver')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-colors">Confirmar Resolución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Cerrar o Descartar Incidencia -->
+    <div id="modalCerrar" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Cerrar o Descartar Incidencia
+                </h3>
+                <button type="button" onclick="cerrarModal('modalCerrar')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/cerrar'}" method="post" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Acción Final <span class="text-rose-400">*</span></label>
+                    <select name="estadoFinal" required class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none">
+                        <option value="CERRADA">Cerrar Administrativamente (Concluida)</option>
+                        <option value="DESCARTADA">Descartar (Improcedente / Infundada)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo / Fundamentación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivoCierre" required minlength="10" rows="3" placeholder="Sustente detalladamente el motivo de cierre o descarte..." class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalCerrar')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-colors">Guardar Estado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Evaluar y Derivar a Infracción -->
+    <div id="modalInfraccion" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-lg w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Derivar a Presunta Infracción
+                </h3>
+                <button type="button" onclick="cerrarModal('modalInfraccion')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/infraccion'}" method="post" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <input type="hidden" name="mercadoId" th:value="${incidencia.mercadoId}"/>
+                <input type="hidden" name="sectorId" th:value="${incidencia.sectorId}"/>
+                <input type="hidden" name="pabellonId" th:value="${incidencia.pabellonId}"/>
+                <input type="hidden" name="puestoId" th:value="${incidencia.puestoId}"/>
+                <input type="hidden" name="comercianteId" th:value="${incidencia.comercianteId}"/>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipificación Normativa <span class="text-rose-400">*</span></label>
+                    <select name="tipificacionId" required class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-rose-500 focus:outline-none">
+                        <option value="">Seleccione Infracción Normativa</option>
+                        <option th:each="t : ${tipificaciones}" th:value="${t.id}" th:text="${t.codigo + ' - ' + t.descripcion + (t.gravedadBaseLabel != null ? ' (' + t.gravedadBaseLabel + ')' : '')}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha de Constatación / Detección <span class="text-rose-400">*</span></label>
+                    <input type="date" name="fechaDeteccion" required th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-rose-500 focus:outline-none"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción de los Hechos Constatados <span class="text-rose-400">*</span></label>
+                    <textarea name="descripcionHechos" required minlength="10" rows="3" placeholder="Constatación fáctica de la presunta falta reglamentaria..." th:text="${incidencia.descripcion}" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:border-rose-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalInfraccion')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition-colors">Registrar Infracción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Adjuntar Evidencia -->
+    <div id="modalEvidencia" class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Adjuntar Evidencia Fotográfica / Documental
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEvidencia')" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <form th:action="@{'/dashboard/mercados/incidencias/' + ${incidencia.id} + '/evidencias'}" method="post" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Archivo (JPG, PNG, PDF max 15MB) <span class="text-rose-400">*</span></label>
+                    <input type="file" name="archivo" required accept=".jpg,.jpeg,.png,.webp,.pdf" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-700"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Evidencia</label>
+                    <select name="tipoEvidencia" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none">
+                        <option value="FOTOGRAFIA" selected>Fotografía de Campo</option>
+                        <option value="DOCUMENTAL">Documento / Acta</option>
+                        <option value="AUDIO_VIDEO">Video / Registro Multimedia</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción</label>
+                    <input type="text" name="descripcion" placeholder="Breve descripción del archivo adjunto..." class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:border-blue-500 focus:outline-none"/>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalEvidencia')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors">Subir Archivo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Interacción -->
+<th:block layout:fragment="scripts">
+<script>
+function cambiarTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-blue-400', 'border-b-2', 'border-blue-500');
+        btn.classList.add('text-slate-400');
+    });
+
+    const content = document.getElementById('tab-' + tabId);
+    const btn = document.getElementById('tab-btn-' + tabId);
+    if (content) content.classList.remove('hidden');
+    if (btn) {
+        btn.classList.add('text-blue-400', 'border-b-2', 'border-blue-500');
+        btn.classList.remove('text-slate-400');
+    }
+}
+
+function abrirModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+    }
+}
+
+function cerrarModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    }
+}
+
+// Cerrar modal al presionar Escape o hacer click en el backdrop
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        ['modalAsignar', 'modalActuacion', 'modalResolver', 'modalCerrar', 'modalInfraccion', 'modalEvidencia'].forEach(cerrarModal);
+    }
+});
+
+['modalAsignar', 'modalActuacion', 'modalResolver', 'modalCerrar', 'modalInfraccion', 'modalEvidencia'].forEach(function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModal(id);
+            }
+        });
+    }
+});
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Catálogo Oficial de Servicios Municipales</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE SECCIÓN -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3 justify-center sm:justify-start">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Servicios Municipales</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Catálogo de Servicios Municipales</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                Relación oficial de los cuatro servicios esenciales de gestión pública y atención digital en la Municipalidad Distrital de Quinua.
+                Cada servicio muestra su disponibilidad real y acceso institucional directo.
+            </p>
+        </div>
+    </section>
+
+    <!-- LISTADO DE LOS CUATRO SERVICIOS OFICIALES -->
+    <section class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <th:block th:each="srv : ${servicios}">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-xl transition-all duration-300 hover:border-blue-500 group relative">
+                    <div>
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-blue-50 text-blue-700 border border-blue-200 group-hover:bg-blue-700 group-hover:text-white shadow-sm">
+                                <i th:attr="data-lucide=${srv.icono}" class="w-6 h-6"></i>
+                            </div>
+
+                            <!-- Estado de Disponibilidad con Lucide Icons -->
+                            <div class="flex items-center">
+                                <span th:if="${srv.estadoDisponibilidad == 'DISPONIBLE'}"
+                                      class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                    <span>Disponible</span>
+                                </span>
+                                <span th:if="${srv.estadoDisponibilidad == 'PROXIMAMENTE'}"
+                                      class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                                    <span>Próximamente</span>
+                                </span>
+                                <span th:if="${srv.estadoDisponibilidad == 'EN_DESARROLLO'}"
+                                      class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                    <i data-lucide="wrench" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span>En Integración</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <h2 class="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors" th:text="${srv.nombre}">
+                            Nombre del Servicio
+                        </h2>
+
+                        <p class="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed" th:text="${srv.descripcion}">
+                            Descripción técnica e institucional del servicio.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <a th:if="${srv.urlAcceso != null && srv.estadoDisponibilidad == 'DISPONIBLE'}"
+                           th:href="@{${srv.urlAcceso}}"
+                           class="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition-all shadow-sm group-hover:shadow-md">
+                            <span>Acceder al Servicio</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-1"></i>
+                        </a>
+
+                        <a th:if="${srv.urlAcceso != null && srv.estadoDisponibilidad != 'DISPONIBLE'}"
+                           th:href="@{${srv.urlAcceso}}"
+                           class="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors">
+                            <span>Ver Estado e Información</span>
+                            <i data-lucide="info" class="w-3.5 h-3.5 ml-1.5"></i>
+                        </a>
+
+                        <div th:if="${srv.urlAcceso == null}"
+                             class="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200">
+                            <i data-lucide="building" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i>
+                            <span>Atención Presencial en Sede</span>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+
+        <!-- AVISO INSTITUCIONAL DE TRANSPARENCIA Y MODERNIZACIÓN -->
+        <div class="mt-12 bg-blue-50 rounded-2xl border border-blue-200 p-6 flex items-start space-x-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                <i data-lucide="shield-check" class="w-5 h-5 text-amber-300"></i>
+            </div>
+            <div class="space-y-1 text-xs text-blue-900 leading-relaxed">
+                <h3 class="font-bold text-sm text-blue-950">Servicios Oficiales de la Municipalidad Distrital de Quinua</h3>
+                <p>
+                    La plataforma SIGM-QUINUA unifica exclusivamente los cuatro servicios institucionales definidos en el plan de transformación digital distrital: Mesa de Partes Virtual, Mercados Municipales, Seguridad Ciudadana y Serenazgo, y Recaudación Tributaria Municipal.
+                </p>
+                <p>
+                    Para trámites presenciales o consultas personalizadas, la atención se encuentra a su disposición en la sede central de la Plaza de Armas s/n, Quinua, de lunes a viernes en horario municipal.
+                </p>
+            </div>
+        </div>
+    </section>
+
+</div>
+</body>
+</html>

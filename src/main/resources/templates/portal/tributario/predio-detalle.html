@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Detalle de Predio | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-4xl mx-auto">
+
+            <div class="flex items-center justify-between">
+                <a th:href="@{/portal/tributario/predios}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-700 transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al listado de predios
+                </a>
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                      th:text="${predio.tipoPredio}">URBANO</span>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ficha Técnica Tributaria del Inmueble</div>
+                    <h2 class="text-xl font-black text-slate-900 mt-1" th:text="${predio.direccionCompleta}">Jr. Sucre N° 120, Quinua</h2>
+                    <p class="text-xs text-slate-500 mt-0.5" th:if="${predio.referencia != null}" th:text="'Referencia: ' + ${predio.referencia}">A media cuadra de la plaza</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Código Predio:</span>
+                        <strong class="text-slate-800 font-mono text-sm" th:text="${predio.codigoPredio}">PRED-001</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Código Catastral:</span>
+                        <strong class="text-slate-800 font-mono text-sm" th:text="${predio.codigoCatastral != null ? predio.codigoCatastral : 'No asignado'}">—</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Tipo de Relación:</span>
+                        <strong class="text-slate-800 text-sm" th:text="${predio.tipoRelacion}">PROPIETARIO ÚNICO</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Porcentaje de Participación:</span>
+                        <strong class="text-slate-800 text-sm" th:text="${predio.porcentajeParticipacion} + '%'">100.00%</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Área de Terreno:</span>
+                        <strong class="text-slate-800 text-sm" th:text="${predio.areaTerreno != null ? predio.areaTerreno + ' m²' : '—'}">150.00 m²</strong>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Área Construida Total:</span>
+                        <strong class="text-slate-800 text-sm" th:text="${predio.areaConstruidaTotal != null ? predio.areaConstruidaTotal + ' m²' : '0.00 m²'}">0.00 m²</strong>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700">Valor de Autovalúo Fiscal Declarado</span>
+                        <div class="text-2xl font-black text-blue-900 mt-1"
+                             th:text="'S/ ' + ${#numbers.formatDecimal(predio.autoavaluoTotal != null ? predio.autoavaluoTotal : 0, 1, 'COMMA', 2, 'POINT')}">
+                            S/ 55,000.00
+                        </div>
+                    </div>
+                    <i data-lucide="scale" class="w-8 h-8 text-blue-400"></i>
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2.5">
+                    <i data-lucide="info" class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <strong>Aviso Catastral:</strong> La información mostrada proviene del Registro Tributario Municipal de la Municipalidad Distrital de Quinua y no convalida títulos registrales en SUNARP ni posesiones litigiosas.
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

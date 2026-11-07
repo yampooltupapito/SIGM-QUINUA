@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Editar Predio ' + ${codigoPredio} + ' — Recaudación Tributaria | SIGM-QUINUA'">Editar Predio — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error en la actualización</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/predios}" class="hover:text-blue-400 transition-colors">Predios</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/predios/{id}(id=${predioId})}" class="hover:text-blue-400 transition-colors" th:text="${codigoPredio}">PR-000001</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium">Editar Datos</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="edit-3" class="w-6 h-6 text-emerald-400"></i>
+                <span th:text="'Modificar Predio ' + ${codigoPredio}">Modificar Predio</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Actualización de características físicas, territoriales y de servicios declarados.
+            </p>
+        </div>
+
+        <div>
+            <a th:href="@{/dashboard/tributaria/predios/{id}(id=${predioId})}"
+               class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-2 border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver a la Ficha</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de Edición -->
+    <form th:action="@{/dashboard/tributaria/predios/{id}/actualizar(id=${predioId})}" th:object="${request}" method="POST" class="space-y-6">
+
+        <!-- 1. IDENTIFICACIÓN Y CLASIFICACIÓN -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-theme pb-3">
+                <i data-lucide="file-badge" class="w-5 h-5 text-blue-400"></i>
+                <h2 class="text-sm font-semibold text-white">1. Identificación y Clasificación Administrativa</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Código Predial Interno</label>
+                    <input type="text" th:value="${codigoPredio}" disabled
+                           class="w-full px-3 py-2 bg-slate-900/60 border border-theme rounded-lg text-xs font-mono font-bold text-blue-400 cursor-not-allowed">
+                    <span class="text-[11px] text-slate-500 mt-1 block">El código interno municipal es inmutable.</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Código Catastral Oficial (Opcional)</label>
+                    <input type="text" th:field="*{codigoCatastral}" placeholder="Ej. 05011001002015"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 font-mono transition-colors">
+                    <span class="text-[11px] text-slate-500 mt-1 block">Debe corresponder a asignación oficial validada.</span>
+                    <span th:if="${#fields.hasErrors('codigoCatastral')}" th:errors="*{codigoCatastral}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Clasificación Territorial <span class="text-rose-400">*</span></label>
+                    <select th:field="*{clasificacionPredio}"
+                            class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="c : ${clasificaciones}" th:value="${c}" th:text="${c.name()}"
+                                th:selected="${request.clasificacionPredio == c}">URBANO</option>
+                    </select>
+                    <span th:if="${#fields.hasErrors('clasificacionPredio')}" th:errors="*{clasificacionPredio}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Predio <span class="text-rose-400">*</span></label>
+                    <select th:field="*{tipoPredio}"
+                            class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="t : ${tiposPredio}" th:value="${t}" th:text="${t.name()}"
+                                th:selected="${request.tipoPredio == t}">CASA_HABITACION</option>
+                    </select>
+                    <span th:if="${#fields.hasErrors('tipoPredio')}" th:errors="*{tipoPredio}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Uso Declarado <span class="text-rose-400">*</span></label>
+                    <select th:field="*{usoDeclarado}"
+                            class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="u : ${usos}" th:value="${u}" th:text="${u.nombre}"
+                                th:selected="${request.usoDeclarado == u}">Vivienda</option>
+                    </select>
+                    <span th:if="${#fields.hasErrors('usoDeclarado')}" th:errors="*{usoDeclarado}" class="text-rose-400 text-[11px]"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. UBICACIÓN ADMINISTRATIVA (QUINUA) -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-theme pb-3">
+                <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
+                <h2 class="text-sm font-semibold text-white">2. Ubicación Administrativa Territorial</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Departamento</label>
+                    <input type="text" th:field="*{departamento}" readonly
+                           class="w-full px-3 py-2 bg-slate-900/60 border border-theme rounded-lg text-xs text-slate-300">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Provincia</label>
+                    <input type="text" th:field="*{provincia}" readonly
+                           class="w-full px-3 py-2 bg-slate-900/60 border border-theme rounded-lg text-xs text-slate-300">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Distrito</label>
+                    <input type="text" th:field="*{distrito}" readonly
+                           class="w-full px-3 py-2 bg-slate-900/60 border border-theme rounded-lg text-xs text-slate-300">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Ubigeo</label>
+                    <input type="text" th:field="*{ubigeo}" readonly
+                           class="w-full px-3 py-2 bg-slate-900/60 border border-theme rounded-lg text-xs font-mono text-slate-300">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Centro Poblado / Comunidad Rural</label>
+                    <input type="text" th:field="*{comunidadCentroPoblado}" placeholder="Ej. San Cristóbal, Huusa, Luricocha..."
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Sector</label>
+                    <input type="text" th:field="*{sector}" placeholder="Ej. Sector 1, Casco Urbano..."
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Zona</label>
+                    <input type="text" th:field="*{zona}" placeholder="Ej. Zona A, Zona Comercial..."
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Vía</label>
+                    <input type="text" th:field="*{tipoVia}" placeholder="Jr. / Av. / Calle / Carretera"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Nombre de la Vía / Paraje</label>
+                    <input type="text" th:field="*{nombreVia}" placeholder="Ej. Sucre / Bolognesi / Paraje Pampa de Quinua"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">N° Municipal</label>
+                    <input type="text" th:field="*{numeroMunicipal}" placeholder="Ej. 142 / S/N"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Manzana</label>
+                    <input type="text" th:field="*{manzana}" placeholder="Ej. A / 12"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Lote</label>
+                    <input type="text" th:field="*{lote}" placeholder="Ej. 05"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Interior / Piso / Dpto.</label>
+                    <input type="text" th:field="*{interior}" placeholder="Ej. Dpto 201 / Int. B"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div class="md:col-span-4">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Referencia Territorial / Descripción de Acceso</label>
+                    <input type="text" th:field="*{referencia}" placeholder="Ej. A dos cuadras del Obelisco de Quinua, camino al museo de sitio"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CARACTERÍSTICAS FÍSICAS, SUPERFICIE Y SERVICIOS -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-theme pb-3">
+                <i data-lucide="maximize" class="w-5 h-5 text-amber-400"></i>
+                <h2 class="text-sm font-semibold text-white">3. Superficie del Terreno y Servicios Básicos Disponibles</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Área del Terreno <span class="text-rose-400">*</span></label>
+                    <input type="number" step="0.01" min="0.01" th:field="*{areaTerreno}" placeholder="0.00"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <span th:if="${#fields.hasErrors('areaTerreno')}" th:errors="*{areaTerreno}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Unidad de Medida <span class="text-rose-400">*</span></label>
+                    <select th:field="*{unidadArea}"
+                            class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="M2" th:selected="${request.unidadArea == 'M2'}">Metros Cuadrados (m²)</option>
+                        <option value="HA" th:selected="${request.unidadArea == 'HA'}">Hectáreas (ha)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-theme pt-3">
+                <label class="block text-xs font-medium text-slate-300 mb-2">Servicios Básicos e Infraestructura Declarada:</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tieneAgua}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Agua Potable</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tieneDesague}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Desagüe / Alcantarillado</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tieneLuz}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Energía Eléctrica</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tieneAlumbradoPublico}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Alumbrado Público</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tienePistasVeredas}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Pistas / Veredas</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{tieneLimpiezaPublica}" class="rounded border-slate-700 bg-slate-900 text-blue-600">
+                        <span>Limpieza Pública</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. GEORREFERENCIACIÓN Y COORDENADAS (OPCIONAL) -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-theme pb-3">
+                <i data-lucide="compass" class="w-5 h-5 text-indigo-400"></i>
+                <h2 class="text-sm font-semibold text-white">4. Ubicación Geográfica en WGS84 (Opcional)</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Latitud (WGS84)</label>
+                    <input type="number" step="0.000001" th:field="*{latitud}" placeholder="Ej. -13.045612"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <span th:if="${#fields.hasErrors('latitud')}" th:errors="*{latitud}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Longitud (WGS84)</label>
+                    <input type="number" step="0.000001" th:field="*{longitud}" placeholder="Ej. -74.138945"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <span th:if="${#fields.hasErrors('longitud')}" th:errors="*{longitud}" class="text-rose-400 text-[11px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Precisión Estimada (Metros)</label>
+                    <input type="number" step="0.1" min="0" th:field="*{precisionMetros}" placeholder="Ej. 5.0"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs font-mono text-white focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Fuente de Coordenadas</label>
+                    <select th:field="*{fuenteCoordenadas}"
+                            class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="">Seleccione fuente...</option>
+                        <option th:each="f : ${fuentesCoordenadas}" th:value="${f}" th:text="${f.nombre}"
+                                th:selected="${request.fuenteCoordenadas == f}">Declarado por Contribuyente</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-theme">
+            <a th:href="@{/dashboard/tributaria/predios/{id}(id=${predioId})}"
+               class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md hover:shadow-emerald-600/20 flex items-center space-x-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+
+    </form>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Planificar Patrullaje | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Encabezado y Navegación -->
+    <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-indigo-400 font-semibold mb-1">
+                <a th:href="@{/dashboard/serenazgo/patrullajes}" class="hover:underline">PATRULLAJES Y RECORRIDOS</a>
+                <span>/</span>
+                <span class="text-slate-400">PLANIFICACIÓN</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="calendar-plus" class="w-6 h-6 text-indigo-500"></i>
+                Planificar Nuevo Patrullaje
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Registro de servicio preventivo municipal, asignación territorial, rutas y recursos de guardia.
+            </p>
+        </div>
+        <a th:href="@{/dashboard/serenazgo/patrullajes}"
+           class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center space-x-1">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver al Listado</span>
+        </a>
+    </div>
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${mensajeError}" class="rounded-xl p-4 bg-rose-500/10 border border-rose-500/30 flex items-center gap-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-rose-400 shrink-0"></i>
+        <p class="text-xs text-rose-300 font-medium" th:text="${mensajeError}"></p>
+    </div>
+
+    <!-- Recordatorio Competencias Municipales -->
+    <div class="rounded-xl p-3 bg-slate-800/60 border border-slate-700 flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-indigo-400 shrink-0 mt-0.5"></i>
+        <p class="text-xs text-slate-300">
+            <span class="font-bold text-white">Competencia Administrativa:</span>
+            Los patrullajes programados deben corresponder a los sectores y corredores autorizados del distrito de Quinua. El personal asignado debe contar con contrato vigente y no encontrarse en servicio activo en otro turno simultáneo.
+        </p>
+    </div>
+
+    <!-- Formulario de Registro Agrupado -->
+    <form th:action="@{/dashboard/serenazgo/patrullajes}" th:object="${nuevoPatrullaje}" method="post" class="space-y-6">
+
+        <!-- 1. Modalidad y Tipo de Patrullaje -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+                1. Modalidad y Tipo de Servicio
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Modalidad de Patrullaje <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{tipoPatrullaje}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option th:each="tp : ${tiposPatrullaje}" th:value="${tp}" th:text="${tp.descripcion}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Carácter del Servicio
+                    </label>
+                    <div class="flex items-center space-x-3 pt-2">
+                        <label class="inline-flex items-center text-xs text-slate-300">
+                            <input type="checkbox" th:field="*{esExtraordinario}" id="checkExtraordinario"
+                                   class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4 mr-2">
+                            <span>¿Es un patrullaje extraordinario / no programado?</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="md:col-span-2 hidden" id="bloqueExtraordinario">
+                    <label class="block text-xs font-semibold text-amber-400 mb-1">
+                        Justificación y Autorización de Servicio Extraordinario <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" th:field="*{motivoExtraordinario}"
+                           placeholder="Indique motivo fundado, orden de supervisión o requerimiento vecinal justificado..."
+                           class="w-full bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Programación de Horario -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+                2. Programación Temporal de Guardia
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Fecha y Hora Inicio Programada <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="datetime-local" th:field="*{fechaHoraInicioProgramada}" required
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Fecha y Hora Fin Programada <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="datetime-local" th:field="*{fechaHoraFinProgramada}" required
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Asignación Territorial y Ruta -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i>
+                3. Delimitación Territorial y Ruta Autorizada
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Sector Territorial <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{sectorId}" id="selectSector" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Seleccione Sector --</option>
+                        <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.codigo + ' - ' + sec.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Ruta Oficial Autorizada (Opcional)
+                    </label>
+                    <select th:field="*{rutaId}" id="selectRuta"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Patrullaje de Ronda Flexible (Sin ruta prefijada) --</option>
+                        <option th:each="r : ${rutas}" th:value="${r.id}" th:text="${r.codigo + ' - ' + r.nombre}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Panel informativo de checkpoints de la ruta elegida -->
+            <div id="panelCheckpointsRuta" class="p-3 bg-slate-900/60 border border-slate-700 rounded-lg hidden">
+                <span class="text-xs font-bold text-indigo-300 block mb-1">Puntos de Control de la Ruta:</span>
+                <ul id="listaCheckpointsRuta" class="text-xs text-slate-400 space-y-1 list-disc pl-4">
+                </ul>
+            </div>
+        </div>
+
+        <!-- 4. Asignación de Recursos Humanos y Móviles -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
+                4. Asignación de Recursos Humanos, Unidad y Equipamiento
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Sereno Responsable Operativo <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{responsableId}" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Seleccione Efectivo Responsable --</option>
+                        <option th:each="p : ${personalActivo}" th:value="${p.id}"
+                                th:text="${p.codigoInterno + ' - ' + p.persona.nombreCompleto + ' (' + (p.cargoOperativo != null ? p.cargoOperativo.nombre : 'Sereno') + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Unidad Móvil Asignada (Vehículo o Moto)
+                    </label>
+                    <select th:field="*{unidadMovilId}"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Sin Vehículo (Patrullaje a pie / pedestre) --</option>
+                        <option th:each="u : ${unidadesDisponibles}" th:value="${u.id}"
+                                th:text="${u.tipoUnidad + ' [' + u.placa + '] - ' + u.codigoInterno}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cuadrilla participante adicional -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    Efectivos de Cuadrilla de Apoyo (Selección Múltiple)
+                </label>
+                <select name="participantesIds" multiple size="4"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option th:each="p : ${personalActivo}" th:value="${p.id}"
+                            th:text="${p.codigoInterno + ' - ' + p.persona.nombreCompleto}"></option>
+                </select>
+                <span class="text-[10px] text-slate-500 mt-1 block">Presione Ctrl (Windows) o Cmd (Mac) para seleccionar varios efectivos adicionales.</span>
+            </div>
+
+            <!-- Equipamiento operativo -->
+            <div th:if="${!equipamientoDisponible.empty}">
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    Equipamiento Operativo Asignado para la Guardia
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-900/60 rounded-lg border border-slate-700">
+                    <label th:each="item : ${equipamientoDisponible}" class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="equipamientoIds" th:value="${item.id}"
+                               class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                        <span th:text="${item.tipoEquipo + ' (' + item.codigoInterno + ')'}"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Objetivos Operativos y Observaciones -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="target" class="w-4 h-4 text-indigo-400"></i>
+                5. Objetivo Operativo de Prevención
+            </h3>
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    Objetivo Principal del Patrullaje <span class="text-rose-400">*</span>
+                </label>
+                <textarea th:field="*{objetivoOperativo}" rows="2" required
+                          placeholder="Ejemplo: Disuasión preventiva en inmediaciones de instituciones educativas y control de orden público en zona comercial..."
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    Observaciones e Instrucciones Particulares de Guardia
+                </label>
+                <textarea th:field="*{observaciones}" rows="2"
+                          placeholder="Consignas especiales, coordinación con comisaría PNP Quinua o puntos críticos priorizados..."
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700">
+            <a th:href="@{/dashboard/serenazgo/patrullajes}"
+               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 transition flex items-center space-x-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Registrar y Programar Patrullaje</span>
+            </button>
+        </div>
+    </form>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            // Checkbox extraordinario
+            const checkExt = document.getElementById('checkExtraordinario');
+            const bloqueExt = document.getElementById('bloqueExtraordinario');
+            if (checkExt && bloqueExt) {
+                checkExt.addEventListener('change', function () {
+                    bloqueExt.classList.toggle('hidden', !this.checked);
+                });
+                if (checkExt.checked) bloqueExt.classList.remove('hidden');
+            }
+
+            // Filtrado dinámico de rutas al cambiar sector
+            const selSector = document.getElementById('selectSector');
+            const selRuta = document.getElementById('selectRuta');
+            const panelCheckpoints = document.getElementById('panelCheckpointsRuta');
+            const listaCheckpoints = document.getElementById('listaCheckpointsRuta');
+
+            if (selSector && selRuta) {
+                selSector.addEventListener('change', function () {
+                    const sectorId = this.value;
+                    if (!sectorId) return;
+
+                    fetch('/api/v1/serenazgo/patrullajes/rutas/sector/' + sectorId)
+                        .then(r => r.json())
+                        .then(rutas => {
+                            selRuta.innerHTML = '<option value="">-- Patrullaje de Ronda Flexible (Sin ruta prefijada) --</option>';
+                            rutas.forEach(rt => {
+                                const opt = document.createElement('option');
+                                opt.value = rt.id;
+                                opt.textContent = rt.codigo + ' - ' + rt.nombre;
+                                selRuta.appendChild(opt);
+                            });
+                            if (panelCheckpoints) panelCheckpoints.classList.add('hidden');
+                        })
+                        .catch(err => console.error('Error al cargar rutas del sector:', err));
+                });
+
+                selRuta.addEventListener('change', function () {
+                    const rutaId = this.value;
+                    if (!rutaId) {
+                        if (panelCheckpoints) panelCheckpoints.classList.add('hidden');
+                        return;
+                    }
+
+                    fetch('/api/v1/serenazgo/patrullajes/rutas/' + rutaId)
+                        .then(r => r.json())
+                        .then(rt => {
+                            if (panelCheckpoints && listaCheckpoints && rt.puntosControl && rt.puntosControl.length > 0) {
+                                listaCheckpoints.innerHTML = '';
+                                rt.puntosControl.forEach(p => {
+                                    const li = document.createElement('li');
+                                    li.textContent = '#' + p.orden + ' ' + p.codigo + ': ' + p.nombre + ' (' + (p.referenciaUbicacion || 'Sin referencia') + ')';
+                                    listaCheckpoints.appendChild(li);
+                                });
+                                panelCheckpoints.classList.remove('hidden');
+                            } else if (panelCheckpoints) {
+                                panelCheckpoints.classList.add('hidden');
+                            }
+                        })
+                        .catch(err => console.error('Error al cargar puntos de ruta:', err));
+                });
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

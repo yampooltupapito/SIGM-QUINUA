@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Patrullaje ' + ${patrullaje.codigo} + ' | SIGM-QUINUA'">Detalle de Patrullaje</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de la Ficha Operativa -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-indigo-400 font-semibold mb-1">
+                <a th:href="@{/dashboard/serenazgo/patrullajes}" class="hover:underline">PATRULLAJES Y RECORRIDOS</a>
+                <span>/</span>
+                <span class="text-slate-400 font-mono" th:text="${patrullaje.codigo}">PAT-2026-00001</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-7 h-7 text-indigo-500"></i>
+                    <span th:text="${patrullaje.codigo}">PAT-2026-00001</span>
+                </h1>
+                <!-- Badges de Estado -->
+                <span th:if="${patrullaje.estado.name() == 'PROGRAMADO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">PROGRAMADO</span>
+                <span th:if="${patrullaje.estado.name() == 'ASIGNADO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">ASIGNADO</span>
+                <span th:if="${patrullaje.estado.name() == 'EN_CURSO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    EN CURSO
+                </span>
+                <span th:if="${patrullaje.estado.name() == 'EN_PAUSA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">EN PAUSA</span>
+                <span th:if="${patrullaje.estado.name() == 'FINALIZADO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-300 border border-slate-600">FINALIZADO</span>
+                <span th:if="${patrullaje.estado.name() == 'CANCELADO'}" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">CANCELADO</span>
+
+                <span th:if="${patrullaje.esExtraordinario}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    EXTRAORDINARIO
+                </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="${patrullaje.tipoPatrullajeDescripcion} + ' | Sector: ' + ${patrullaje.sectorNombre}"></p>
+        </div>
+
+        <!-- Botones de Acción Operativa Rápida -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón PDF siempre disponible -->
+            <a th:href="@{/dashboard/serenazgo/patrullajes/{id}/ficha-pdf(id=${patrullaje.id})}" target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
+               title="Descargar Ficha Oficial en PDF">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Ficha PDF</span>
+            </a>
+
+            <!-- Acciones según Estado -->
+            <!-- 1. Si está PROGRAMADO o ASIGNADO: Iniciar o Cancelar -->
+            <button th:if="${patrullaje.estado.name() == 'PROGRAMADO' || patrullaje.estado.name() == 'ASIGNADO'}"
+                    onclick="abrirModal('modalIniciar')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_INICIAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 transition flex items-center space-x-1.5">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Iniciar Patrullaje</span>
+            </button>
+
+            <!-- 2. Si está EN_CURSO: Puntos, Novedad, Pausar, Cambiar Ruta, Finalizar -->
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO'}"
+                    onclick="abrirModal('modalPunto')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_REGISTRAR_RECORRIDO', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                <span>Registrar Checkpoint</span>
+            </button>
+
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO' || patrullaje.estado.name() == 'EN_PAUSA'}"
+                    onclick="abrirModal('modalNovedad')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_REGISTRAR_NOVEDAD', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
+                <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-400"></i>
+                <span>Registrar Novedad</span>
+            </button>
+
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO'}"
+                    onclick="abrirModal('modalPausar')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_INICIAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
+                <i data-lucide="pause" class="w-4 h-4"></i>
+                <span>Pausar</span>
+            </button>
+
+            <button th:if="${patrullaje.estado.name() == 'EN_PAUSA'}"
+                    onclick="abrirModal('modalReanudar')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_INICIAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Reanudar</span>
+            </button>
+
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO'}"
+                    onclick="abrirModal('modalCambiarRuta')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_CAMBIAR_RUTA', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL')"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
+                <i data-lucide="shuffle" class="w-4 h-4 text-indigo-400"></i>
+                <span>Cambiar Ruta</span>
+            </button>
+
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO' || patrullaje.estado.name() == 'EN_PAUSA'}"
+                    onclick="abrirModal('modalFinalizar')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_FINALIZAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 transition flex items-center space-x-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Finalizar Patrullaje</span>
+            </button>
+
+            <!-- Cancelar (si no está finalizado ni cancelado) -->
+            <button th:if="${patrullaje.estado.name() != 'FINALIZADO' && patrullaje.estado.name() != 'CANCELADO'}"
+                    onclick="abrirModal('modalCancelar')"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_CANCELAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')"
+                    class="px-3 py-2 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                <span>Cancelar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    <div th:if="${mensajeExito}" class="rounded-xl p-4 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+        <p class="text-xs text-emerald-300 font-medium" th:text="${mensajeExito}"></p>
+    </div>
+    <div th:if="${mensajeError}" class="rounded-xl p-4 bg-rose-500/10 border border-rose-500/30 flex items-center gap-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-rose-400 shrink-0"></i>
+        <p class="text-xs text-rose-300 font-medium" th:text="${mensajeError}"></p>
+    </div>
+
+    <!-- Notificación si está en Pausa -->
+    <div th:if="${patrullaje.estado.name() == 'EN_PAUSA'}" class="rounded-xl p-4 bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+        <i data-lucide="pause-circle" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div class="text-xs text-slate-300">
+            <span class="font-bold text-amber-300">Patrullaje en Pausa Operativa:</span>
+            <p th:text="${patrullaje.motivoPausa != null ? patrullaje.motivoPausa : 'Pausa declarada por el responsable de guardia.'}"></p>
+        </div>
+    </div>
+
+    <!-- Barra de Progreso de Checkpoints de la Ruta -->
+    <div th:if="${patrullaje.totalPuntosRuta > 0}" class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="milestone" class="w-4 h-4 text-indigo-400"></i>
+                Avance de Ruta Autorizada (<span th:text="${patrullaje.rutaNombre}"></span>):
+            </span>
+            <span class="font-bold text-indigo-400 font-mono" th:text="${patrullaje.porcentajeAvance + '% (' + patrullaje.puntosVisitados + ' de ' + patrullaje.totalPuntosRuta + ' puntos)'}"></span>
+        </div>
+        <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+            <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"
+                 th:style="'width: ' + ${patrullaje.porcentajeAvance} + '%'"></div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Navegación por Pestañas -->
+    <div class="border-b border-slate-700 flex flex-wrap gap-2">
+        <button type="button" onclick="cambiarPestana('tab-resumen')" id="btn-tab-resumen"
+                class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-indigo-500 text-indigo-400 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            Resumen General
+        </button>
+        <button type="button" onclick="cambiarPestana('tab-checkpoints')" id="btn-tab-checkpoints"
+                class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            Checkpoints en Ruta (<span th:text="${patrullaje.totalPuntosRuta}">0</span>)
+        </button>
+        <button type="button" onclick="cambiarPestana('tab-personal')" id="btn-tab-personal"
+                class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            Cuadrilla y Recursos (<span th:text="${patrullaje.participantes.size() + 1}">1</span>)
+        </button>
+        <button type="button" onclick="cambiarPestana('tab-novedades')" id="btn-tab-novedades"
+                class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+            Novedades (<span th:text="${patrullaje.novedades.size()}">0</span>)
+        </button>
+        <button type="button" onclick="cambiarPestana('tab-historial')" id="btn-tab-historial"
+                class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            Línea de Tiempo (<span th:text="${patrullaje.historial.size()}">0</span>)
+        </button>
+    </div>
+
+    <!-- Pestaña 1: Resumen General -->
+    <div id="tab-resumen" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Datos de Programación y Horario -->
+            <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-3">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    Tiempos y Horarios Operativos
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Inicio Programado:</span>
+                        <span class="text-white font-medium" th:text="${#temporals.format(patrullaje.fechaHoraInicioProgramada, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Fin Programado:</span>
+                        <span class="text-white font-medium" th:text="${#temporals.format(patrullaje.fechaHoraFinProgramada, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Inicio Real:</span>
+                        <span class="text-emerald-400 font-medium" th:text="${patrullaje.fechaHoraInicioReal != null ? #temporals.format(patrullaje.fechaHoraInicioReal, 'dd/MM/yyyy HH:mm') : 'Pendiente de inicio'}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Fin Real:</span>
+                        <span class="text-slate-200 font-medium" th:text="${patrullaje.fechaHoraFinReal != null ? #temporals.format(patrullaje.fechaHoraFinReal, 'dd/MM/yyyy HH:mm') : 'En ejecución'}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos Territoriales y Recursos -->
+            <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-3">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="map" class="w-4 h-4"></i>
+                    Territorio y Unidad Asignada
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Sector Territorial:</span>
+                        <span class="text-white font-medium" th:text="${patrullaje.sectorNombre}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Zona / Cuadrante:</span>
+                        <span class="text-slate-200" th:text="${patrullaje.zonaNombre != null ? patrullaje.zonaNombre : 'Sector general'}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Ruta Oficial:</span>
+                        <span class="text-white font-medium" th:text="${patrullaje.rutaNombre != null ? patrullaje.rutaNombre : 'Ronda flexible'}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Unidad Móvil:</span>
+                        <span th:if="${patrullaje.unidadPlaca != null}" class="font-mono text-indigo-300 font-bold" th:text="${patrullaje.unidadTipo + ' [' + patrullaje.unidadPlaca + ']'}"></span>
+                        <span th:unless="${patrullaje.unidadPlaca != null}" class="text-slate-400 italic">A pie (Sin vehículo)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Objetivo Operativo y Resultado Administrativo -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-4">
+            <div>
+                <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Objetivo Operativo:</span>
+                <p class="text-xs text-slate-200 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-700"
+                   th:text="${patrullaje.objetivoOperativo}"></p>
+            </div>
+            <div th:if="${patrullaje.resultadoAdministrativo != null && !patrullaje.resultadoAdministrativo.isBlank()}">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-1">Resultado Administrativo Conclusivo:</span>
+                <p class="text-xs text-slate-200 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-700"
+                   th:text="${patrullaje.resultadoAdministrativo}"></p>
+            </div>
+            <div th:if="${patrullaje.observaciones != null && !patrullaje.observaciones.isBlank()}">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Observaciones de Guardia:</span>
+                <p class="text-xs text-slate-300 leading-relaxed" th:text="${patrullaje.observaciones}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Checkpoints y Ruta -->
+    <div id="tab-checkpoints" class="tab-content hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="milestone" class="w-4 h-4 text-indigo-400"></i>
+                Hitos y Puntos de Control en Ruta
+            </h3>
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO'}"
+                    onclick="abrirModal('modalPunto')"
+                    class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Registrar Paso por Punto</span>
+            </button>
+        </div>
+
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                <tr>
+                    <th class="px-4 py-3 text-center">Orden</th>
+                    <th class="px-4 py-3">Código</th>
+                    <th class="px-4 py-3">Punto de Control</th>
+                    <th class="px-4 py-3">Ubicación / Referencia</th>
+                    <th class="px-4 py-3">Hora de Paso</th>
+                    <th class="px-4 py-3">Verificación</th>
+                    <th class="px-4 py-3 text-center">Estado Visita</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${patrullaje.puntosControlRuta.empty}">
+                    <td colspan="7" class="px-4 py-6 text-center text-slate-500">
+                        Este patrullaje se realiza bajo modalidad flexible sin ruta prefijada de checkpoints.
+                    </td>
+                </tr>
+                <tr th:each="pt : ${patrullaje.puntosControlRuta}" class="hover:bg-slate-800/60 transition">
+                    <td class="px-4 py-3 text-center font-mono font-bold text-slate-400" th:text="'#' + ${pt.orden}"></td>
+                    <td class="px-4 py-3 font-mono text-indigo-400 font-bold" th:text="${pt.codigo}"></td>
+                    <td class="px-4 py-3 font-medium text-white" th:text="${pt.nombre}"></td>
+                    <td class="px-4 py-3 text-slate-400" th:text="${pt.referenciaUbicacion != null ? pt.referenciaUbicacion : '-'}"></td>
+                    <td class="px-4 py-3">
+                        <!-- Buscar si fue visitado -->
+                        <span th:each="v : ${patrullaje.visitasPuntos}"
+                              th:if="${v.puntoControlId == pt.id}"
+                              class="text-slate-200 font-mono text-xs"
+                              th:text="${#temporals.format(v.fechaHoraRegistro, 'HH:mm')}"></span>
+                        <span th:unless="${#lists.contains(patrullaje.visitasPuntos.![puntoControlId], pt.id)}" class="text-slate-500">-</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span th:each="v : ${patrullaje.visitasPuntos}"
+                              th:if="${v.puntoControlId == pt.id}"
+                              class="text-[11px] text-slate-300"
+                              th:text="${v.metodoRegistro.descripcion}"></span>
+                        <span th:unless="${#lists.contains(patrullaje.visitasPuntos.![puntoControlId], pt.id)}" class="text-slate-500">-</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div th:each="v : ${patrullaje.visitasPuntos}" th:if="${v.puntoControlId == pt.id}">
+                            <span th:if="${v.estadoVisita.name() == 'VISITADO'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">VISITADO</span>
+                            <span th:if="${v.estadoVisita.name() == 'OMITIDO'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                  th:title="${v.motivoOmision}">OMITIDO</span>
+                        </div>
+                        <span th:unless="${#lists.contains(patrullaje.visitasPuntos.![puntoControlId], pt.id)}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700/60 text-slate-400">PENDIENTE</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pestaña 3: Cuadrilla y Recursos -->
+    <div id="tab-personal" class="tab-content hidden space-y-6">
+        <!-- Sereno Responsable -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-3">
+            <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                Efectivo Responsable del Patrullaje
+            </h3>
+            <div class="flex items-center space-x-4 bg-slate-900/60 p-4 rounded-lg border border-slate-700">
+                <div class="w-10 h-10 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold">
+                    <i data-lucide="user" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <span class="block text-sm font-bold text-white" th:text="${patrullaje.responsableNombre}"></span>
+                    <span class="block text-xs text-slate-400" th:text="'Código: ' + ${patrullaje.responsableCodigo} + ' | Cargo: ' + ${patrullaje.responsableCargo}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal de Cuadrilla de Apoyo -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                Efectivos de Cuadrilla Integrantes (<span th:text="${patrullaje.participantes.size()}">0</span>)
+            </h3>
+            <div th:if="${patrullaje.participantes.empty}" class="text-xs text-slate-500 py-3 text-center">
+                Patrullaje individual sin personal adicional asignado.
+            </div>
+            <div th:unless="${patrullaje.participantes.empty}" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div th:each="part : ${patrullaje.participantes}" class="p-3 bg-slate-900/60 border border-slate-700 rounded-lg flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold text-white" th:text="${part.nombreCompleto}"></span>
+                        <span class="block text-[11px] text-slate-400" th:text="'Cód: ' + ${part.codigoInterno} + ' - ' + ${part.funcionDesempenada}"></span>
+                    </div>
+                    <span class="text-[10px] text-slate-500" th:text="${#temporals.format(part.fechaIncorporacion, 'HH:mm')}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipamiento Operativo Asignado -->
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5 space-y-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="radio" class="w-4 h-4"></i>
+                Equipamiento Operativo de Guardia (<span th:text="${patrullaje.equipamiento.size()}">0</span>)
+            </h3>
+            <div th:if="${patrullaje.equipamiento.empty}" class="text-xs text-slate-500 py-3 text-center">
+                Sin equipamiento institucional asignado en registro.
+            </div>
+            <div th:unless="${patrullaje.equipamiento.empty}" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div th:each="eq : ${patrullaje.equipamiento}" class="p-3 bg-slate-900/60 border border-slate-700 rounded-lg">
+                    <span class="block text-xs font-bold text-white" th:text="${eq.tipoEquipo}"></span>
+                    <span class="block text-[10px] text-slate-400 font-mono" th:text="'Cód: ' + ${eq.codigoInterno}"></span>
+                    <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold"
+                          th:classappend="${eq.fechaDevolucion != null ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-400'}"
+                          th:text="${eq.fechaDevolucion != null ? 'DEVUELTO' : 'EN USO'}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 4: Novedades Operativas -->
+    <div id="tab-novedades" class="tab-content hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="bell" class="w-4 h-4 text-indigo-400"></i>
+                Bitácora de Novedades e Incidencias en Ruta
+            </h3>
+            <button th:if="${patrullaje.estado.name() == 'EN_CURSO' || patrullaje.estado.name() == 'EN_PAUSA'}"
+                    onclick="abrirModal('modalNovedad')"
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Registrar Novedad</span>
+            </button>
+        </div>
+
+        <div th:if="${patrullaje.novedades.empty}" class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-8 text-center text-slate-500 text-xs">
+            <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+            Sin novedades reportadas durante este servicio de patrullaje.
+        </div>
+
+        <div th:unless="${patrullaje.novedades.empty}" class="space-y-3">
+            <div th:each="nov : ${patrullaje.novedades}" class="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span th:text="${nov.tipoNovedadDescripcion}"></span>
+                    </span>
+                    <span class="text-slate-400 font-mono text-[11px]" th:text="${#temporals.format(nov.fechaHora, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                </div>
+                <p class="text-xs text-slate-200 leading-relaxed" th:text="${nov.descripcion}"></p>
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-700/40">
+                    <span th:text="'Reportado por: ' + ${nov.personalReportaNombre}"></span>
+                    <span th:if="${nov.incidenciaVinculadaCodigo != null}" class="font-mono text-indigo-400"
+                          th:text="'Incidencia: ' + ${nov.incidenciaVinculadaCodigo}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 5: Línea de Tiempo e Historial -->
+    <div id="tab-historial" class="tab-content hidden space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+            Trazabilidad y Línea de Tiempo del Patrullaje
+        </h3>
+
+        <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-6">
+            <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-700">
+                <div th:each="h : ${patrullaje.historial}" class="relative">
+                    <div class="absolute -left-[27px] top-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-slate-900"></div>
+                    <div class="flex items-center justify-between text-xs mb-0.5">
+                        <span class="font-bold text-white" th:text="${h.accion}"></span>
+                        <span class="text-slate-400 text-[10px] font-mono" th:text="${#temporals.format(h.fecha, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                    </div>
+                    <p class="text-xs text-slate-300" th:text="${h.descripcion}"></p>
+                    <span class="text-[10px] text-slate-500 mt-1 block" th:text="'Operador: ' + ${h.username}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODALES DE EJECUCIÓN OPERATIVA                                            -->
+    <!-- ========================================================================= -->
+
+    <!-- Modal 1: Iniciar Patrullaje -->
+    <div id="modalIniciar" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4 text-emerald-400"></i>
+                    Iniciar Patrullaje Formal en Campo
+                </h3>
+                <button type="button" onclick="cerrarModal('modalIniciar')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/iniciar(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <p class="text-xs text-slate-300">
+                    Se verificará que el efectivo responsable y la unidad móvil no cuenten con solapamiento operativo.
+                </p>
+                <div th:if="${patrullaje.unidadPlaca != null}">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Kilometraje Inicial del Vehículo</label>
+                    <input type="number" step="0.01" name="kmInicio" placeholder="Ej: 12540.50"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones de Inicio</label>
+                    <textarea name="observaciones" rows="2" placeholder="Novedades de salida de base..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalIniciar')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">Confirmar Inicio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Registrar Paso por Punto de Control -->
+    <div id="modalPunto" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i>
+                    Registrar Checkpoint en Ruta
+                </h3>
+                <button type="button" onclick="cerrarModal('modalPunto')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/puntos(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Punto de Control en Ruta <span class="text-rose-400">*</span></label>
+                    <select name="puntoControlId" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                        <option th:each="pt : ${patrullaje.puntosControlRuta}" th:value="${pt.id}"
+                                th:text="'#' + ${pt.orden} + ' ' + ${pt.codigo} + ' - ' + ${pt.nombre}"></option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Estado de Visita <span class="text-rose-400">*</span></label>
+                        <select name="estadoVisita" id="selEstadoVisita" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                            <option value="VISITADO">VISITADO CONFORME</option>
+                            <option value="OMITIDO">OMITIDO / NO VISITADO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Método de Verificación</label>
+                        <select name="metodoRegistro" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                            <option th:each="m : ${metodosRegistro}" th:value="${m}" th:text="${m.descripcion}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bloqueOmision" class="hidden">
+                    <label class="block text-xs font-semibold text-amber-400 mb-1">Motivo Justificatorio de Omisión <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivoOmision" placeholder="Tráfico vehicular, emergencia vecinal prioritaria, desvío autorizado..."
+                           class="w-full bg-slate-950 border border-amber-500/40 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones</label>
+                    <input type="text" name="observaciones" placeholder="Sin novedades en el punto / Todo conforme..."
+                           class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalPunto')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold">Guardar Paso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Registrar Novedad -->
+    <div id="modalNovedad" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-400"></i>
+                    Registrar Novedad Operativa
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNovedad')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/novedades(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Novedad <span class="text-rose-400">*</span></label>
+                    <select name="tipoNovedad" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                        <option th:each="tn : ${tiposNovedad}" th:value="${tn}" th:text="${tn.descripcion}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción del Suceso <span class="text-rose-400">*</span></label>
+                    <textarea name="descripcion" rows="3" required placeholder="Detalle circunstanciado de los hechos observados..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div th:if="${!incidenciasActivas.empty}">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Vincular con Incidencia en Curso (Opcional)</label>
+                    <select name="incidenciaVinculadaId" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                        <option value="">-- Sin Incidencia Vinculada --</option>
+                        <option th:each="inc : ${incidenciasActivas}" th:value="${inc.id}"
+                                th:text="${inc.codigo + ' - ' + inc.descripcion}"></option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalNovedad')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold">Registrar Novedad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Pausar Patrullaje -->
+    <div id="modalPausar" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="pause-circle" class="w-4 h-4 text-amber-400"></i>
+                    Declarar Pausa Operativa
+                </h3>
+                <button type="button" onclick="cerrarModal('modalPausar')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/pausar(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificado de la Pausa <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Ej: Reabastecimiento de combustible en base, auxilio a cuadrilla contigua..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalPausar')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold">Pausar Patrullaje</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Reanudar Patrullaje -->
+    <div id="modalReanudar" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4 text-emerald-400"></i>
+                    Reanudar Servicio de Patrullaje
+                </h3>
+                <button type="button" onclick="cerrarModal('modalReanudar')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/reanudar(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <p class="text-xs text-slate-300">
+                    El patrullaje volverá al estado <strong>EN CURSO</strong> y los recursos continuarán bajo asignación activa.
+                </p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones de Reanudación</label>
+                    <input type="text" name="observaciones" placeholder="Reingreso a ruta conforme..."
+                           class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalReanudar')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">Reanudar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6: Cambiar Ruta -->
+    <div id="modalCambiarRuta" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="shuffle" class="w-4 h-4 text-indigo-400"></i>
+                    Autorizar Cambio de Ruta
+                </h3>
+                <button type="button" onclick="cerrarModal('modalCambiarRuta')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/cambiar-ruta(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nueva Ruta Autorizada <span class="text-rose-400">*</span></label>
+                    <select name="nuevaRutaId" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                        <option th:each="r : ${rutasDisponibles}" th:value="${r.id}" th:text="${r.codigo + ' - ' + r.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificatorio del Cambio <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Instrucción de supervisión, congestión o desvío ordenado por central..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalCambiarRuta')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold">Autorizar Cambio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Finalizar Patrullaje -->
+    <div id="modalFinalizar" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4 text-blue-400"></i>
+                    Finalizar y Cerrar Patrullaje
+                </h3>
+                <button type="button" onclick="cerrarModal('modalFinalizar')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/finalizar(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <div th:if="${patrullaje.unidadPlaca != null}">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Kilometraje Final del Vehículo</label>
+                    <input type="number" step="0.01" name="kmFin" placeholder="Ej: 12565.80"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado Administrativo y Conclusiones <span class="text-rose-400">*</span></label>
+                    <textarea name="resultadoAdministrativo" rows="3" required placeholder="Resumen de la ronda preventiva, estado de tranquilidad del sector, incidencias atendidas..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones Finales</label>
+                    <input type="text" name="observaciones" placeholder="Entrega de cuadrilla, devolución conforme de equipos..."
+                           class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalFinalizar')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold">Finalizar Servicio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 8: Cancelar Patrullaje -->
+    <div id="modalCancelar" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Cancelar Patrullaje Planificado
+                </h3>
+                <button type="button" onclick="cerrarModal('modalCancelar')" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/patrullajes/{id}/cancelar(id=${patrullaje.id})}" method="post" class="space-y-4">
+                <p class="text-xs text-slate-300">
+                    La cancelación liberará al personal y recursos asignados, pero conservará el registro histórico inmutable para auditoría.
+                </p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificatorio de Cancelación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Reasignación urgente por emergencia climática, orden superior..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="cerrarModal('modalCancelar')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Atrás</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold">Confirmar Cancelación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function cambiarPestana(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-500', 'text-indigo-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const content = document.getElementById(tabId);
+            const btn = document.getElementById('btn-' + tabId);
+            if (content) content.classList.remove('hidden');
+            if (btn) {
+                btn.classList.add('border-indigo-500', 'text-indigo-400');
+                btn.classList.remove('border-transparent', 'text-slate-400');
+            }
+        }
+
+        function abrirModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.remove('hidden');
+        }
+
+        function cerrarModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const selVis = document.getElementById('selEstadoVisita');
+            const blkOm = document.getElementById('bloqueOmision');
+            if (selVis && blkOm) {
+                selVis.addEventListener('change', function () {
+                    blkOm.classList.toggle('hidden', this.value !== 'OMITIDO');
+                });
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

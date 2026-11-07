@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja de Incidencias | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/incidencias/dashboard}" class="hover:text-blue-400">Incidencias</a>
+                <span>/</span>
+                <span class="text-slate-200">Bandeja General</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Bandeja de Incidencias Registradas
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a th:href="@{/dashboard/mercados/incidencias/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Incidencia
+            </a>
+            <a th:href="@{/dashboard/mercados/incidencias/reportes}"
+               class="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Exportar
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form method="get" th:action="@{/dashboard/mercados/incidencias}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Todos los mercados --</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${m.id == mercadoId}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Tipo</label>
+                <select name="tipoId" class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}" th:text="${t.nombre}" th:selected="${t.id == tipoId}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Prioridad</label>
+                <select name="prioridad" class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Todas --</option>
+                    <option th:each="p : ${prioridades}" th:value="${p}" th:text="${p.label}" th:selected="${p == prioridad}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500">
+                    <option value="">-- Todos --</option>
+                    <option th:each="e : ${estados}" th:value="${e}" th:text="${e.label}" th:selected="${e == estado}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Buscar (Código/Texto)</label>
+                <input type="text" name="q" th:value="${q}" placeholder="Código o descripción..."
+                       class="w-full bg-[#101827] border border-slate-700 text-xs text-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg p-2 transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/incidencias}" class="bg-slate-700 hover:bg-slate-600 text-white text-xs p-2 rounded-lg text-center">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Incidencias -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-[#101827] border-b border-slate-700 text-slate-400 font-semibold uppercase tracking-wider">
+                    <th class="p-3">Código</th>
+                    <th class="p-3">Fecha</th>
+                    <th class="p-3">Mercado / Puesto</th>
+                    <th class="p-3">Tipo Incidencia</th>
+                    <th class="p-3">Prioridad</th>
+                    <th class="p-3">Estado</th>
+                    <th class="p-3">Responsable</th>
+                    <th class="p-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-slate-300">
+                <tr th:if="${#lists.isEmpty(incidenciasPage.content)}">
+                    <td colspan="8" class="p-8 text-center text-slate-500">
+                        No se encontraron incidencias registradas con los filtros seleccionados.
+                    </td>
+                </tr>
+                <tr th:each="i : ${incidenciasPage.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="p-3 font-mono font-bold text-slate-200" th:text="${i.codigoIncidencia}">INC-MER-2026-000001</td>
+                    <td class="p-3 text-slate-400" th:text="${#temporals.format(i.fechaReporte, 'dd/MM/yyyy HH:mm')}">17/10/2026</td>
+                    <td class="p-3">
+                        <span class="font-medium text-slate-200 block" th:text="${i.mercadoNombre}">Mercado Central</span>
+                        <span class="text-[10px] text-slate-400" th:text="${i.puestoNumero != null ? 'Puesto ' + i.puestoNumero : 'Ámbito General'}">Puesto 12</span>
+                    </td>
+                    <td class="p-3">
+                        <span class="text-slate-200 block" th:text="${i.tipoIncidenciaNombre}">Infraestructura</span>
+                        <span class="text-[10px] text-slate-400" th:text="${i.origen.label}">Personal Municipal</span>
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${i.prioridad.badgeClass}"
+                              th:text="${i.prioridad.label}">Media</span>
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${i.estado.badgeClass}"
+                              th:text="${i.estado.label}">Registrada</span>
+                    </td>
+                    <td class="p-3 text-slate-400" th:text="${i.responsableNombre != null ? i.responsableNombre : 'Sin asignar'}">jquispe</td>
+                    <td class="p-3 text-right">
+                        <a th:href="@{'/dashboard/mercados/incidencias/' + ${i.id}}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-medium rounded-lg transition-colors">
+                            Ver Detalle
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${incidenciasPage.totalPages > 1}" class="p-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+            <div>
+                Página <span th:text="${incidenciasPage.number + 1}">1</span> de <span th:text="${incidenciasPage.totalPages}">1</span>
+                (<span th:text="${incidenciasPage.totalElements}">0</span> registros)
+            </div>
+            <div class="flex gap-1">
+                <a th:if="${!incidenciasPage.first}"
+                   th:href="@{/dashboard/mercados/incidencias(page=${incidenciasPage.number - 1}, size=${incidenciasPage.size}, mercadoId=${mercadoId}, tipoId=${tipoId}, prioridad=${prioridad}, estado=${estado}, q=${q})}"
+                   class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded">Anterior</a>
+                <a th:if="${!incidenciasPage.last}"
+                   th:href="@{/dashboard/mercados/incidencias(page=${incidenciasPage.number + 1}, size=${incidenciasPage.size}, mercadoId=${mercadoId}, tipoId=${tipoId}, prioridad=${prioridad}, estado=${estado}, q=${q})}"
+                   class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

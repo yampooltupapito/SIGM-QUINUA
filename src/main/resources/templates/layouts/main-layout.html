@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE">SIGM-QUINUA</title>
+    <!-- Tailwind CSS Compilado Localmente y Sistema de Diseño -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+</head>
+<body class="bg-[#101827] text-[#e2e8f0] font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header institucional -->
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar municipal -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Contenido dinámico de cada página -->
+        <main class="flex-1 overflow-y-auto p-8 bg-[#101827]">
+            <div layout:fragment="content">
+                <!-- Contenido reemplazado por la vista -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer institucional -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <!-- Lucide Icons Bundle Local -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Conciliaciones Financieras de Caja — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div th:if="${success}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center space-x-3">
+        <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${success}" class="text-sm font-medium">Operación realizada con éxito</span>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}" class="text-sm font-medium">Ocurrió un error</span>
+    </div>
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Conciliaciones</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="scale" class="w-6 h-6 text-blue-400"></i>
+                Actas de Arqueo y Conciliación Financiera
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+                Supervisión de cierres diarios de caja, comparación entre efectivo contado vs calculado y resolución de diferencias.
+            </p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+        <form th:action="@{/dashboard/tributaria/conciliaciones}" method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Búsqueda</label>
+                <input type="text" name="busqueda" th:value="${busqueda}" placeholder="N° conciliación o sesión..."
+                       class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Estado de Conciliación</label>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="e : ${estadosConciliacion}" th:value="${e.name()}" th:text="${e.descripcion}" th:selected="${e.name() == (estado != null ? estado.name() : '')}"></option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/conciliaciones}" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Conciliaciones -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                    <tr>
+                        <th class="py-3 px-4">Código Conciliación</th>
+                        <th class="py-3 px-4">Sesión de Caja</th>
+                        <th class="py-3 px-4">Cajero</th>
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4 text-right">Efectivo Esperado</th>
+                        <th class="py-3 px-4 text-right">Efectivo Verificado</th>
+                        <th class="py-3 px-4 text-center">Diferencia</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]">
+                    <tr th:if="${#lists.isEmpty(conciliaciones.content)}" class="text-center text-slate-500 py-6">
+                        <td colspan="9" class="py-6">No hay registros de conciliación de caja.</td>
+                    </tr>
+                    <tr th:each="c : ${conciliaciones.content}" class="hover:bg-slate-800/40">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${c.codigoConciliacion}">CONC-2026-00001</td>
+                        <td class="py-3 px-4 font-mono text-slate-200" th:text="${c.sesionCajaCodigo}">SES-2026-00001</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${c.cajeroNombre}">Juan Cajero</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(c.fechaConciliacion, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
+                        <td class="py-3 px-4 text-right font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(c.importeEsperado, 1, 'POINT', 2, 'COMMA')}">S/ 350.00</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-white" th:text="'S/ ' + ${#numbers.formatDecimal(c.importeVerificado, 1, 'POINT', 2, 'COMMA')}">S/ 350.00</td>
+                        <td class="py-3 px-4 text-center font-mono font-bold"
+                            th:classappend="${c.diferencia.compareTo(T(java.math.BigDecimal).ZERO) == 0 ? 'text-emerald-400' : 'text-rose-400'}"
+                            th:text="'S/ ' + ${#numbers.formatDecimal(c.diferencia, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${c.estadoBadgeClass}"
+                                  th:text="${c.estadoDescripcion}">CONCILIADA</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <a th:href="@{'/dashboard/tributaria/conciliaciones/' + ${c.id}}"
+                               class="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors inline-block"
+                               title="Ver Detalle de Conciliación">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

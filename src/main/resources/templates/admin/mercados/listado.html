@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Padrón de Mercados Municipales — Listado y Gestión | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional y Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Módulos Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados Municipales</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Padrón de Mercados</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="store" class="w-6 h-6 text-blue-500"></i>
+                <span>Padrón de Mercados Municipales</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Registro oficial, catastro, ubicación y administración de mercados públicos de Quinua.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a th:href="@{/api/mercados/exportar/excel(termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, fechaDesde=${filtro.fechaDesde}, fechaHasta=${filtro.fechaHasta})}"
+               target="_blank"
+               sec:authorize="hasAuthority('MERCADOS_MERCADO_EXPORTAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'OPERADOR')"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold transition-colors">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Excel</span>
+            </a>
+
+            <a th:href="@{/api/mercados/exportar/pdf(termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, fechaDesde=${filtro.fechaDesde}, fechaHasta=${filtro.fechaHasta})}"
+               target="_blank"
+               sec:authorize="hasAuthority('MERCADOS_MERCADO_EXPORTAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'OPERADOR')"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>PDF</span>
+            </a>
+
+            <a th:href="@{/dashboard/mercados/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_MERCADO_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white shadow-sm transition-colors">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Mercado</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas del Listado -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Mercados</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-white" th:text="${estadisticas.totalMercados}">0</span>
+                <span class="text-[10px] text-slate-400">Registrados</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Activos</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-emerald-400" th:text="${estadisticas.mercadosActivos}">0</span>
+                <span class="text-[10px] text-emerald-500/80">Operativos</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Mantenimiento</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-amber-400" th:text="${estadisticas.mercadosEnMantenimiento}">0</span>
+                <span class="text-[10px] text-amber-500/80">Refacción</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider">Suspendidos / Inac.</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-rose-400" th:text="${estadisticas.mercadosSuspendidos + estadisticas.mercadosInactivos}">0</span>
+                <span class="text-[10px] text-rose-500/80">No operativos</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm col-span-2 sm:col-span-1">
+            <span class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider">Puestos Totales</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-blue-400" th:text="${estadisticas.totalPuestosAsociados}">0</span>
+                <span class="text-[10px] text-blue-500/80">Catastrados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros y Búsqueda -->
+    <div class="bg-card border border-theme rounded-2xl p-4 shadow-sm">
+        <form method="get" th:action="@{/dashboard/mercados/listado}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5">
+            <!-- Búsqueda libre -->
+            <div class="lg:col-span-4">
+                <label for="termino" class="block text-[11px] font-semibold text-slate-300 mb-1">Buscar por código, nombre o dirección</label>
+                <div class="relative">
+                    <input type="text" id="termino" name="termino" th:value="${filtro.termino}"
+                           placeholder="Ej. Mercado Central, MKT-01, Plaza..."
+                           class="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-900/90 border border-theme text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors" />
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                </div>
+            </div>
+
+            <!-- Filtro Estado -->
+            <div class="lg:col-span-2">
+                <label for="estado" class="block text-[11px] font-semibold text-slate-300 mb-1">Estado</label>
+                <select id="estado" name="estado"
+                        class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-theme text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}"
+                            th:value="${est.name()}"
+                            th:text="${est.name()}"
+                            th:selected="${filtro.estado != null && filtro.estado.name() == est.name()}">ACTIVO</option>
+                </select>
+            </div>
+
+            <!-- Filtro Oficina -->
+            <div class="lg:col-span-3">
+                <label for="oficinaId" class="block text-[11px] font-semibold text-slate-300 mb-1">Oficina Administradora</label>
+                <select id="oficinaId" name="oficinaId"
+                        class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-theme text-xs text-white focus:outline-none focus:border-blue-500 transition-colors">
+                    <option value="">Todas las oficinas</option>
+                    <option th:each="of : ${oficinas}"
+                            th:value="${of.id}"
+                            th:text="${of.nombre}"
+                            th:selected="${filtro.oficinaId != null && filtro.oficinaId == of.id}">Subgerencia de Desarrollo Económico</option>
+                </select>
+            </div>
+
+            <!-- Filtro Distrito -->
+            <div class="lg:col-span-2">
+                <label for="distrito" class="block text-[11px] font-semibold text-slate-300 mb-1">Distrito</label>
+                <input type="text" id="distrito" name="distrito" th:value="${filtro.distrito}"
+                       placeholder="Ej. Quinua"
+                       class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-theme text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors" />
+            </div>
+
+            <!-- Botones de Acción de Filtro -->
+            <div class="lg:col-span-1 flex items-end space-x-2">
+                <button type="submit"
+                        class="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition-colors flex items-center justify-center space-x-1"
+                        title="Aplicar filtros">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/mercados/listado}"
+                   class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                   title="Limpiar filtros">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Mercados Municipales -->
+    <div class="bg-card border border-theme rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-theme flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="layout-list" class="w-4 h-4 text-blue-400"></i>
+                <h2 class="text-sm font-bold text-white">Catastro de Mercados Registrados</h2>
+                <span class="text-xs text-slate-400" th:text="'(' + ${pagina.totalElements} + ' encontrados)'">(0)</span>
+            </div>
+
+            <!-- Ordenamiento Rápido -->
+            <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-400">Ordenar por:</span>
+                <a th:href="@{/dashboard/mercados/listado(termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy='nombre', sortDir=${filtro.sortBy == 'nombre' && filtro.sortDir == 'asc' ? 'desc' : 'asc'})}"
+                   th:classappend="${filtro.sortBy == 'nombre'} ? 'text-blue-400 font-bold' : 'text-slate-300 hover:text-white'"
+                   class="px-2 py-1 rounded bg-slate-900 border border-theme transition-colors">
+                    Nombre <span th:if="${filtro.sortBy == 'nombre'}" th:text="${filtro.sortDir == 'asc' ? '↑' : '↓'}">↑</span>
+                </a>
+                <a th:href="@{/dashboard/mercados/listado(termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy='codigo', sortDir=${filtro.sortBy == 'codigo' && filtro.sortDir == 'asc' ? 'desc' : 'asc'})}"
+                   th:classappend="${filtro.sortBy == 'codigo'} ? 'text-blue-400 font-bold' : 'text-slate-300 hover:text-white'"
+                   class="px-2 py-1 rounded bg-slate-900 border border-theme transition-colors">
+                    Código <span th:if="${filtro.sortBy == 'codigo'}" th:text="${filtro.sortDir == 'asc' ? '↑' : '↓'}">↑</span>
+                </a>
+                <a th:href="@{/dashboard/mercados/listado(termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy='fechaRegistro', sortDir=${filtro.sortBy == 'fechaRegistro' && filtro.sortDir == 'asc' ? 'desc' : 'asc'})}"
+                   th:classappend="${filtro.sortBy == 'fechaRegistro'} ? 'text-blue-400 font-bold' : 'text-slate-300 hover:text-white'"
+                   class="px-2 py-1 rounded bg-slate-900 border border-theme transition-colors">
+                    Fecha <span th:if="${filtro.sortBy == 'fechaRegistro'}" th:text="${filtro.sortDir == 'asc' ? '↑' : '↓'}">↑</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="bg-slate-900/60 border-b border-theme text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <th class="py-3 px-4">Código</th>
+                    <th class="py-3 px-4">Nombre del Mercado</th>
+                    <th class="py-3 px-4">Ubicación y Dirección</th>
+                    <th class="py-3 px-4">Oficina Administradora</th>
+                    <th class="py-3 px-3 text-center">Capacidad</th>
+                    <th class="py-3 px-3 text-center">Puestos (Disp/Ocup)</th>
+                    <th class="py-3 px-3 text-center">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-theme text-xs text-slate-300">
+                <!-- Fila de Mercado -->
+                <tr th:each="m : ${mercados}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3.5 px-4 font-mono font-bold text-blue-400" th:text="${m.codigo}">MKT-01</td>
+                    <td class="py-3.5 px-4">
+                        <a th:href="@{/dashboard/mercados/{id}(id=${m.id})}"
+                           class="font-semibold text-white hover:text-blue-400 transition-colors block"
+                           th:text="${m.nombre}">Mercado Central de Quinua</a>
+                        <span class="text-[11px] text-slate-400 truncate max-w-xs block" th:text="${m.descripcion != null ? m.descripcion : 'Sin descripción registrada'}">-</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span class="text-slate-200 block truncate max-w-xs" th:text="${m.direccion}">Jr. Sucre S/N</span>
+                        <span class="text-[11px] text-slate-400" th:text="${m.distrito + ' - ' + m.provincia}">Quinua - Huamanga</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-300">
+                        <span th:text="${m.oficinaAdministradoraNombre != null ? m.oficinaAdministradoraNombre : 'Sin asignar'}"
+                              th:classappend="${m.oficinaAdministradoraNombre == null ? 'text-slate-500 italic' : ''}">Subgerencia de Desarrollo Económico</span>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-mono" th:text="${m.capacidadReferencial}">0</td>
+                    <td class="py-3.5 px-3 text-center font-mono">
+                        <span class="text-emerald-400 font-bold" th:text="${m.puestosDisponibles}">0</span> /
+                        <span class="text-blue-400 font-bold" th:text="${m.puestosOcupados}">0</span>
+                        <span class="text-[10px] text-slate-500 block" th:text="'(Total: ' + ${m.totalPuestos} + ')'">(Total: 0)</span>
+                    </td>
+                    <td class="py-3.5 px-3 text-center">
+                        <span th:if="${m.estado.name() == 'ACTIVO'}" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            ACTIVO
+                        </span>
+                        <span th:if="${m.estado.name() == 'EN_MANTENIMIENTO'}" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            MANTENIMIENTO
+                        </span>
+                        <span th:if="${m.estado.name() == 'SUSPENDIDO'}" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            SUSPENDIDO
+                        </span>
+                        <span th:if="${m.estado.name() == 'INACTIVO'}" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            INACTIVO
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                        <div class="flex items-center justify-end space-x-1.5">
+                            <a th:href="@{/dashboard/mercados/{id}(id=${m.id})}"
+                               class="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors"
+                               title="Ver detalle completo">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/{id}/editar(id=${m.id})}"
+                               sec:authorize="hasAuthority('MERCADOS_MERCADO_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                               class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-colors"
+                               title="Editar mercado">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </a>
+                            <button type="button"
+                                    sec:authorize="hasAuthority('MERCADOS_MERCADO_CAMBIAR_ESTADO') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                                    th:data-mercado-id="${m.id}"
+                                    th:data-mercado-codigo="${m.codigo}"
+                                    th:data-mercado-nombre="${m.nombre}"
+                                    th:data-mercado-estado="${m.estado.name()}"
+                                    class="btn-abrir-modal-estado p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors"
+                                    title="Cambiar estado operativo">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Estado Vacío -->
+                <tr th:if="${mercados == null || mercados.isEmpty()}">
+                    <td colspan="8" class="py-12 text-center">
+                        <div class="max-w-sm mx-auto space-y-3">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-800/80 border border-theme flex items-center justify-center mx-auto text-slate-500">
+                                <i data-lucide="store" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-white">No se encontraron mercados municipales</h3>
+                            <p class="text-xs text-slate-400">
+                                No existen registros que coincidan con los criterios de búsqueda o aún no se han registrado mercados en el padrón distrital de Quinua.
+                            </p>
+                            <div class="pt-2" sec:authorize="hasAuthority('MERCADOS_MERCADO_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')">
+                                <a th:href="@{/dashboard/mercados/nuevo}"
+                                   class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white shadow-sm transition-colors">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Registrar Primer Mercado</span>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${pagina.totalPages > 1}" class="p-4 border-t border-theme flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${pagina.number + 1}">1</span> de <span class="font-bold text-white" th:text="${pagina.totalPages}">1</span>
+                (Mostrando <span th:text="${pagina.numberOfElements}">0</span> de <span th:text="${pagina.totalElements}">0</span> mercados)
+            </div>
+
+            <div class="flex items-center space-x-1.5">
+                <a th:if="${pagina.hasPrevious()}"
+                   th:href="@{/dashboard/mercados/listado(page=${pagina.number - 1}, size=${pagina.size}, termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy=${filtro.sortBy}, sortDir=${filtro.sortDir})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-900 border border-theme text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                    Anterior
+                </a>
+
+                <span th:each="p : ${#numbers.sequence(0, pagina.totalPages - 1)}"
+                      th:if="${p >= pagina.number - 2 && p <= pagina.number + 2}">
+                    <a th:href="@{/dashboard/mercados/listado(page=${p}, size=${pagina.size}, termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy=${filtro.sortBy}, sortDir=${filtro.sortDir})}"
+                       th:text="${p + 1}"
+                       th:classappend="${p == pagina.number} ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-slate-900 text-slate-400 hover:text-white border-theme'"
+                       class="px-2.5 py-1.5 rounded-lg border text-xs transition-colors">
+                        1
+                    </a>
+                </span>
+
+                <a th:if="${pagina.hasNext()}"
+                   th:href="@{/dashboard/mercados/listado(page=${pagina.number + 1}, size=${pagina.size}, termino=${filtro.termino}, estado=${filtro.estado}, oficinaId=${filtro.oficinaId}, distrito=${filtro.distrito}, sortBy=${filtro.sortBy}, sortDir=${filtro.sortDir})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-900 border border-theme text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inclusión del Fragmento Modal de Cambio de Estado -->
+    <div th:replace="~{admin/mercados/componentes/modal-estado :: modalEstado}"></div>
+
+</div>
+
+<!-- Scripts específicos del listado -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-listado.js}"></script>
+</th:block>
+</body>
+</html>

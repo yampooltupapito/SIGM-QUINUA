@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Ficha: ' + ${doc.codigo} + ' — Serenazgo Quinua'">Ficha de Evidencia — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="contenido" th:with="moduloActivo='serenazgo', submenuActivo='documentos'">
+    <div class="space-y-6">
+
+        <!-- Mensajes Flash -->
+        <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm font-medium" th:text="${mensajeExito}"></span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm font-medium" th:text="${mensajeError}"></span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Encabezado con Códigos y Badges -->
+        <div class="bg-[#1e293b]/70 border border-slate-700/60 p-5 rounded-2xl shadow-sm backdrop-blur-sm space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <a th:href="@{/dashboard/serenazgo/documentos}" class="inline-flex items-center space-x-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium mb-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>Volver a Evidencias y Documentos</span>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <span class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                            <i th:attr="data-lucide=${doc.tipoDocumentoIcono}" class="w-5 h-5"></i>
+                        </span>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                                <span class="font-mono" th:text="${doc.codigo}">DOC-SEG-2026-00001</span>
+                                <span class="text-sm font-normal text-slate-400">|</span>
+                                <span class="text-sm font-medium text-slate-300" th:text="${doc.nombreOriginal}">evidencia.jpg</span>
+                            </h1>
+                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block"
+                                      th:classappend="${doc.estadoBadgeClase}"
+                                      th:text="${doc.estadoDesc}">Registrado</span>
+
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-purple-500/20 bg-purple-500/10 text-purple-300">
+                                    <i data-lucide="lock" class="w-2.5 h-2.5 inline mr-0.5"></i>
+                                    <span th:text="${doc.nivelConfidencialidadDesc}">Confidencial</span>
+                                </span>
+
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-flex items-center space-x-1"
+                                      th:classappend="${doc.verificacionBadgeClase}">
+                                    <i data-lucide="check" class="w-2.5 h-2.5" th:if="${doc.ultimoResultadoVerificacion.name() == 'COINCIDENTE'}"></i>
+                                    <i data-lucide="alert-triangle" class="w-2.5 h-2.5" th:if="${doc.ultimoResultadoVerificacion.name() == 'NO_COINCIDENTE'}"></i>
+                                    <span th:text="${doc.ultimoResultadoVerificacionDesc}">Integridad Verificada</span>
+                                </span>
+
+                                <span class="text-[11px] text-slate-400 font-mono">
+                                    Versión <strong class="text-slate-200" th:text="${doc.versionActual}">1</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Acciones Principales -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Botón Verificar Integridad Real -->
+                    <form th:action="@{/dashboard/serenazgo/documentos/{id}/verificar(id=${doc.id})}" method="post" class="inline">
+                        <button type="submit" sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VERIFICAR')"
+                                class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition shadow-sm"
+                                title="Recalcular huella SHA-256 física y comparar con el valor registrado">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            <span>Verificar Integridad SHA-256</span>
+                        </button>
+                    </form>
+
+                    <a th:href="@{/dashboard/serenazgo/documentos/{id}/descargar(id=${doc.id})}"
+                       sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_DESCARGAR')"
+                       class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-600/50 rounded-xl text-xs font-medium transition shadow-sm"
+                       title="Descargar archivo original">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Descargar</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/serenazgo/documentos/{id}/exportar/pdf(id=${doc.id})}"
+                       sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_EXPORTAR')"
+                       class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600/50 rounded-xl text-xs font-medium transition shadow-sm"
+                       title="Descargar Ficha Técnica en PDF">
+                        <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                        <span>Ficha PDF</span>
+                    </a>
+
+                    <!-- Menú Desplegable o Botones de Transición -->
+                    <button type="button" onclick="document.getElementById('modal-validar').classList.remove('hidden')"
+                            sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VALIDAR')"
+                            th:if="${doc.estado.name() != 'VALIDADO_ADMINISTRATIVAMENTE' && doc.estado.name() != 'ARCHIVADO'}"
+                            class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition shadow-sm">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Validar</span>
+                    </button>
+
+                    <button type="button" onclick="document.getElementById('modal-observar').classList.remove('hidden')"
+                            sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_REVISAR')"
+                            th:if="${doc.estado.name() != 'OBSERVADO' && doc.estado.name() != 'ARCHIVADO'}"
+                            class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 rounded-xl text-xs font-medium transition">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span>Observar</span>
+                    </button>
+
+                    <button type="button" onclick="document.getElementById('modal-version').classList.remove('hidden')"
+                            sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VERSIONAR')"
+                            class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 rounded-xl text-xs font-medium transition">
+                        <i data-lucide="git-branch" class="w-4 h-4"></i>
+                        <span>Nueva Versión</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navegación por Pestañas -->
+            <div class="flex items-center space-x-1 border-b border-slate-700/60 overflow-x-auto text-xs font-medium text-slate-400">
+                <button type="button" onclick="cambiarPestana('tab-resumen')" id="btn-tab-resumen" class="tab-btn px-4 py-2.5 border-b-2 border-blue-500 text-blue-400 font-bold">
+                    Resumen
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-archivo')" id="btn-tab-archivo" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Archivo & Vista Previa
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-campo')" id="btn-tab-campo" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Metadatos de Campo
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-relaciones')" id="btn-tab-relaciones" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Actuaciones Asociadas (<span th:text="${#lists.size(doc.relaciones)}">0</span>)
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-integridad')" id="btn-tab-integridad" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Integridad Digital SHA-256
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-versiones')" id="btn-tab-versiones" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Versiones (<span th:text="${#lists.size(doc.versiones) + 1}">1</span>)
+                </button>
+                <button type="button" onclick="cambiarPestana('tab-historial')" id="btn-tab-historial" class="tab-btn px-4 py-2.5 border-b-2 border-transparent hover:text-slate-200">
+                    Historial & Trazabilidad
+                </button>
+            </div>
+        </div>
+
+        <!-- CONTENIDO DE LAS PESTAÑAS -->
+
+        <!-- Pestaña 1: Resumen General -->
+        <div id="tab-resumen" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Tarjeta 1: Ficha del Archivo -->
+                <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Datos del Archivo Digital</span>
+                    </h3>
+                    <dl class="divide-y divide-slate-700/40 text-xs">
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Código Oficial:</dt>
+                            <dd class="font-mono font-bold text-slate-100" th:text="${doc.codigo}">DOC-SEG-2026-00001</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Nombre Original:</dt>
+                            <dd class="font-medium text-slate-200 truncate max-w-[240px]" th:text="${doc.nombreOriginal}">evidencia.jpg</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Tipo de Documento:</dt>
+                            <dd class="text-slate-200 font-medium" th:text="${doc.tipoDocumentoDesc}">Fotografía</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Formato / MIME:</dt>
+                            <dd class="font-mono text-slate-300" th:text="${doc.mimeType}">image/jpeg</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Tamaño Almacenado:</dt>
+                            <dd class="font-mono text-slate-300" th:text="${doc.tamanoFormateado}">1.45 MB</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Origen:</dt>
+                            <dd class="text-slate-300" th:text="${doc.origenDocumentoDesc}">Carga Administrativa</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- Tarjeta 2: Trazabilidad y Fechas -->
+                <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center space-x-2">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span>Responsables y Fechas</span>
+                    </h3>
+                    <dl class="divide-y divide-slate-700/40 text-xs">
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Cargado Por:</dt>
+                            <dd class="text-slate-200 font-medium" th:text="${doc.usuarioCargaNombre}">admin</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Fecha y Hora de Carga:</dt>
+                            <dd class="font-mono text-slate-300" th:text="${doc.fechaHoraCargaFormateada}">26/10/2026 09:30:00</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Validado Por:</dt>
+                            <dd class="text-slate-200 font-medium" th:text="${doc.usuarioValidadorNombre}">-</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Fecha de Validación:</dt>
+                            <dd class="font-mono text-slate-300" th:text="${doc.fechaHoraValidacionFormateada}">-</dd>
+                        </div>
+                        <div class="py-2 flex justify-between">
+                            <dt class="text-slate-400">Última Comprobación SHA:</dt>
+                            <dd class="font-mono text-slate-300" th:text="${doc.fechaUltimaVerificacionFormateada}">26/10/2026 09:30:00</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Descripción y Observaciones -->
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                    <i data-lucide="align-left" class="w-4 h-4 text-slate-400"></i>
+                    <span>Descripción y Observaciones Administrativas</span>
+                </h3>
+                <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/60 text-xs text-slate-200">
+                    <p th:if="${doc.descripcion != null && !#strings.isEmpty(doc.descripcion)}" th:text="${doc.descripcion}"></p>
+                    <p th:if="${doc.descripcion == null || #strings.isEmpty(doc.descripcion)}" class="text-slate-500 italic">Sin descripción registrada al momento de la carga.</p>
+                </div>
+                <div th:if="${doc.observaciones != null}" class="p-3 bg-amber-500/5 rounded-xl border border-amber-500/20 text-xs text-amber-300">
+                    <strong class="block mb-1 text-[11px] uppercase tracking-wider">Anotación / Observación:</strong>
+                    <span th:text="${doc.observaciones}"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 2: Archivo & Vista Previa -->
+        <div id="tab-archivo" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-6 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                            <i data-lucide="eye" class="w-4 h-4 text-blue-400"></i>
+                            <span>Visualización de Contenido Protegido</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Streaming seguro controlado por permisos de Spring Security.</p>
+                    </div>
+                    <a th:href="@{/dashboard/serenazgo/documentos/{id}/descargar(id=${doc.id})}"
+                       sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_DESCARGAR')"
+                       class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium transition flex items-center space-x-1.5">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Descargar Original</span>
+                    </a>
+                </div>
+
+                <!-- Visor para Imágenes -->
+                <div th:if="${doc.esImagen}" class="flex flex-col items-center justify-center p-4 bg-[#101827] rounded-xl border border-slate-700/60">
+                    <img th:src="@{/dashboard/serenazgo/documentos/{id}/vista-previa(id=${doc.id})}"
+                         th:alt="${doc.nombreOriginal}"
+                         class="max-h-[600px] w-auto rounded-lg shadow-lg border border-slate-700/40 object-contain"/>
+                </div>
+
+                <!-- Visor para Videos -->
+                <div th:if="${doc.esVideo}" class="flex flex-col items-center justify-center p-4 bg-[#101827] rounded-xl border border-slate-700/60">
+                    <video controls class="max-h-[500px] w-full max-w-3xl rounded-lg shadow-lg border border-slate-700/40">
+                        <source th:src="@{/dashboard/serenazgo/documentos/{id}/vista-previa(id=${doc.id})}" th:type="${doc.mimeType}">
+                        Tu navegador no soporta reproducción directa de video HTML5.
+                    </video>
+                </div>
+
+                <!-- Visor para Documentos PDF -->
+                <div th:if="${doc.esPdf}" class="w-full h-[650px] bg-[#101827] rounded-xl border border-slate-700/60 overflow-hidden">
+                    <iframe th:src="@{/dashboard/serenazgo/documentos/{id}/vista-previa(id=${doc.id})}" class="w-full h-full border-0"></iframe>
+                </div>
+
+                <!-- Formatos sin visor directo -->
+                <div th:if="${!doc.esImagen && !doc.esVideo && !doc.esPdf}" class="p-8 text-center bg-[#101827] rounded-xl border border-slate-700/60 space-y-3">
+                    <i data-lucide="file" class="w-12 h-12 text-slate-500 mx-auto"></i>
+                    <p class="text-sm font-semibold text-slate-300">Este formato de archivo no cuenta con visualizador web incrustado.</p>
+                    <p class="text-xs text-slate-500">Puede descargarlo de forma segura a su dispositivo para su revisión en la aplicación correspondiente.</p>
+                    <a th:href="@{/dashboard/serenazgo/documentos/{id}/descargar(id=${doc.id})}"
+                       sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_DESCARGAR')"
+                       class="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Descargar Archivo</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 3: Metadatos de Campo -->
+        <div id="tab-campo" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center space-x-2">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span>Información de Captura y Contexto de Campo</span>
+                </h3>
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/60">
+                        <dt class="text-slate-400 text-[11px] mb-1">Fecha y Hora Declarada de Captura:</dt>
+                        <dd class="text-slate-100 font-mono font-medium" th:text="${doc.fechaCapturaFormateada}">-</dd>
+                    </div>
+                    <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/60">
+                        <dt class="text-slate-400 text-[11px] mb-1">Ubicación / Referencia Declarada:</dt>
+                        <dd class="text-slate-100 font-medium" th:text="${doc.ubicacionCaptura != null ? doc.ubicacionCaptura : '-'}">-</dd>
+                    </div>
+                    <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/60">
+                        <dt class="text-slate-400 text-[11px] mb-1">Coordenadas Geográficas (WGS84):</dt>
+                        <dd class="text-slate-100 font-mono" th:if="${doc.latitud != null && doc.longitud != null}">
+                            Lat: <span th:text="${doc.latitud}"></span>, Lng: <span th:text="${doc.longitud}"></span>
+                        </dd>
+                        <dd class="text-slate-500 italic" th:if="${doc.latitud == null || doc.longitud == null}">Sin coordenadas GPS registradas.</dd>
+                    </div>
+                    <div class="p-3 bg-[#101827] rounded-xl border border-slate-700/60">
+                        <dt class="text-slate-400 text-[11px] mb-1">Autoría Declarada del Registro:</dt>
+                        <dd class="text-slate-100 font-medium" th:text="${doc.autoriaDeclarada != null ? doc.autoriaDeclarada : '-'}">-</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Pestaña 4: Actuaciones Asociadas -->
+        <div id="tab-relaciones" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-2">
+                        <i data-lucide="link" class="w-4 h-4"></i>
+                        <span>Actuaciones Municipales Vinculadas</span>
+                    </h3>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                        <tr class="border-b border-slate-700/70 text-slate-400 text-[10px] uppercase">
+                            <th class="py-2 px-3">Tipo de Actuación</th>
+                            <th class="py-2 px-3">Código</th>
+                            <th class="py-2 px-3">Rol del Documento</th>
+                            <th class="py-2 px-3">Fecha de Asociación</th>
+                            <th class="py-2 px-3">Asociado Por</th>
+                            <th class="py-2 px-3 text-right">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/40">
+                        <tr th:if="${#lists.isEmpty(doc.relaciones)}">
+                            <td colspan="6" class="py-4 text-center text-slate-500 italic">No tiene actuaciones asociadas formalmente.</td>
+                        </tr>
+                        <tr th:each="r : ${doc.relaciones}">
+                            <td class="py-2 px-3 font-semibold text-slate-200" th:text="${r.tipoEntidadDesc}">Incidencia</td>
+                            <td class="py-2 px-3 font-mono text-blue-400" th:text="${r.entidadCodigo}">INC-2026-00001</td>
+                            <td class="py-2 px-3 text-slate-300" th:text="${r.rolRelacionDesc}">Evidencia Primaria</td>
+                            <td class="py-2 px-3 text-slate-400 font-mono text-[11px]" th:text="${r.fechaAsociacionFormateada}">26/10/2026</td>
+                            <td class="py-2 px-3 text-slate-300" th:text="${r.usuarioAsociaNombre}">admin</td>
+                            <td class="py-2 px-3 text-right">
+                                <a th:href="@{${r.urlDetalle}}" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-400 text-[11px]">
+                                    Ver Ficha
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 5: Integridad Digital SHA-256 -->
+        <div id="tab-integridad" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-2">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            <span>Control Criptográfico de Integridad Digital</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Comprobación de no alteración de bytes frente a la huella original registrada.</p>
+                    </div>
+                    <form th:action="@{/dashboard/serenazgo/documentos/{id}/verificar(id=${doc.id})}" method="post">
+                        <button type="submit" sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VERIFICAR')"
+                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            <span>Ejecutar Recálculo SHA-256</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tarjeta con el Hash Registrado -->
+                <div class="p-4 bg-[#101827] rounded-xl border border-slate-700/60 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase">Huella SHA-256 Registrada:</span>
+                        <span class="text-[10px] text-emerald-400 font-semibold">Algoritmo FIPS PUB 180-4</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-emerald-400 break-all select-all"
+                         th:text="${doc.hashSha256}">
+                        e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                    </div>
+                </div>
+
+                <!-- Historial de Verificaciones de Hash -->
+                <div class="space-y-2 pt-2">
+                    <h4 class="text-xs font-bold text-slate-300">Historial de Comprobaciones Físicas Recalculadas</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                            <tr class="border-b border-slate-700/70 text-slate-400 text-[10px] uppercase">
+                                <th class="py-2 px-3">Fecha / Hora</th>
+                                <th class="py-2 px-3">Resultado</th>
+                                <th class="py-2 px-3">Hash Calculado</th>
+                                <th class="py-2 px-3">Verificado Por</th>
+                                <th class="py-2 px-3">Detalle Técnico</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700/40">
+                            <tr th:if="${#lists.isEmpty(doc.verificaciones)}">
+                                <td colspan="5" class="py-4 text-center text-slate-500 italic">No se han ejecutado comprobaciones adicionales.</td>
+                            </tr>
+                            <tr th:each="v : ${doc.verificaciones}">
+                                <td class="py-2 px-3 font-mono text-slate-300" th:text="${v.fechaVerificacionFormateada}">26/10/2026</td>
+                                <td class="py-2 px-3">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                          th:classappend="${v.badgeClase}"
+                                          th:text="${v.resultadoDesc}">Coincidente</span>
+                                </td>
+                                <td class="py-2 px-3 font-mono text-[10px] text-slate-400 max-w-[150px] truncate" th:title="${v.hashCalculado}" th:text="${v.hashCalculado}">hash...</td>
+                                <td class="py-2 px-3 text-slate-300" th:text="${v.usuarioNombre}">admin</td>
+                                <td class="py-2 px-3 text-slate-400 text-[11px]" th:text="${v.detalleTecnico}">Comprobación exitosa.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Advertencia Técnica sobre las Limitaciones del Hash -->
+                <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                    <strong class="text-slate-300 block">Principio y Limitaciones Técnicas del Hash SHA-256:</strong>
+                    <p>
+                        La huella digital criptográfica asegura matemáticamente que el contenido en bytes del archivo coincide exactamente con el momento de su almacenamiento. Sin embargo, no acredita de manera autónoma la identidad del autor material, la veracidad del hecho registrado ni constituye por sí misma peritaje legal forense.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 6: Versiones -->
+        <div id="tab-versiones" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center space-x-2">
+                            <i data-lucide="git-branch" class="w-4 h-4"></i>
+                            <span>Versiones del Documento y Trazabilidad</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">El archivo original es inmutable; las correcciones o mejoras generan versiones hijas con trazabilidad.</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('modal-version').classList.remove('hidden')"
+                            sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VERSIONAR')"
+                            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-medium flex items-center space-x-1.5">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Cargar Nueva Versión</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                        <tr class="border-b border-slate-700/70 text-slate-400 text-[10px] uppercase">
+                            <th class="py-2 px-3">Versión</th>
+                            <th class="py-2 px-3">Código</th>
+                            <th class="py-2 px-3">Nombre</th>
+                            <th class="py-2 px-3">Tamaño</th>
+                            <th class="py-2 px-3">Fecha Carga</th>
+                            <th class="py-2 px-3">Usuario</th>
+                            <th class="py-2 px-3">Motivo</th>
+                            <th class="py-2 px-3 text-right">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/40">
+                        <!-- Versión Actual -->
+                        <tr class="bg-blue-500/5">
+                            <td class="py-2 px-3 font-bold text-blue-400">v<span th:text="${doc.versionActual}">1</span> (Actual)</td>
+                            <td class="py-2 px-3 font-mono text-slate-200" th:text="${doc.codigo}">DOC-SEG-2026-00001</td>
+                            <td class="py-2 px-3 text-slate-200 truncate max-w-[150px]" th:text="${doc.nombreOriginal}">evidencia.jpg</td>
+                            <td class="py-2 px-3 font-mono text-slate-300" th:text="${doc.tamanoFormateado}">1.2 MB</td>
+                            <td class="py-2 px-3 font-mono text-slate-400 text-[11px]" th:text="${doc.fechaHoraCargaFormateada}">26/10/2026</td>
+                            <td class="py-2 px-3 text-slate-300" th:text="${doc.usuarioCargaNombre}">admin</td>
+                            <td class="py-2 px-3 text-slate-400">-</td>
+                            <td class="py-2 px-3 text-right">
+                                <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold">Activo</span>
+                            </td>
+                        </tr>
+                        <!-- Otras Versiones -->
+                        <tr th:each="ver : ${doc.versiones}">
+                            <td class="py-2 px-3 font-mono text-slate-400">v<span th:text="${ver.version}">2</span></td>
+                            <td class="py-2 px-3 font-mono text-slate-300" th:text="${ver.codigo}">DOC-SEG-2026-00002</td>
+                            <td class="py-2 px-3 text-slate-300 truncate max-w-[150px]" th:text="${ver.nombreOriginal}">evidencia_v2.jpg</td>
+                            <td class="py-2 px-3 font-mono text-slate-400" th:text="${ver.tamanoFormateado}">1.3 MB</td>
+                            <td class="py-2 px-3 font-mono text-slate-400 text-[11px]" th:text="${ver.fechaHoraCargaFormateada}">26/10/2026</td>
+                            <td class="py-2 px-3 text-slate-400" th:text="${ver.usuarioCargaNombre}">admin</td>
+                            <td class="py-2 px-3 text-slate-400" th:text="${ver.motivo}">Corrección</td>
+                            <td class="py-2 px-3 text-right">
+                                <a th:href="@{/dashboard/serenazgo/documentos/{id}(id=${ver.id})}" class="px-2 py-1 rounded bg-slate-800 text-blue-400 text-[11px]">Ver</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 7: Historial & Trazabilidad -->
+        <div id="tab-historial" class="tab-content hidden space-y-4">
+            <div class="bg-[#202c3d] border border-slate-700/60 rounded-2xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                    <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Trazabilidad de Accesos y Operaciones</span>
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                        <tr class="border-b border-slate-700/70 text-slate-400 text-[10px] uppercase">
+                            <th class="py-2 px-3">Fecha y Hora</th>
+                            <th class="py-2 px-3">Operación</th>
+                            <th class="py-2 px-3">Usuario Responsable</th>
+                            <th class="py-2 px-3">Descripción / Registro de Auditoría</th>
+                            <th class="py-2 px-3">IP Origen</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/40">
+                        <tr th:if="${#lists.isEmpty(doc.historial)}">
+                            <td colspan="5" class="py-4 text-center text-slate-500 italic">No hay registros de trazabilidad adicionales.</td>
+                        </tr>
+                        <tr th:each="h : ${doc.historial}">
+                            <td class="py-2 px-3 font-mono text-slate-400 text-[11px]" th:text="${h.fechaHoraFormateada}">26/10/2026 09:30:00</td>
+                            <td class="py-2 px-3">
+                                <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200 font-mono text-[10px]" th:text="${h.accion}">CARGA</span>
+                            </td>
+                            <td class="py-2 px-3 font-semibold text-slate-300" th:text="${h.usuarioNombre}">admin</td>
+                            <td class="py-2 px-3 text-slate-300" th:text="${h.descripcion}">Archivo cargado</td>
+                            <td class="py-2 px-3 font-mono text-slate-500 text-[10px]" th:text="${h.ipOrigen != null ? h.ipOrigen : '-'}">127.0.0.1</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Descargo Legal al Pie -->
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-start space-x-3 text-xs text-slate-400">
+            <i data-lucide="shield" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+                <strong class="text-slate-200 block mb-0.5">Aviso de Respaldo Administrativo Municipal (Ley N° 31297 / Ley N° 27933):</strong>
+                <p>
+                    La gestión de evidencias del Serenazgo Distrital de Quinua obedece al sustento operativo municipal. La cadena de custodia judicial formal sólo corresponde a intervenciones coordinadas con el Ministerio Público y la Policía Nacional del Perú bajo las directivas procesales penales correspondientes.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODALES DE GESTIÓN ADMINISTRATIVA -->
+
+    <!-- Modal Validar Administrativamente -->
+    <div id="modal-validar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                <span>Validar Administrativamente</span>
+            </h3>
+            <p class="text-xs text-slate-300">
+                Esta acción certifica que el documento cumple los requisitos de respaldo para las actuaciones municipales de Serenazgo.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/documentos/{id}/validar(id=${doc.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Anotaciones de Conformidad</label>
+                    <textarea name="observaciones" rows="3" placeholder="Observaciones de la validación administrativa..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-validar').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">
+                        Confirmar Validación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Observar Documento -->
+    <div id="modal-observar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-rose-400 flex items-center space-x-2">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <span>Observar Documento o Evidencia</span>
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/documentos/{id}/observar(id=${doc.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de la Observación <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivo" required placeholder="Ej: Archivo ilegible, formato incorrecto, datos inconsistentes..."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Detalle de la Observación</label>
+                    <textarea name="observaciones" rows="3" placeholder="Instrucciones para subsanación o corrección..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-observar').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold">
+                        Registrar Observación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Versión -->
+    <div id="modal-version" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="git-branch" class="w-5 h-5 text-blue-400"></i>
+                <span>Cargar Nueva Versión Sustitutoria</span>
+            </h3>
+            <p class="text-xs text-slate-400">
+                La nueva versión quedará vinculada formalmente a este documento conservando el historial previo.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/documentos/{id}/versiones(id=${doc.id})}" method="post" enctype="multipart/form-data" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo Archivo <span class="text-rose-400">*</span></label>
+                    <input type="file" name="nuevoArchivo" required class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2 text-xs text-slate-100"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de la Nueva Versión <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivoVersion" required placeholder="Ej: Mejor resolución, documento firmado, subsanación..."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100"/>
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-version').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">
+                        Cargar Versión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Cambio de Pestañas -->
+    <script>
+        function cambiarPestana(idTab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400', 'font-bold');
+                btn.classList.add('border-transparent');
+            });
+
+            const tabActiva = document.getElementById(idTab);
+            const btnActivo = document.getElementById('btn-' + idTab);
+            if (tabActiva && btnActivo) {
+                tabActiva.classList.remove('hidden');
+                btnActivo.classList.add('border-blue-500', 'text-blue-400', 'font-bold');
+                btnActivo.classList.remove('border-transparent');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+    </script>
+</div>
+</body>
+</html>

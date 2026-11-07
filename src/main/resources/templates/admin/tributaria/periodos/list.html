@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Períodos Fiscales — Recaudación Tributaria | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Períodos Fiscales</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="calendar" class="w-6 h-6 text-amber-400"></i>
+                <span>Ejercicios y Períodos Tributarios</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Apertura, cierre y valor oficial de la Unidad Impositiva Tributaria (UIT) por año fiscal.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <a th:href="@{/dashboard/tributaria}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5 border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver al Panel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Períodos -->
+    <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+        <div th:if="${periodos.isEmpty()}" class="p-12 text-center text-slate-400">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+            <p class="text-sm font-medium">Aún no existen registros disponibles.</p>
+        </div>
+
+        <div th:unless="${periodos.isEmpty()}" class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Año Fiscal</th>
+                        <th class="px-4 py-3">Fecha Inicio</th>
+                        <th class="px-4 py-3">Fecha Fin</th>
+                        <th class="px-4 py-3">UIT Vigente</th>
+                        <th class="px-4 py-3">Norma Aprobatoria</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:each="p : ${periodos.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-lg text-white" th:text="${p.anio}">2026</td>
+                        <td class="px-4 py-3 text-slate-300" th:text="${p.fechaInicio}">01/01/2026</td>
+                        <td class="px-4 py-3 text-slate-300" th:text="${p.fechaFin}">31/12/2026</td>
+                        <td class="px-4 py-3 font-mono font-bold text-amber-400">S/ <span th:text="${#numbers.formatDecimal(p.uitVigente, 1, 2)}">5,500.00</span></td>
+                        <td class="px-4 py-3 text-slate-300" th:text="${p.resolucionAprobacion}">D.S. N° 285-2025-EF</td>
+                        <td class="px-4 py-3">
+                            <span th:class="${'px-2 py-0.5 rounded text-[10px] font-semibold border ' + p.badgeClass}"
+                                  th:text="${p.estado}">APERTURADO</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-400 truncate max-w-xs" th:text="${p.observaciones}">Vigente</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

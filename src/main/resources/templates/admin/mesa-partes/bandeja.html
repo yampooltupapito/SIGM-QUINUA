@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja Institucional de Entrada — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de la Bandeja Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">MÓDULO 1</span>
+                <h1 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="inbox" class="w-5 h-5 text-blue-400"></i>
+                    <span>Bandeja Institucional de Mesa de Partes</span>
+                </h1>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Recepción, verificación documental, admisión y control de expedientes de la Municipalidad Distrital de Quinua.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 flex items-center space-x-1.5 transition-colors">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                <span>Actualizar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Reales -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- Presentados (Nuevos) -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='PRESENTADO')}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block"
+           th:classappend="${estadoSel != null && estadoSel.name() == 'PRESENTADO'} ? 'bg-amber-950/30 border-amber-500/50 ring-1 ring-amber-500' : 'bg-card border-theme hover:border-slate-600'">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Nuevos</span>
+                <span class="p-1 rounded bg-amber-500/20 text-amber-400"><i data-lucide="bell-ring" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.presentados}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Por recibir formalmente</p>
+        </a>
+
+        <!-- Recibidos -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='RECIBIDO')}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block"
+           th:classappend="${estadoSel != null && estadoSel.name() == 'RECIBIDO'} ? 'bg-blue-950/30 border-blue-500/50 ring-1 ring-blue-500' : 'bg-card border-theme hover:border-slate-600'">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Recibidos</span>
+                <span class="p-1 rounded bg-blue-500/20 text-blue-400"><i data-lucide="check-check" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.recibidos}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Radicados en oficina</p>
+        </a>
+
+        <!-- En Revisión -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_REVISION')}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block"
+           th:classappend="${estadoSel != null && estadoSel.name() == 'EN_REVISION'} ? 'bg-indigo-950/30 border-indigo-500/50 ring-1 ring-indigo-500' : 'bg-card border-theme hover:border-slate-600'">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">En Revisión</span>
+                <span class="p-1 rounded bg-indigo-500/20 text-indigo-400"><i data-lucide="search" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.enRevision}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Calificación técnica</p>
+        </a>
+
+        <!-- Observados -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='OBSERVADO')}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block"
+           th:classappend="${estadoSel != null && estadoSel.name() == 'OBSERVADO'} ? 'bg-rose-950/30 border-rose-500/50 ring-1 ring-rose-500' : 'bg-card border-theme hover:border-slate-600'">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400">Observados</span>
+                <span class="p-1 rounded bg-rose-500/20 text-rose-400"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.observados}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Requerimientos vigentes</p>
+        </a>
+
+        <!-- Por Subsanar -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_SUBSANACION')}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block"
+           th:classappend="${estadoSel != null && estadoSel.name() == 'EN_SUBSANACION'} ? 'bg-emerald-950/30 border-emerald-500/50 ring-1 ring-emerald-500' : 'bg-card border-theme hover:border-slate-600'">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Subsanados</span>
+                <span class="p-1 rounded bg-emerald-500/20 text-emerald-400"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.pendientesSubsanacion}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Respuestas ciudadanas</p>
+        </a>
+
+        <!-- Total Expedientes -->
+        <a th:href="@{/dashboard/mesa-partes/bandeja}"
+           class="p-3.5 rounded-xl border transition-all cursor-pointer block bg-card border-theme hover:border-slate-600">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Ámbito</span>
+                <span class="p-1 rounded bg-slate-800 text-slate-400"><i data-lucide="folder" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <p class="text-2xl font-bold text-slate-100 mt-2 font-mono" th:text="${stats.totalExpedientes}">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Expedientes registrados</p>
+        </a>
+    </div>
+
+    <!-- Barra de Filtros Avanzados -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+        <form th:action="@{/dashboard/mesa-partes/bandeja}" method="get" class="space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <!-- Búsqueda libre -->
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar por expediente, asunto o administrado</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" name="q" th:value="${qSel}"
+                               placeholder="Ej. MPV-2026-000001, Licencia, Juan Pérez, 45892314..."
+                               class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Estado -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Estado</label>
+                    <select name="estado" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Todos los estados --</option>
+                        <option th:each="est : ${estados}"
+                                th:value="${est.name()}"
+                                th:text="${est.name()}"
+                                th:selected="${estadoSel != null && estadoSel.name() == est.name()}"></option>
+                    </select>
+                </div>
+
+                <!-- Prioridad -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Prioridad</label>
+                    <select name="prioridad" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Todas --</option>
+                        <option th:each="p : ${prioridades}"
+                                th:value="${p.name()}"
+                                th:text="${p.name()}"
+                                th:selected="${prioridadSel != null && prioridadSel.name() == p.name()}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filtros Secundarios -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t border-slate-800">
+                <!-- Tipo de Trámite -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Tipo de Trámite</label>
+                    <select name="tipoTramiteId" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Todos los trámites --</option>
+                        <option th:each="t : ${tramites}"
+                                th:value="${t.id}"
+                                th:text="${t.nombre}"
+                                th:selected="${tipoTramiteIdSel != null && tipoTramiteIdSel == t.id}"></option>
+                    </select>
+                </div>
+
+                <!-- Oficina Responsable -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Oficina Responsable</label>
+                    <select name="oficinaId" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Todas las oficinas --</option>
+                        <option th:each="ofi : ${oficinas}"
+                                th:value="${ofi.id}"
+                                th:text="${ofi.nombre}"
+                                th:selected="${oficinaIdSel != null && oficinaIdSel == ofi.id}"></option>
+                    </select>
+                </div>
+
+                <!-- Fecha Desde -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Fecha Desde</label>
+                    <input type="date" name="fechaDesde" th:value="${fechaDesdeSel}"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Fecha Hasta -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Fecha Hasta</label>
+                    <input type="date" name="fechaHasta" th:value="${fechaHastaSel}"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Botones de Acción de Filtro -->
+            <div class="flex items-center justify-end space-x-2 pt-2">
+                <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                   class="px-3.5 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800 transition-colors">
+                    Limpiar Filtros
+                </a>
+                <button type="submit"
+                        class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Aplicar Filtros</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Institucional de Expedientes -->
+    <div class="bg-card rounded-xl border border-slate-700/60 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="border-b border-slate-700/80 bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                    <th class="py-3 px-4">Expediente</th>
+                    <th class="py-3 px-4">Presentación</th>
+                    <th class="py-3 px-4">Administrado</th>
+                    <th class="py-3 px-4">Trámite / Asunto</th>
+                    <th class="py-3 px-4">Oficina</th>
+                    <th class="py-3 px-4">Prioridad</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80 text-xs">
+                <tr th:if="${expedientes == null || expedientes.empty}">
+                    <td colspan="8" class="py-12 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <i data-lucide="inbox" class="w-8 h-8 text-slate-500"></i>
+                            <p class="font-medium">No se encontraron expedientes con los criterios especificados.</p>
+                            <p class="text-[11px] text-slate-500">Ajuste los filtros o actualice la bandeja de entrada.</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:each="e : ${expedientes.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <!-- Número y Canal -->
+                    <td class="py-3 px-4">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${e.id})}"
+                           class="font-mono font-bold text-blue-400 hover:text-blue-300 text-xs inline-flex items-center space-x-1">
+                            <span th:text="${e.numeroExpediente != null ? e.numeroExpediente : 'BORRADOR'}">MPV-2026-000001</span>
+                            <i data-lucide="external-link" class="w-3 h-3 text-slate-500"></i>
+                        </a>
+                        <div class="flex items-center space-x-1 mt-0.5">
+                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-medium"
+                                  th:text="${e.canalIngreso}">VIRTUAL</span>
+                            <span th:if="${e.totalDocumentos != null}" class="text-[10px] text-slate-500"
+                                  th:text="${e.totalDocumentos + ' doc(s)'}">2 doc(s)</span>
+                        </div>
+                    </td>
+
+                    <!-- Fecha Presentación -->
+                    <td class="py-3 px-4 text-slate-300 font-mono text-[11px]">
+                        <span th:text="${e.fechaPresentacion != null ? #temporals.format(e.fechaPresentacion, 'dd/MM/yyyy HH:mm') : '-'}">15/10/2026 10:30</span>
+                    </td>
+
+                    <!-- Administrado Solicitante -->
+                    <td class="py-3 px-4">
+                        <p class="font-medium text-slate-200" th:text="${e.solicitanteNombreCompleto}">Juan Pérez Gómez</p>
+                        <p class="text-[10px] text-slate-400 font-mono"
+                           th:text="${!#strings.isEmpty(e.solicitanteNumeroDocumento) ? 'DOC: ' + e.solicitanteNumeroDocumento : '-'}">DNI: 45892314</p>
+                    </td>
+
+                    <!-- Trámite y Asunto -->
+                    <td class="py-3 px-4 max-w-xs">
+                        <p class="text-slate-300 font-medium truncate" th:text="${e.asunto}">Solicitud de Licencia</p>
+                        <p class="text-[10px] text-slate-400 truncate" th:text="${e.tipoTramiteNombre}">Licencia de Funcionamiento</p>
+                    </td>
+
+                    <!-- Oficina -->
+                    <td class="py-3 px-4">
+                        <span class="text-[11px] text-slate-300" th:text="${e.oficinaResponsableNombre}">Gerencia de Rentas</span>
+                    </td>
+
+                    <!-- Prioridad -->
+                    <td class="py-3 px-4">
+                        <span th:if="${e.prioridad != null and e.prioridad.name() == 'URGENTE'}"
+                              class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1"></span>
+                            URGENTE
+                        </span>
+                        <span th:if="${e.prioridad != null and e.prioridad.name() == 'ALTA'}"
+                              class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            ALTA
+                        </span>
+                        <span th:if="${e.prioridad == null or (e.prioridad.name() != 'URGENTE' and e.prioridad.name() != 'ALTA')}"
+                              class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400"
+                              th:text="${e.prioridad != null ? e.prioridad.name() : 'NORMAL'}">
+                            NORMAL
+                        </span>
+                    </td>
+
+                    <!-- Estado -->
+                    <td class="py-3 px-4">
+                        <span th:if="${e.estadoActual != null and e.estadoActual.name() == 'PRESENTADO'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            PRESENTADO
+                        </span>
+                        <span th:if="${e.estadoActual != null and e.estadoActual.name() == 'RECIBIDO'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                            RECIBIDO
+                        </span>
+                        <span th:if="${e.estadoActual != null and (e.estadoActual.name() == 'EN_REVISION' or e.estadoActual.name() == 'EN_ATENCION' or e.estadoActual.name() == 'DERIVADO')}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                              th:text="${#strings.replace(e.estadoActual.name(), '_', ' ')}">
+                            EN REVISIÓN
+                        </span>
+                        <span th:if="${e.estadoActual != null and e.estadoActual.name() == 'OBSERVADO'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                            OBSERVADO
+                        </span>
+                        <span th:if="${e.estadoActual != null and e.estadoActual.name() == 'EN_SUBSANACION'}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            SUBSANADO
+                        </span>
+                        <span th:if="${e.estadoActual != null and (e.estadoActual.name() == 'RESUELTO' or e.estadoActual.name() == 'CERRADO')}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30"
+                              th:text="${e.estadoActual.name()}">
+                            RESUELTO
+                        </span>
+                        <span th:if="${e.estadoActual != null and (e.estadoActual.name() == 'ARCHIVADO' or e.estadoActual.name() == 'RECHAZADO' or e.estadoActual.name() == 'BORRADOR')}"
+                              class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400"
+                              th:text="${e.estadoActual.name()}">
+                            ARCHIVADO
+                        </span>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center space-x-1.5">
+                            <!-- Ver Detalle -->
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${e.id})}"
+                               title="Revisar expediente completo"
+                               class="p-1.5 bg-slate-800 hover:bg-blue-600/30 hover:text-blue-400 border border-slate-700 rounded-lg text-slate-300 transition-colors">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </a>
+
+                            <!-- Botón Rápido Recibir (si estado == PRESENTADO) -->
+                            <button th:if="${e.estadoActual != null and e.estadoActual.name() == 'PRESENTADO'}"
+                                    th:data-id="${e.id}"
+                                    th:data-numero="${e.numeroExpediente}"
+                                    th:data-asunto="${e.asunto}"
+                                    onclick="abrirModalRecepcion(this.dataset.id, this.dataset.numero, this.dataset.asunto)"
+                                    title="Registrar recepción formal"
+                                    class="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-sm transition-colors">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </button>
+
+                            <!-- Ver / Descargar Constancia de Recepción (si estado != BORRADOR y != PRESENTADO) -->
+                            <button type="button"
+                                    th:if="${e.estadoActual != null and e.estadoActual.name() != 'BORRADOR' and e.estadoActual.name() != 'PRESENTADO'}"
+                                    th:data-id="${e.id}"
+                                    th:data-numero="${e.numeroExpediente}"
+                                    onclick="abrirVistaPreviaConstancia(this.dataset.id, this.dataset.numero)"
+                                    title="Ver y Descargar Constancia Oficial de Recepción (PDF)"
+                                    class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-colors">
+                                <i data-lucide="file-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${expedientes != null && expedientes.totalPages > 1}"
+             class="px-4 py-3 border-t border-slate-800 bg-slate-900/40 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-slate-200" th:text="${expedientes.number + 1}">1</span>
+                de <span class="font-bold text-slate-200" th:text="${expedientes.totalPages}">5</span>
+                (<span th:text="${expedientes.totalElements}">100</span> registros)
+            </div>
+            <div class="flex items-center space-x-1">
+                <a th:if="${expedientes.hasPrevious()}"
+                   th:href="@{/dashboard/mesa-partes/bandeja(page=${expedientes.number - 1}, estado=${estadoSel}, oficinaId=${oficinaIdSel}, tipoTramiteId=${tipoTramiteIdSel}, prioridad=${prioridadSel}, q=${qSel})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-colors">
+                    Anterior
+                </a>
+                <a th:if="${expedientes.hasNext()}"
+                   th:href="@{/dashboard/mesa-partes/bandeja(page=${expedientes.number + 1}, estado=${estadoSel}, oficinaId=${oficinaIdSel}, tipoTramiteId=${tipoTramiteIdSel}, prioridad=${prioridadSel}, q=${qSel})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Recepción Rápida -->
+    <div id="modalRecepcion" class="modal-container fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg mx-auto my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center space-x-2">
+                    <span class="p-1.5 rounded-lg bg-blue-500/20 text-blue-400"><i data-lucide="check-check" class="w-4 h-4"></i></span>
+                    <h3 class="text-sm font-bold text-slate-100">Registrar Recepción Administrativa</h3>
+                </div>
+                <button type="button" onclick="cerrarModalRecepcion()" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formRecepcion" onsubmit="confirmarRecepcion(event)" data-no-loading="true" class="p-5 space-y-4">
+                <input type="hidden" id="recExpedienteId">
+
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase">Expediente a recibir:</p>
+                    <p id="recExpedienteNum" class="text-sm font-bold font-mono text-blue-400">MPV-2026-000001</p>
+                    <p id="recExpedienteAsunto" class="text-xs text-slate-300 mt-0.5 truncate">Asunto del trámite</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones o notas de radicación (opcional)</label>
+                    <textarea id="recObservaciones" rows="3"
+                              placeholder="Ej. Recaudos completos. Radicado para calificación técnica..."
+                              class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="bg-amber-950/20 border border-amber-500/30 rounded-lg p-3 text-[11px] text-amber-300/90 flex items-start space-x-2">
+                    <i data-lucide="info" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
+                    <span>Al confirmar, el expediente pasará de estado <strong>PRESENTADO</strong> a <strong>RECIBIDO</strong>, registrando su usuario y fecha oficial de recepción.</span>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalRecepcion()"
+                            class="px-4 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnConfirmarRecepcion"
+                            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-colors flex items-center space-x-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Confirmar Recepción</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Vista Previa de Constancia de Recepción (PDF) -->
+    <div id="modalVistaPreviaConstancia" class="modal-container fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-slate-700 rounded-xl shadow-2xl w-full max-w-4xl mx-auto my-auto overflow-hidden flex flex-col" style="height: 85vh;">
+            <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/70">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 flex-shrink-0">
+                        <i data-lucide="file-check" class="w-4 h-4"></i>
+                    </span>
+                    <h3 id="tituloVistaPreviaConstancia" class="text-sm font-bold text-slate-100 truncate">
+                        Constancia de Recepción Administrativa
+                    </h3>
+                </div>
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                    <a id="btnAbrirPestanaConstancia" href="#" target="_blank"
+                       class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Abrir en pestaña</span>
+                    </a>
+                    <a id="btnDescargarConstanciaPdf" href="#" download="Constancia-Recepcion.pdf"
+                       class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Descargar PDF</span>
+                    </a>
+                    <button type="button" onclick="cerrarVistaPreviaConstancia()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 bg-slate-950 relative">
+                <iframe id="iframeConstanciaRecepcion" src="about:blank" class="w-full h-full border-0" title="Vista Previa de Constancia de Recepción"></iframe>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Script modular de la Bandeja Institucional -->
+<th:block layout:fragment="scripts">
+    <script>
+        function abrirModalRecepcion(id, numero, asunto) {
+            document.getElementById('recExpedienteId').value = id;
+            document.getElementById('recExpedienteNum').textContent = numero;
+            document.getElementById('recExpedienteAsunto').textContent = asunto;
+            document.getElementById('recObservaciones').value = '';
+            abrirModal('modalRecepcion');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarModalRecepcion() {
+            cerrarModal('modalRecepcion');
+        }
+
+        function abrirVistaPreviaConstancia(id, numero) {
+            const urlInline = `/dashboard/mesa-partes/expedientes/${id}/constancia-recepcion`;
+            const urlDownload = `/dashboard/mesa-partes/expedientes/${id}/constancia-recepcion?download=true`;
+            document.getElementById('tituloVistaPreviaConstancia').textContent =
+                'Constancia Oficial de Recepción — ' + (numero || ('Expediente #' + id));
+            document.getElementById('btnAbrirPestanaConstancia').href = urlInline;
+            const btnDesc = document.getElementById('btnDescargarConstanciaPdf');
+            btnDesc.href = urlDownload;
+            btnDesc.setAttribute('download', 'Constancia-Recepcion-' + (numero || id) + '.pdf');
+            document.getElementById('iframeConstanciaRecepcion').src = urlInline;
+            abrirModal('modalVistaPreviaConstancia');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function cerrarVistaPreviaConstancia() {
+            document.getElementById('iframeConstanciaRecepcion').src = 'about:blank';
+            cerrarModal('modalVistaPreviaConstancia');
+        }
+
+        async function confirmarRecepcion(e) {
+            e.preventDefault();
+            const id = document.getElementById('recExpedienteId').value;
+            const obs = document.getElementById('recObservaciones').value;
+            const btn = document.getElementById('btnConfirmarRecepcion');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Procesando...';
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                let url = `/api/mesa-partes/expedientes/${id}/recibir`;
+                if (obs && obs.trim()) {
+                    url += `?observaciones=${encodeURIComponent(obs.trim())}`;
+                }
+
+                await fetchApi(url, { method: 'POST' });
+                mostrarToast('Recepción registrada exitosamente.', 'success');
+                cerrarModalRecepcion();
+                setTimeout(() => window.location.reload(), 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Confirmar Recepción</span>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        window.abrirModalRecepcion = abrirModalRecepcion;
+        window.cerrarModalRecepcion = cerrarModalRecepcion;
+        window.abrirVistaPreviaConstancia = abrirVistaPreviaConstancia;
+        window.cerrarVistaPreviaConstancia = cerrarVistaPreviaConstancia;
+        window.confirmarRecepcion = confirmarRecepcion;
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,10 @@
+/* ==========================================================================
+   SIGM-QUINUA — ESTILOS ESPECÍFICOS DE MÓDULO: RECAUDACIÓN TRIBUTARIA
+   ========================================================================== */
+
+.tributaria-amount {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+

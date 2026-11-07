@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$LAYOUT_TITLE — $CONTENT_TITLE">Autenticación — SIGM-QUINUA</title>
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <script th:src="@{/js/lucide.min.js}"></script>
+</head>
+<body class="bg-[#101827] text-[#e2e8f0] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div layout:fragment="content">
+        <th:block th:if="${contenido != null}">
+            <th:block th:replace="${contenido}"></th:block>
+        </th:block>
+    </div>
+    <script th:src="@{/js/auth.js}"></script>
+    <th:block layout:fragment="page-scripts"></th:block>
+</body>
+</html>
+

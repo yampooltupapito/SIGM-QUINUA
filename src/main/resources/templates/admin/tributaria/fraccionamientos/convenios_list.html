@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title='Convenios de Pago Vigentes | SIGM-QUINUA',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Convenios de Fraccionamiento</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header y Acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/fraccionamientos}" class="hover:underline">Fraccionamientos</a>
+                <span>&bull;</span>
+                <span>Convenios Formalizados</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-100 tracking-tight">Convenios de Fraccionamiento Tributario</h1>
+            <p class="text-xs text-slate-400 mt-1">Convenios de pago aprobados mediante resolución administrativa y en cumplimiento de cronograma.</p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes}"
+               class="inline-flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Ver Solicitudes</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+        <form method="get" th:action="@{/dashboard/tributaria/fraccionamientos/convenios}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Búsqueda General</label>
+                <div class="relative">
+                    <input type="text" name="search" th:value="${search}" placeholder="Código, Resolución, Contribuyente..."
+                           class="w-full bg-slate-900/60 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado de Convenio</label>
+                <select name="estado" class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los estados --</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.descripcion}" th:selected="${est == estadoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Programa</label>
+                <select name="programaId" class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los programas --</option>
+                    <option th:each="prog : ${programas}" th:value="${prog.id}" th:text="${prog.codigo + ' - ' + prog.nombre}" th:selected="${prog.id == programaIdSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/fraccionamientos/convenios}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors" title="Limpiar">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Convenios -->
+    <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="text-[11px] uppercase bg-slate-800/80 text-slate-400 border-b border-slate-700/60">
+                    <tr>
+                        <th class="py-3 px-4">Código Convenio</th>
+                        <th class="py-3 px-4">Contribuyente</th>
+                        <th class="py-3 px-4">Resolución</th>
+                        <th class="py-3 px-4">Aprobación</th>
+                        <th class="py-3 px-4 text-center">Cuotas</th>
+                        <th class="py-3 px-4 text-right">Total Financiado</th>
+                        <th class="py-3 px-4 text-right">Amortizado</th>
+                        <th class="py-3 px-4 text-right">Saldo Pendiente</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    <tr th:each="conv : ${convenios.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-bold text-emerald-400">
+                            <a th:href="@{'/dashboard/tributaria/fraccionamientos/convenios/' + ${conv.id}}"
+                               th:text="${conv.codigoConvenio}" class="hover:underline"></a>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-200">
+                            <div th:text="${conv.contribuyenteNombre}"></div>
+                            <div class="text-[10px] text-slate-400" th:text="${conv.contribuyenteDocumento}"></div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300 truncate max-w-[130px]" th:text="${conv.resolucionAprobacion}"></td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(conv.fechaAprobacion, 'dd/MM/yyyy')}"></td>
+                        <td class="py-3 px-4 text-center font-semibold text-slate-300" th:text="${conv.numeroCuotas}"></td>
+                        <td class="py-3 px-4 text-right font-bold text-slate-100" th:text="'S/ ' + ${#numbers.formatDecimal(conv.importeTotal, 1, 2)}"></td>
+                        <td class="py-3 px-4 text-right font-medium text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(conv.totalPagado, 1, 2)}"></td>
+                        <td class="py-3 px-4 text-right font-medium text-amber-300" th:text="'S/ ' + ${#numbers.formatDecimal(conv.saldoPendiente, 1, 2)}"></td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                  th:classappend="${conv.estadoBadgeClass}"
+                                  th:text="${conv.estadoDescripcion}"></span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <a th:href="@{'/dashboard/tributaria/fraccionamientos/convenios/' + ${conv.id}}"
+                                   class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs rounded transition-colors"
+                                   title="Ver expediente del convenio">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                                <a th:href="@{'/dashboard/tributaria/fraccionamientos/convenios/' + ${conv.id} + '/pdf'}"
+                                   target="_blank"
+                                   class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs rounded transition-colors"
+                                   title="Descargar Convenio PDF">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${convenios.totalElements == 0}">
+                        <td colspan="10" class="py-12 text-center text-slate-500">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                            <p class="text-xs">No se encontraron convenios con los criterios de búsqueda especificados.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${convenios.totalPages > 1}" class="flex items-center justify-between px-4 py-3 bg-slate-800/40 border-t border-slate-700/60 text-xs text-slate-400">
+            <div>
+                Mostrando <span th:text="${convenios.numberOfElements}"></span> de <span th:text="${convenios.totalElements}"></span> registros
+            </div>
+            <div class="flex space-x-1">
+                <a th:if="${convenios.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/fraccionamientos/convenios(page=${convenios.number - 1}, search=${search}, estado=${estadoSeleccionado}, programaId=${programaIdSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-200">Anterior</a>
+                <span class="px-3 py-1 bg-blue-600 text-white rounded font-semibold" th:text="${convenios.number + 1}"></span>
+                <a th:if="${convenios.hasNext()}"
+                   th:href="@{/dashboard/tributaria/fraccionamientos/convenios(page=${convenios.number + 1}, search=${search}, estado=${estadoSeleccionado}, programaId=${programaIdSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-200">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide) { lucide.createIcons(); }
+        });
+    </script>
+</div>
+</body>
+</html>

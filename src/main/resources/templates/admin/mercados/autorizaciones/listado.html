@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Autorizaciones Comerciales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Autorizaciones Comerciales</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Padrón y Autorizaciones Comerciales
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Actos administrativos habilitantes, licencias de puesto, vigencias y control de salubridad.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/autorizaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_AUTORIZACION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Autorización
+            </a>
+
+            <!-- Exportar Excel -->
+            <a th:href="@{/api/mercados/autorizaciones/exportar/excel(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoAutorizacion=${tipoSeleccionado},fechaDesde=${fechaDesde},fechaHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+
+            <!-- Exportar PDF -->
+            <a th:href="@{/api/mercados/autorizaciones/exportar/pdf(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoAutorizacion=${tipoSeleccionado},fechaDesde=${fechaDesde},fechaHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas del Módulo de Autorizaciones -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Expedidas</span>
+            <p class="text-xl font-bold text-white mt-1" th:text="${stats.autorizacionesRegistradas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">Vigentes / Emitidas</span>
+            <p class="text-xl font-bold text-emerald-400 mt-1" th:text="${stats.autorizacionesVigentes}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block">Próximas a Vencer</span>
+            <p class="text-xl font-bold text-amber-400 mt-1" th:text="${stats.autorizacionesProximasVencer}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-rose-400 uppercase tracking-wider block">Vencidas</span>
+            <p class="text-xl font-bold text-rose-400 mt-1" th:text="${stats.autorizacionesVencidas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Revocadas / Anuladas</span>
+            <p class="text-xl font-bold text-slate-400 mt-1" th:text="${stats.autorizacionesRevocadas}">0</p>
+        </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d]">
+        <form method="get" th:action="@{/dashboard/mercados/autorizaciones}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Buscar</label>
+                <input type="text" name="termino" th:value="${termino}" placeholder="Código, DNI, comerciante, puesto..."
+                       class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${m.id == mercadoIdSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.name()}"
+                            th:selected="${est == estadoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Tipo Autorización</label>
+                <select name="tipoAutorizacion" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Tipos</option>
+                    <option th:each="ta : ${tiposAutorizacion}" th:value="${ta.codigo}" th:text="${ta.nombre}"
+                            th:selected="${ta.codigo == tipoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Desde</label>
+                <input type="date" name="fechaDesde" th:value="${fechaDesde}"
+                       class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/autorizaciones}" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl border border-[#334155] transition-colors" title="Limpiar Filtros">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Autorizaciones -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                <tr>
+                    <th class="px-5 py-3">Código</th>
+                    <th class="px-5 py-3">Titular Comerciante</th>
+                    <th class="px-5 py-3">Mercado / Puesto</th>
+                    <th class="px-5 py-3">Modalidad</th>
+                    <th class="px-5 py-3">Emisión / Vigencia</th>
+                    <th class="px-5 py-3">Estado</th>
+                    <th class="px-5 py-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40">
+                <tr th:if="${autorizaciones.empty}">
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                        <svg class="w-10 h-10 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <p class="font-medium">No se encontraron autorizaciones comerciales registradas.</p>
+                    </td>
+                </tr>
+
+                <tr th:each="a : ${autorizaciones.content}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="px-5 py-3.5">
+                        <a th:href="@{/dashboard/mercados/autorizaciones/{id}(id=${a.id})}"
+                           class="font-mono font-bold text-blue-400 hover:underline" th:text="${a.codigoAutorizacion}">AUT-2026-000001</a>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="font-semibold text-white" th:text="${a.comercianteNombre}">Juan Pérez</div>
+                        <span class="text-[10px] text-slate-400" th:text="${a.comercianteDocumento}">DNI 12345678</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="font-medium text-slate-200" th:text="${a.mercadoNombre}">Mercado Central</span>
+                        <div class="text-[10px] text-slate-400" th:text="${a.puestoCodigo != null ? 'Puesto ' + a.puestoCodigo : 'Comercio Ambulante / Feria'}">Puesto A-01</div>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="text-xs text-slate-300" th:text="${a.tipoAutorizacionNombre}">Padrón Municipal</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="text-[11px] text-slate-200" th:text="${'Emitida: ' + (a.fechaEmision != null ? a.fechaEmision : 'Pendiente')}"></div>
+                        <span class="text-[10px] text-slate-400" th:text="${'Vigencia: ' + (a.fechaFin != null ? a.fechaFin : 'Indefinida')}"></span>
+                        <span th:if="${a.diasRestantes != null && a.diasRestantes >= 0}" class="block text-[9px] font-semibold text-slate-400" th:text="${a.diasRestantes + ' días'}"></span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span th:if="${a.estado.name() == 'BORRADOR'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700">BORRADOR</span>
+                        <span th:if="${a.estado.name() == 'EN_EVALUACION'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-900/40 text-blue-400 border border-blue-800">EN EVALUACIÓN</span>
+                        <span th:if="${a.estado.name() == 'OBSERVADA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-900/40 text-rose-400 border border-rose-800">OBSERVADA</span>
+                        <span th:if="${a.estado.name() == 'APROBADA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-900/40 text-indigo-400 border border-indigo-800">APROBADA</span>
+                        <span th:if="${a.estado.name() == 'VIGENTE' or a.estado.name() == 'EMITIDA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-900/40 text-emerald-400 border border-emerald-800">VIGENTE</span>
+                        <span th:if="${a.estado.name() == 'SUSPENDIDA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-900/40 text-amber-400 border border-amber-800">SUSPENDIDA</span>
+                        <span th:if="${a.estado.name() == 'VENCIDA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-950 text-rose-400 border border-rose-800">VENCIDA</span>
+                        <span th:if="${a.estado.name() == 'REVOCADA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-950 text-slate-400 border border-rose-800">REVOCADA</span>
+                        <span th:if="${a.estado.name() == 'ANULADA'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-950 text-slate-500 border border-slate-800">ANULADA</span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right space-x-2">
+                        <a th:href="@{/dashboard/mercados/autorizaciones/{id}(id=${a.id})}"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                           title="Ver Expediente de Autorización">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        <a th:href="@{/api/mercados/autorizaciones/{id}/pdf(id=${a.id})}"
+                           target="_blank"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 hover:text-rose-300 rounded-lg transition-colors"
+                           title="Descargar Autorización PDF">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${autorizaciones.totalPages > 1}" class="px-6 py-4 bg-[#101827] border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <span class="text-slate-400" th:text="${'Mostrando página ' + (autorizaciones.number + 1) + ' de ' + autorizaciones.totalPages + ' (' + autorizaciones.totalElements + ' autorizaciones)'}"></span>
+            <div class="flex items-center gap-2">
+                <a th:if="${!autorizaciones.first}"
+                   th:href="@{/dashboard/mercados/autorizaciones(page=${autorizaciones.number - 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Anterior</a>
+                <span class="px-3 py-1 bg-blue-600 text-white font-semibold rounded-lg" th:text="${autorizaciones.number + 1}"></span>
+                <a th:if="${!autorizaciones.last}"
+                   th:href="@{/dashboard/mercados/autorizaciones(page=${autorizaciones.number + 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Siguiente</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

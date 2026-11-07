@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Incidencias y Reclamos — Mercados Municipales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados/reportes}" class="hover:text-white transition-colors">Centro de Reportes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-blue-400 font-semibold">Incidencias</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="bell-ring" class="w-6 h-6 text-purple-500"></i>
+                <span>Reporte de Incidencias Operativas y Reclamos</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Monitoreo de incidentes de infraestructura, servicios básicos, salubridad y tiempos de atención administrativa.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-2.5">
+            <button onclick="exportar('EXCEL')" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Exportar Excel
+            </button>
+            <button onclick="exportar('PDF')" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4 mr-1.5"></i> Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+        <form method="get" th:action="@{/dashboard/mercados/reportes/incidencias}" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Mercado Municipal</label>
+                <select name="mercadoId" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${filtro.mercadoId == m.id}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Búsqueda / Código o Tipo</label>
+                <input type="text" name="termino" th:value="${filtro.termino}" placeholder="Código de incidencia o palabra..." class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center h-[34px]">
+                    <i data-lucide="search" class="w-3.5 h-3.5 mr-1"></i> Filtrar Incidencias
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Incidencias -->
+    <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/60 border-b border-theme">
+                    <tr>
+                        <th class="px-3 py-2.5">Código</th>
+                        <th class="px-3 py-2.5">Mercado</th>
+                        <th class="px-3 py-2.5">Tipo Incidencia</th>
+                        <th class="px-3 py-2.5 text-center">Prioridad</th>
+                        <th class="px-3 py-2.5">Reportante</th>
+                        <th class="px-3 py-2.5 text-center">Fecha Registro</th>
+                        <th class="px-3 py-2.5 text-center">Días Transc.</th>
+                        <th class="px-3 py-2.5 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/60">
+                    <tr th:if="${pagina.empty}" class="text-center py-4 text-slate-400">
+                        <td colspan="8" class="py-6 text-center text-slate-400">No se encontraron incidencias operativas según los filtros aplicados.</td>
+                    </tr>
+                    <tr th:each="inc : ${pagina.content}" class="hover:bg-slate-800/40">
+                        <td class="px-3 py-2.5 font-bold text-purple-400" th:text="${inc.codigoIncidencia}">INC-001</td>
+                        <td class="px-3 py-2.5 text-white" th:text="${inc.mercadoNombre}">Mercado</td>
+                        <td class="px-3 py-2.5 text-slate-200" th:text="${inc.tipoIncidencia}">INFRAESTRUCTURA</td>
+                        <td class="px-3 py-2.5 text-center">
+                            <span th:class="${inc.prioridad == 'ALTA' or inc.prioridad == 'URGENTE' ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30' : (inc.prioridad == 'MEDIA' ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-700 text-slate-300')}"
+                                  th:text="${inc.prioridad}">MEDIA</span>
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-300" th:text="${inc.origen != null ? inc.origen : '-'}">Administrador</td>
+                        <td class="px-3 py-2.5 text-center text-slate-400" th:text="${#temporals.format(inc.fechaReporte, 'dd/MM/yyyy HH:mm')}">-</td>
+                        <td class="px-3 py-2.5 text-center text-slate-300 font-medium" th:text="${inc.tiempoAtencionHoras != null ? inc.tiempoAtencionHoras + ' h' : '-'}">-</td>
+                        <td class="px-3 py-2.5 text-center">
+                            <span th:class="${inc.estado == 'RESUELTA' or inc.estado == 'CERRADA' ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20'}"
+                                  th:text="${inc.estado}">ABIERTA</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${pagina.totalPages > 1}" class="flex items-center justify-between mt-4 pt-3 border-t border-theme/60 text-xs">
+            <span class="text-slate-400" th:text="'Página ' + (${pagina.number} + 1) + ' de ' + ${pagina.totalPages} + ' (' + ${pagina.totalElements} + ' incidencias)'">Pág 1 de 1</span>
+            <div class="flex space-x-1">
+                <a th:if="${pagina.hasPrevious()}" th:href="@{/dashboard/mercados/reportes/incidencias(page=${pagina.number - 1}, mercadoId=${filtro.mercadoId}, termino=${filtro.termino})}" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white">Anterior</a>
+                <a th:if="${pagina.hasNext()}" th:href="@{/dashboard/mercados/reportes/incidencias(page=${pagina.number + 1}, mercadoId=${filtro.mercadoId}, termino=${filtro.termino})}" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    async function exportar(formato) {
+        const mercadoId = document.querySelector('select[name="mercadoId"]').value || null;
+        const termino = document.querySelector('input[name="termino"]').value || null;
+
+        const requestPayload = {
+            tipoReporte: 'INCIDENCIAS',
+            formato: formato,
+            filtro: { mercadoId, termino }
+        };
+
+        const url = formato === 'EXCEL' ? '/api/mercados/reportes/exportar/excel' : '/api/mercados/reportes/exportar/pdf';
+        const token = document.querySelector('meta[name="_csrf"]')?.content;
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', [header]: token },
+                body: JSON.stringify(requestPayload)
+            });
+            if (!resp.ok) return alert('Error al exportar incidencias');
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = window.URL.createObjectURL(blob);
+            a.download = `REPORTE_INCIDENCIAS_${new Date().toISOString().slice(0,10)}.${formato === 'EXCEL' ? 'xlsx' : 'pdf'}`;
+            a.click();
+        } catch(e) { console.error(e); alert('Error en la descarga'); }
+    }
+</script>
+</th:block>
+</body>
+</html>

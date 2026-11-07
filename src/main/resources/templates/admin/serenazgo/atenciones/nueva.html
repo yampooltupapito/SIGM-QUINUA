@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Nueva Asignación y Despacho — Serenazgo Quinua</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Mensajes Flash de Notificación -->
+    <div th:if="${mensajeError}" class="p-4 bg-rose-950/60 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado con Migas de Pan -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/atenciones}" class="hover:text-blue-400 transition">Atenciones de Serenazgo</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span class="text-slate-200 font-semibold">Nueva Asignación Operativa</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="send" class="w-7 h-7 text-blue-500"></i>
+                Organización y Despacho de Atención
+            </h1>
+        </div>
+        <a th:href="@{/dashboard/serenazgo/atenciones}"
+           class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver a la Bandeja</span>
+        </a>
+    </div>
+
+    <!-- Advertencia Institucional de No Urgencia -->
+    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0 text-amber-400"></i>
+        <span>
+            <strong>Verificación Operativa:</strong> Antes de confirmar el despacho, valide que el personal y recursos asignados se encuentren realmente en servicio activo y cuenten con el equipamiento necesario.
+        </span>
+    </div>
+
+    <form th:action="@{/dashboard/serenazgo/atenciones}" th:object="${nuevaAtencion}" method="post" class="space-y-6">
+
+        <!-- 1. Selección de Incidencia Registrada -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                1. Incidencia de Seguridad a Atender
+            </h2>
+
+            <div th:if="${incidenciaSeleccionada != null}" class="p-4 rounded-xl bg-slate-900/80 border border-blue-500/40">
+                <input type="hidden" name="incidenciaId" th:value="${incidenciaSeleccionada.id}"/>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
+                    <div>
+                        <span class="text-xs text-blue-400 font-mono font-bold" th:text="${incidenciaSeleccionada.codigo}">INC-2026-00001</span>
+                        <h3 class="text-sm font-bold text-slate-100" th:text="${incidenciaSeleccionada.tipoIncidencia?.nombre}">Tipo de Incidencia</h3>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          th:text="${incidenciaSeleccionada.estado?.etiqueta}">REGISTRADA</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300">
+                    <div>
+                        <span class="text-slate-500 block text-[11px]">Ubicación / Dirección:</span>
+                        <span class="font-medium" th:text="${incidenciaSeleccionada.direccion}">Plaza Mayor</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[11px]">Sector / Zona:</span>
+                        <span class="font-medium" th:text="${(incidenciaSeleccionada.sector?.nombre ?: 'Sin sector') + ' - ' + (incidenciaSeleccionada.zona?.nombre ?: 'Sin zona')}">Sector Centro</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[11px]">Fecha / Hora Hecho:</span>
+                        <span class="font-medium" th:text="${incidenciaSeleccionada.fechaHoraOcurrencia}">25/10/2026 14:00</span>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-800 text-xs">
+                    <span class="text-slate-500 block text-[11px]">Descripción del Hecho:</span>
+                    <p class="text-slate-300 italic mt-0.5" th:text="${incidenciaSeleccionada.descripcion}">Descripción...</p>
+                </div>
+            </div>
+
+            <div th:if="${incidenciaSeleccionada == null}">
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Seleccione la Incidencia Pendiente <span class="text-rose-400">*</span>
+                </label>
+                <select th:field="*{incidenciaId}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    <option value="">-- Seleccionar incidencia pendiente de atención --</option>
+                    <option th:each="inc : ${incidenciasPendientes}"
+                            th:value="${inc.id}"
+                            th:text="${inc.codigo + ' — ' + (inc.tipoIncidencia?.nombre ?: 'Incidencia') + ' (' + inc.direccion + ') - Prioridad: ' + inc.prioridad?.name()}">
+                    </option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Solo se listan incidencias registradas que no cuentan con atención activa en curso.</p>
+                <span th:if="${#fields.hasErrors('incidenciaId')}" th:errors="*{incidenciaId}" class="text-xs text-rose-400 block mt-1"></span>
+            </div>
+        </div>
+
+        <!-- 2. Clasificación Operativa y Sector -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+                2. Nivel Operativo y Sector Territorial
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Prioridad Operativa de Despacho <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{prioridadOperativa}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option th:each="prio : ${prioridades}" th:value="${prio.name()}" th:text="${prio.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Sector Territorial</label>
+                    <select th:field="*{sectorId}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- Sector asignado por defecto --</option>
+                        <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.nombre + ' (' + sec.codigo + ')'}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Asignación de Personal de Serenazgo -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+                3. Personal de Serenazgo Asignado
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Sereno Responsable Operativo (Líder de cuadrilla) <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{responsablePersonalId}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- Seleccionar responsable operativo disponible --</option>
+                        <option th:each="per : ${personalDisponible}"
+                                th:value="${per.id}"
+                                th:text="${per.nombreCompleto + ' — ' + (per.cargo ?: 'Sereno') + ' (' + (per.codigoEmpleado ?: 'S/C') + ')'}">
+                        </option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Solo se muestran efectivos disponibles sin atenciones en curso.</p>
+                    <span th:if="${#fields.hasErrors('responsablePersonalId')}" th:errors="*{responsablePersonalId}" class="text-xs text-rose-400 block mt-1"></span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Personal de Apoyo Adicional (Opcional)
+                    </label>
+                    <select multiple size="4" th:field="*{personalIds}" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option th:each="per : ${personalDisponible}"
+                                th:value="${per.id}"
+                                th:text="${per.nombreCompleto + ' (' + per.estado + ')'}">
+                        </option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Mantenga presionada la tecla Ctrl para seleccionar múltiples efectivos.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Asignación de Recursos Móviles y Equipamiento -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="truck" class="w-4 h-4 text-sky-400"></i>
+                4. Unidad Móvil y Equipamiento Operativo
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Unidad Móvil Asignada (Opcional - Patrullaje a pie si no se selecciona)
+                    </label>
+                    <select th:field="*{unidadMovilId}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- Sin unidad móvil (Patrullaje a pie / Modalidad pedestre) --</option>
+                        <option th:each="uni : ${unidadesDisponibles}"
+                                th:value="${uni.id}"
+                                th:text="${uni.codigo + ' — ' + uni.tipo + ' (' + uni.placa + ')'}">
+                        </option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Solo se muestran unidades con estado 'OPERATIVO' no comprometidas en otra atención activa.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Equipamiento Operativo Asignado
+                    </label>
+                    <div class="max-h-36 overflow-y-auto p-2.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2 text-xs">
+                        <div th:if="${#lists.isEmpty(equiposDisponibles)}" class="text-slate-500 italic">
+                            No hay equipamiento disponible para despacho en este momento.
+                        </div>
+                        <label th:each="equipo : ${equiposDisponibles}" class="flex items-center gap-2 cursor-pointer hover:text-slate-100">
+                            <input type="checkbox" name="equipamientoIds" th:value="${equipo.id}" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                            <span th:text="${equipo.nombre + ' (' + (equipo.codigoPatrimonial ?: equipo.tipo) + ')'}">Radio Portátil</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Opciones de Despacho Inmediato -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="radio" class="w-4 h-4 text-purple-400"></i>
+                5. Activación y Despacho Operativo
+            </h2>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-700">
+                    <input type="checkbox" id="despacharInmediatamente" th:field="*{despacharInmediatamente}"
+                           class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                    <label for="despacharInmediatamente" class="text-xs font-semibold text-slate-200 cursor-pointer">
+                        Despachar Inmediatamente al crear la atención (Transición a estado DESPACHADA)
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                            Canal de Comunicación Utilizado
+                        </label>
+                        <select th:field="*{canalComunicacion}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                            <option th:each="c : ${canales}" th:value="${c.name()}" th:text="${c.etiqueta}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                            Instrucciones u Órdenes de Despacho
+                        </label>
+                        <textarea th:field="*{instruccionesDespacho}" rows="2" placeholder="Indicaciones para el personal desplegado..."
+                                  class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Observaciones Administrativas Iniciales
+                    </label>
+                    <textarea th:field="*{observaciones}" rows="2" placeholder="Notas internas para la bitácora operativa..."
+                              class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/60">
+            <a th:href="@{/dashboard/serenazgo/atenciones}"
+               class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Confirmar y Crear Orden de Atención</span>
+            </button>
+        </div>
+
+    </form>
+
+</div>
+</body>
+</html>

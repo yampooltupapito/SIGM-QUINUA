@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — SIGM-QUINUA</title>
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+</head>
+<body class="bg-[#101827] text-[#e2e8f0] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+    <div class="flex-1 flex flex-col lg:flex-row min-h-screen">
+        
+        <!-- Columna Izquierda: Identidad Institucional (Desktop) -->
+        <div class="hidden lg:flex lg:w-1/2 bg-[#1e293b] border-r border-[#334155] p-12 flex-col justify-between relative overflow-hidden">
+            <!-- Patrón de fondo sutil -->
+            <div class="absolute inset-0 opacity-5 pointer-events-none">
+                <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                    <defs>
+                        <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="1"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+                </svg>
+            </div>
+
+            <!-- Cabecera Institucional Superior -->
+            <div class="relative z-10 flex items-center space-x-4">
+                <!-- Escudo Institucional Oficial de Quinua -->
+                <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-lg shadow-blue-950/60"
+                     title="Logo Oficial - Municipalidad Distrital de Quinua">
+                    <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-base font-extrabold uppercase tracking-wide text-slate-100">Municipalidad Distrital de Quinua</h1>
+                    <p class="text-xs text-blue-400 font-semibold tracking-wider uppercase">Provincia de Huamanga | Ayacucho, Perú</p>
+                </div>
+            </div>
+
+            <!-- Cuerpo Central Institucional -->
+            <div class="relative z-10 my-auto py-8 max-w-lg">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-700/50 text-blue-300 text-xs font-semibold mb-6">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    <span>Plataforma Digital Institucional</span>
+                </div>
+                
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                    SIGM-QUINUA
+                </h2>
+                <p class="text-lg text-slate-300 font-medium mt-2">
+                    Sistema Integral de Gestión Municipal
+                </p>
+
+                <p class="text-sm text-[#94a3b8] mt-4 leading-relaxed">
+                    Acceso unificado y seguro para servidores públicos, unidades orgánicas y ciudadanos a los servicios administrativos, tributarios, documentales y asistenciales del distrito histórico de Quinua.
+                </p>
+
+                <!-- Tarjeta de Seguridad y Garantía Institucional -->
+                <div class="mt-8 bg-[#202c3d] p-5 rounded-xl border border-[#334155] shadow-md space-y-3">
+                    <div class="flex items-center space-x-3 text-slate-200">
+                        <i data-lucide="lock" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+                        <span class="text-xs font-semibold">Ciberseguridad Gubernamental Certificada</span>
+                    </div>
+                    <p class="text-xs text-[#94a3b8] leading-relaxed">
+                        Todas las sesiones y transacciones se encuentran cifradas, protegidas bajo el marco de interoperabilidad del Estado Peruano y monitoreadas con registro de auditoría estricto.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pie Institucional Izquierdo -->
+            <div class="relative z-10 text-xs text-[#94a3b8] flex items-center justify-between border-t border-[#334155]/60 pt-4">
+                <span>Quinua — Cuna de la Libertad Americana</span>
+                <span class="text-[11px] font-mono text-slate-500">v1.0.0-PROD</span>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Formulario de Autenticación -->
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16">
+            <div class="w-full max-w-md space-y-8">
+                
+                <!-- Encabezado para vista Móvil / Tablet -->
+                <div class="lg:hidden text-center space-y-3">
+                    <div class="inline-flex w-16 h-16 rounded-2xl bg-white border border-slate-200 p-1.5 items-center justify-center shadow-lg mx-auto">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-extrabold uppercase text-slate-100 tracking-wide">Municipalidad Distrital de Quinua</h1>
+                        <p class="text-xs text-blue-400 font-semibold tracking-wide">SIGM-QUINUA — Huamanga, Ayacucho</p>
+                    </div>
+                </div>
+
+                <!-- Título del Formulario -->
+                <div class="space-y-1 text-center lg:text-left">
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Iniciar Sesión</h2>
+                    <p class="text-xs text-[#94a3b8]">Ingrese sus credenciales autorizadas para acceder al sistema.</p>
+                </div>
+
+                <!-- Notificaciones y Alertas Accesibles -->
+                <div th:if="${logoutMessage}" role="alert" aria-live="polite"
+                     class="p-4 rounded-xl bg-blue-950/60 border border-blue-800/80 text-blue-200 text-xs flex items-start space-x-3 shadow-sm">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold block text-blue-100">Sesión Cerrada</span>
+                        <span th:text="${logoutMessage}">Su sesión institucional ha sido cerrada de forma segura.</span>
+                    </div>
+                </div>
+
+                <div th:if="${resetSuccessMessage}" role="alert" aria-live="polite"
+                     class="p-4 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 text-xs flex items-start space-x-3 shadow-sm">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold block text-emerald-100">Contraseña Actualizada</span>
+                        <span th:text="${resetSuccessMessage}">Su contraseña ha sido restablecida exitosamente.</span>
+                    </div>
+                </div>
+
+                <div th:if="${errorMessage}" role="alert" aria-live="assertive"
+                     class="p-4 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs flex items-start space-x-3 shadow-sm">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold block text-rose-100">Acceso Denegado</span>
+                        <span th:text="${errorMessage}">Credenciales incorrectas o cuenta bloqueada.</span>
+                    </div>
+                </div>
+
+                <!-- Formulario de Autenticación Real -->
+                <form th:action="@{/login}" method="post" class="auth-form space-y-5" novalidate>
+                    <!-- Token CSRF -->
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <input type="hidden" name="redirect" th:value="${redirect}" th:if="${redirect != null}" />
+
+                    <!-- Campo Usuario -->
+                    <div class="space-y-1.5">
+                        <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                            Usuario Institucional
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text"
+                                   id="username"
+                                   name="username"
+                                   th:value="${prevUsername}"
+                                   required
+                                   autocomplete="username"
+                                   autofocus
+                                   placeholder="Ej. juan.perez o DNI"
+                                   class="auth-input w-full pl-10 pr-4 py-3 rounded-xl text-xs placeholder:text-slate-500 text-slate-100 font-medium focus:ring-0">
+                        </div>
+                    </div>
+
+                    <!-- Campo Contraseña -->
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                Contraseña
+                            </label>
+                            <a th:href="@{/forgot-password}"
+                               class="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors hover:underline focus:outline-none focus:underline">
+                                ¿Olvidó su contraseña?
+                            </a>
+                        </div>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="lock" class="w-4 h-4"></i>
+                            </div>
+                            <input type="password"
+                                   id="password"
+                                   name="password"
+                                   required
+                                   autocomplete="current-password"
+                                   placeholder="••••••••••••"
+                                   class="auth-input w-full pl-10 pr-12 py-3 rounded-xl text-xs placeholder:text-slate-500 text-slate-100 font-medium focus:ring-0">
+                            
+                            <button type="button"
+                                    class="toggle-password-btn absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                                    data-target="password"
+                                    aria-label="Mostrar u ocultar contraseña">
+                                <i data-lucide="eye" class="icon-eye w-4 h-4"></i>
+                                <i data-lucide="eye-off" class="icon-eye-off w-4 h-4 hidden"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Envío con Estado de Carga -->
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="auth-btn-primary btn-submit w-full py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center space-x-2">
+                            <svg class="btn-spinner hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="btn-text-normal flex items-center space-x-2">
+                                <i data-lucide="log-in" class="w-4 h-4"></i>
+                                <span>Ingresar al Sistema</span>
+                            </span>
+                            <span class="btn-text-loading hidden">Autenticando...</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Panel de Credenciales de Acceso Rápido (Entorno de Demostración / Pruebas) -->
+                <div class="bg-[#1e293b]/90 border border-[#334155] rounded-xl p-4 space-y-3 shadow-md">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="key-round" class="w-4 h-4 text-blue-400"></i>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-200">Acceso Rápido por Rol (Clic para autocompletar)</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/50 font-mono">DEV</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" data-fill-user="admin" data-fill-pass="Admin2026!"
+                                class="quick-cred-btn flex items-center justify-between px-3 py-2 rounded-lg bg-[#0f172a] hover:bg-blue-950/60 border border-slate-700/80 hover:border-blue-500/60 text-left transition-all group">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-200 group-hover:text-blue-300">Administrador General</span>
+                                <span class="block text-[10px] font-mono text-slate-400">admin / Admin2026!</span>
+                            </div>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400"></i>
+                        </button>
+                        <button type="button" data-fill-user="operador.mpv" data-fill-pass="Operador2026!"
+                                class="quick-cred-btn flex items-center justify-between px-3 py-2 rounded-lg bg-[#0f172a] hover:bg-blue-950/60 border border-slate-700/80 hover:border-blue-500/60 text-left transition-all group">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-200 group-hover:text-blue-300">Mesa de Partes (MPV)</span>
+                                <span class="block text-[10px] font-mono text-slate-400">operador.mpv / Operador2026!</span>
+                            </div>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400"></i>
+                        </button>
+                        <button type="button" data-fill-user="jefe.obras" data-fill-pass="Jefe2026!"
+                                class="quick-cred-btn flex items-center justify-between px-3 py-2 rounded-lg bg-[#0f172a] hover:bg-blue-950/60 border border-slate-700/80 hover:border-blue-500/60 text-left transition-all group">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-200 group-hover:text-blue-300">Jefe de Oficina</span>
+                                <span class="block text-[10px] font-mono text-slate-400">jefe.obras / Jefe2026!</span>
+                            </div>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400"></i>
+                        </button>
+                        <button type="button" data-fill-user="ciudadano" data-fill-pass="Ciudadano2026!"
+                                class="quick-cred-btn flex items-center justify-between px-3 py-2 rounded-lg bg-[#0f172a] hover:bg-blue-950/60 border border-slate-700/80 hover:border-blue-500/60 text-left transition-all group">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-200 group-hover:text-blue-300">Ciudadano Registrado</span>
+                                <span class="block text-[10px] font-mono text-slate-400">ciudadano / Ciudadano2026!</span>
+                            </div>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pie de Seguridad -->
+                <div class="pt-4 border-t border-[#334155]/60 text-center space-y-2">
+                    <p class="text-[11px] text-[#94a3b8]">
+                        ¿Requiere asistencia técnica o creación de cuenta?
+                    </p>
+                    <p class="text-[11px] text-slate-400">
+                        Comuníquese con la <span class="font-semibold text-slate-300">Oficina de Tecnologías de la Información</span> de la Municipalidad de Quinua.
+                    </p>
+                    <div class="pt-1">
+                        <a th:href="@{/}" class="inline-flex items-center space-x-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                            <span>Volver al Portal Público Municipal</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Interactividad y Lucide Icons -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <script th:src="@{/js/auth.js}"></script>
+</body>
+</html>

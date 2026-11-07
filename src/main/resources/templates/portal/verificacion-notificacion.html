@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Notificaciones Tributarias | Municipalidad Distrital de Quinua</title>
+    <link rel="stylesheet" th:href="@{/css/tailwind.css}">
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <style>
+        body {
+            background-color: #101827;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Encabezado Institucional -->
+    <header class="bg-[#1e293b] border-b border-[#334155]/80 py-4 px-6 shadow-md">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-wide">MUNICIPALIDAD DISTRITAL DE QUINUA</h1>
+                    <p class="text-[11px] text-slate-400">Portal Oficial de Verificación de Notificaciones y Comunicaciones Tributarias</p>
+                </div>
+            </div>
+            <div class="text-right text-xs text-slate-400 hidden sm:block">
+                <span class="block text-slate-200 font-medium">Huamanga - Ayacucho</span>
+                <span class="text-[10px] text-slate-500">RUC: 20194451731</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Central -->
+    <main class="max-w-3xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+
+        <!-- Caja de Búsqueda de Verificación -->
+        <div class="bg-[#202c3d] rounded-2xl border border-[#334155]/80 p-6 shadow-xl space-y-4">
+            <div class="text-center space-y-1">
+                <h2 class="text-lg font-bold text-white flex items-center justify-center gap-2">
+                    <i data-lucide="qr-code" class="w-5 h-5 text-blue-400"></i>
+                    <span>Verificación de Cédula o Notificación Municipal</span>
+                </h2>
+                <p class="text-xs text-slate-400 max-w-lg mx-auto">
+                    Ingrese el código único impreso en su documento para comprobar la autenticidad, integridad y estado del acto administrativo emitido por la Municipalidad Distrital de Quinua.
+                </p>
+            </div>
+
+            <form th:action="@{/verificar/notificacion}" method="get" class="flex gap-2 max-w-md mx-auto">
+                <div class="relative flex-1">
+                    <input type="text" name="codigo" th:value="${codigoConsultado}" required
+                           placeholder="Ej. NOTIF-2026-000001"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+                <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm flex items-center space-x-2">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span>Consultar</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Resultado de la Verificación -->
+        <div th:if="${resultado != null}" class="bg-[#202c3d] rounded-2xl border border-[#334155]/80 p-6 shadow-xl space-y-5">
+            <div th:if="${resultado.existe and resultado.esValido}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center space-x-3 text-emerald-300">
+                <i data-lucide="check-circle" class="w-6 h-6 flex-shrink-0 text-emerald-400"></i>
+                <div>
+                    <h3 class="text-sm font-bold">Documento Municipal Auténtico y Válido</h3>
+                    <p class="text-[11px] text-emerald-400/90" th:text="${resultado.mensajeVerificacion}"></p>
+                </div>
+            </div>
+
+            <div th:if="${resultado.existe and !resultado.esValido}" class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center space-x-3 text-amber-300">
+                <i data-lucide="alert-triangle" class="w-6 h-6 flex-shrink-0 text-amber-400"></i>
+                <div>
+                    <h3 class="text-sm font-bold">Documento Registrado pero Anulado / Observado</h3>
+                    <p class="text-[11px] text-amber-400/90" th:text="${resultado.mensajeVerificacion}"></p>
+                </div>
+            </div>
+
+            <div th:if="${!resultado.existe}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center space-x-3 text-rose-300">
+                <i data-lucide="x-circle" class="w-6 h-6 flex-shrink-0 text-rose-400"></i>
+                <div>
+                    <h3 class="text-sm font-bold">Documento No Encontrado</h3>
+                    <p class="text-[11px] text-rose-400/90" th:text="${resultado.mensajeVerificacion}"></p>
+                </div>
+            </div>
+
+            <div th:if="${resultado.existe}" class="space-y-4 pt-2">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-700 pb-2">
+                    Datos Mínimos Públicos (Protección de Datos Personales - Ley N° 29733)
+                </h4>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Código Notificación</span>
+                        <span class="text-blue-400 font-mono font-bold text-sm" th:text="${resultado.codigoNotificacion}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Tipo de Acto</span>
+                        <span class="text-slate-200 font-semibold" th:text="${resultado.tipoDocumento}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Destinatario (Anonimizado)</span>
+                        <span class="text-slate-200" th:text="${resultado.destinatarioAnonimizado}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Doc. Identidad (Enmascarado)</span>
+                        <span class="text-slate-200 font-mono" th:text="${resultado.numeroDocEnmascarado}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Fecha de Emisión Oficial</span>
+                        <span class="text-slate-200" th:text="${#temporals.format(resultado.fechaEmision, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Entidad Emisora</span>
+                        <span class="text-slate-200" th:text="${resultado.entidadEmisora}"></span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Huella Criptográfica SHA-256</span>
+                        <span class="text-emerald-400 font-mono text-[10px] break-all bg-slate-900 p-2 rounded block border border-slate-800" th:text="${resultado.hashDocumento}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <footer class="bg-[#1e293b] border-t border-[#334155]/80 py-4 px-6 text-center text-xs text-slate-500">
+        <p class="font-medium text-slate-400">Municipalidad Distrital de Quinua — Subgerencia de Administración Tributaria y Rentas</p>
+        <p class="text-[10px] mt-1">Plaza Mayor s/n, Quinua, Huamanga, Ayacucho | Capital de la Libertad Americana</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
+

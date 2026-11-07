@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Emitir Documento Tributario | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="contenido" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Mensajes de feedback -->
+    <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria/documentos}" class="hover:text-blue-400 transition-colors">Recibos y Constancias</a>
+                <span>/</span>
+                <span class="text-slate-200">Nueva Emisión</span>
+            </div>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="file-plus-2" class="w-6 h-6 text-blue-500"></i>
+                Emisión de Recibo o Constancia Tributaria
+            </h1>
+            <p class="text-xs text-slate-400">Genere documentos oficiales a partir de pagos confirmados con numeración correlativa segura y código QR.</p>
+        </div>
+
+        <a th:href="@{/dashboard/tributaria/documentos}"
+           class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver</span>
+        </a>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form th:action="@{/dashboard/tributaria/documentos/emitir}" th:object="${form}" method="post" class="space-y-6">
+
+        <!-- Tarjeta: Selección del Pago Confirmado -->
+        <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
+                <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
+                1. Selección de Operación de Pago Confirmada
+            </h2>
+
+            <div th:if="${pagoSeleccionado != null}" class="p-3 bg-blue-950/30 border border-blue-500/30 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Pago Seleccionado</span>
+                        <div class="font-mono font-bold text-sm text-white" th:text="${pagoSeleccionado.codigoPago}">PAG-2026-00001</div>
+                        <div class="text-xs text-slate-300 mt-0.5" th:text="${pagoSeleccionado.contribuyente.nombreRazonSocial}">Juan Pérez</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block">Total Recaudado</span>
+                        <span class="text-base font-bold text-emerald-400">S/ <span th:text="${#numbers.formatDecimal(pagoSeleccionado.importeTotal, 1, 'COMMA', 2, 'POINT')}">150.00</span></span>
+                    </div>
+                </div>
+                <input type="hidden" th:field="*{pagoId}">
+            </div>
+
+            <div th:if="${pagoSeleccionado == null}">
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Operación de Pago Confirmada <span class="text-rose-400">*</span>
+                </label>
+                <select th:field="*{pagoId}" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+                    <option value="">-- Seleccione un pago confirmado reciente --</option>
+                    <option th:each="p : ${pagosElegibles}"
+                            th:value="${p.id}"
+                            th:text="${p.codigoPago} + ' • ' + ${p.contribuyente.nombreRazonSocial} + ' • S/ ' + ${p.importeTotal} + ' • ' + ${p.estado}">
+                    </option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Solo se listan pagos confirmados. Pagos en borrador o revertidos no pueden ser seleccionados.</p>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Parámetros del Documento -->
+        <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
+                <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i>
+                2. Tipo Documental y Parámetros
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Tipo de Documento Oficial <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{tipoDocumentoCodigo}" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option th:each="t : ${tiposDocumento}" th:value="${t.codigo}" th:text="${t.nombre} + ' (' + ${t.codigo} + ')'"></option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">El Recibo de Caja acredita el cobro en ventanilla; la Constancia certifica el estado formal para trámites.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Serie de Emisión (Opcional)
+                    </label>
+                    <input type="text" th:field="*{serieCodigo}" placeholder="Dejar vacío para usar serie activa por defecto"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 uppercase font-mono">
+                    <p class="text-[11px] text-slate-500 mt-1">Ej. REC01 para Recibos, CON01 para Constancias.</p>
+                </div>
+            </div>
+
+            <!-- Llave de idempotencia oculta -->
+            <input type="hidden" th:field="*{idempotencyKey}" id="idempotencyKey">
+        </div>
+
+        <!-- Advertencias Institucionales -->
+        <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-700/40 text-xs text-slate-400 space-y-1">
+            <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+                <span>Garantías de Integridad y Validez Documental:</span>
+            </div>
+            <p>• La emisión asignará un número correlativo atómico e inalterable en el libro de documentos de la municipalidad.</p>
+            <p>• Se generará automáticamente el código QR y el hash criptográfico SHA-256 para verificación ciudadana.</p>
+            <p>• Conforme a la normativa tributaria municipal, este documento no constituye comprobante de pago electrónico SUNAT.</p>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a th:href="@{/dashboard/tributaria/documentos}"
+               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors">
+                Cancelar
+            </a>
+            <button type="submit" id="btnEmitir"
+                    class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Generar y Emitir Documento</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Generar llave de idempotencia si está vacía
+        const idempInput = document.getElementById('idempotencyKey');
+        if (idempInput && !idempInput.value) {
+            idempInput.value = 'DOC-IDEMP-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Prevenir doble clic
+        const form = document.querySelector('form');
+        const btn = document.getElementById('btnEmitir');
+        if (form && btn) {
+            form.addEventListener('submit', () => {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="animate-spin inline-block mr-1">⌛</span> Generando documento...';
+            });
+        }
+    });
+</script>
+</body>
+</html>

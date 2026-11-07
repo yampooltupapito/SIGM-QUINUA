@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title>Espacio de Trabajo Institucional — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- 1. BANNER EJECUTIVO PERSONALIZADO SEGÚN ROL Y OFICINA                     -->
+    <!-- ========================================================================= -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/80 via-[#1e293b] to-[#101827] border border-theme p-6 lg:p-8 shadow-xl">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="flex items-start space-x-4">
+                <div class="w-14 h-14 rounded-2xl bg-white p-1.5 border border-slate-200 shadow-lg flex items-center justify-center flex-shrink-0 hidden sm:flex">
+                    <img th:src="@{/images/logo-quinua.jpg}" alt="Escudo Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                </div>
+                <div class="space-y-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-700/60 text-emerald-300 text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Sesión Autenticada</span>
+                        </span>
+                        <span th:each="rol : ${rolesPrincipales}"
+                              th:text="${rol}"
+                              class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-900/50 text-blue-300 border border-blue-700/60 font-mono">
+                            ROLE_JEFE_OFICINA
+                        </span>
+                        <span th:if="${oficinaUsuario != null}"
+                              class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 text-[11px] font-semibold">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+                            <span th:text="${oficinaUsuario.codigo + ' • ' + oficinaUsuario.nombre}">OFI-OBRAS • Subgerencia de Desarrollo Urbano y Obras Públicas</span>
+                        </span>
+                    </div>
+
+                    <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                        Bienvenido(a), <span class="text-blue-400" th:text="${userProfile != null ? userProfile.nombreCompleto : username}">Carlos Mendoza</span>
+                        <span class="text-sm font-mono font-normal text-slate-400" th:text="${'(@' + username + ')'}">(@jefe.obras)</span>
+                    </h1>
+
+                    <p th:if="${esJefeOficina and oficinaUsuario != null}" class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                        Panel de Gestión de Expedientes de la <strong class="text-white" th:text="${oficinaUsuario.nombre}">Subgerencia de Desarrollo Urbano y Obras Públicas</strong>
+                        — <strong class="text-slate-100">Municipalidad Distrital de Quinua</strong>. Supervise los trámites recibidos, asigne responsables y atienda los expedientes de su unidad orgánica.
+                    </p>
+                    <p th:if="${esCiudadano}" class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                        Portal de Atención Ciudadana de la <strong class="text-slate-100">Municipalidad Distrital de Quinua</strong> — Huamanga, Ayacucho.
+                        Registre nuevas solicitudes por Mesa de Partes Virtual y consulte el estado real de sus expedientes.
+                    </p>
+                    <p th:if="${!esJefeOficina and !esCiudadano}" class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                        Espacio de Trabajo Unificado del Sistema Integral de Gestión Municipal de la
+                        <strong class="text-slate-100">Municipalidad Distrital de Quinua</strong> — Huamanga, Ayacucho.
+                        Seleccione el servicio municipal o bandeja operativa asignada a su área.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas de Cabecera -->
+            <div class="flex flex-wrap sm:flex-nowrap lg:flex-col gap-2.5 min-w-[215px]">
+                <a th:if="${esAdmin}"
+                   th:href="@{/admin/dashboard}"
+                   class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl btn-primary text-xs font-bold shadow-lg shadow-blue-900/40 transition-all">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Panel de Control Admin</span>
+                </a>
+                <a th:if="${esJefeOficina}"
+                   th:href="@{/dashboard/mesa-partes/bandeja}"
+                   class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl btn-primary text-xs font-bold shadow-lg shadow-blue-900/40 transition-all">
+                    <i data-lucide="inbox" class="w-4 h-4"></i>
+                    <span>Bandeja de Entrada de Oficina</span>
+                </a>
+                <a th:href="@{/dashboard/perfil}"
+                   class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                    <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i>
+                    <span>Mi Perfil y Contraseña</span>
+                </a>
+                <a th:href="@{/logout}"
+                   class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 text-xs font-semibold transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>Finalizar Sesión</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2A. DASHBOARD PERSONALIZADO PARA JEFE DE OFICINA (ROLE_JEFE_OFICINA)      -->
+    <!-- ========================================================================= -->
+    <th:block th:if="${esJefeOficina}">
+
+        <!-- 5 Tarjetas de Estadísticas Reales de la Oficina en PostgreSQL (Componente statisticsCard) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('1. Recibidos', ${kpiRecibidos}, 'Total en la oficina', 'inbox', 'info')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('2. Pendientes', ${kpiPendientes}, 'Por recepcionar / atender', 'clock', 'warning')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('3. En Proceso', ${kpiEnProceso}, 'En revisión / evaluación', 'file-search', 'purple')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('4. Observados', ${kpiObservados}, 'Con subsanación pendiente', 'alert-triangle', 'danger')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('5. Finalizados', ${kpiFinalizados}, 'Resueltos / archivados', 'check-circle-2', 'success')}"></div>
+        </div>
+
+        <!-- Accesos Rápidos de Gestión de Expedientes de la Oficina + Notificaciones Recientes -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div class="xl:col-span-2 bg-card border border-theme rounded-2xl p-5 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                            <i data-lucide="briefcase" class="w-4 h-4 text-blue-400"></i>
+                            <span>Bandejas y Herramientas de la Unidad Orgánica</span>
+                        </h2>
+                        <span th:if="${oficinaUsuario != null}"
+                              class="text-[11px] text-slate-400 font-medium"
+                              th:text="${'Ámbito autorizado: ' + oficinaUsuario.nombre}">Ámbito autorizado</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="inbox" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-blue-300">Bandeja de Entrada</p>
+                                <p class="text-[10px] text-slate-400">Expedientes de oficina</p>
+                            </div>
+                        </a>
+
+                        <a th:href="@{/dashboard/mesa-partes/mis-expedientes}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-emerald-600/20 border border-slate-700 hover:border-emerald-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="user-check" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-emerald-300">Expedientes Asignados</p>
+                                <p class="text-[10px] text-slate-400">Bajo mi responsabilidad</p>
+                            </div>
+                        </a>
+
+                        <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_REVISION')}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-indigo-600/20 border border-slate-700 hover:border-indigo-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="file-search" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-indigo-300">En Revisión</p>
+                                <p class="text-[10px] text-slate-400">Evaluación técnica</p>
+                            </div>
+                        </a>
+
+                        <a th:href="@{/dashboard/documentos}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-cyan-600/20 border border-slate-700 hover:border-cyan-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="folder-archive" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-cyan-300">Gestión Documental</p>
+                                <p class="text-[10px] text-slate-400">Repositorio y anexos</p>
+                            </div>
+                        </a>
+
+                        <a th:href="@{/dashboard/mesa-partes/derivaciones}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-purple-600/20 border border-slate-700 hover:border-purple-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="history" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-purple-300">Historial de Trámites</p>
+                                <p class="text-[10px] text-slate-400">Derivaciones y pases</p>
+                            </div>
+                        </a>
+
+                        <a th:href="@{/dashboard/notificaciones}"
+                           class="flex items-center space-x-3 p-3.5 rounded-xl bg-slate-800/70 hover:bg-amber-600/20 border border-slate-700 hover:border-amber-500/50 transition-all group">
+                            <div class="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="bell" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-100 group-hover:text-amber-300">Notificaciones</p>
+                                <p class="text-[10px] text-slate-400" th:text="${(noLeidas != null ? noLeidas : 0) + ' alertas sin leer'}">0 alertas sin leer</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Resumen de Notificaciones del Despacho -->
+            <div class="bg-card border border-theme rounded-2xl p-5 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                            <i data-lucide="bell-ring" class="w-4 h-4 text-amber-400"></i>
+                            <span>Notificaciones de Despacho</span>
+                        </h3>
+                        <a th:href="@{/dashboard/notificaciones}" class="text-[11px] text-blue-400 hover:underline font-medium">Ver todas</a>
+                    </div>
+                    <div th:if="${notificaciones == null or notificaciones.isEmpty()}" class="py-6 text-center text-xs text-slate-400">
+                        <i data-lucide="check-circle" class="w-6 h-6 mx-auto mb-1.5 text-emerald-400"></i>
+                        <p>No tiene notificaciones pendientes.</p>
+                    </div>
+                    <div th:if="${notificaciones != null and !notificaciones.isEmpty()}" class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                        <div th:each="notif, iter : ${notificaciones}" th:if="${iter.index < 3}"
+                             class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 text-xs">
+                            <p class="font-semibold text-slate-200 truncate" th:text="${notif.titulo}">Aviso de Expediente</p>
+                            <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5" th:text="${notif.mensaje}">Detalle de notificación</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Alertas no leídas:</span>
+                    <span class="px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300" th:text="${noLeidas != null ? noLeidas : 0}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Real de Expedientes de la Oficina en PostgreSQL -->
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-md">
+            <div class="px-5 py-4 border-b border-theme flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-2.5">
+                    <i data-lucide="table-2" class="w-4 h-4 text-blue-400"></i>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                        Expedientes de la Oficina
+                        <span th:if="${oficinaUsuario != null}" class="text-blue-400" th:text="${'— ' + oficinaUsuario.nombre}"></span>
+                    </h2>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a th:href="@{/dashboard/mesa-partes/panel-oficina}"
+                       class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                        <span>Asignar Personal</span>
+                    </a>
+                    <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                       class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Ver Bandeja Completa</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827]/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-theme font-semibold">
+                    <tr>
+                        <th class="py-3.5 px-4">N° Expediente</th>
+                        <th class="py-3.5 px-4">Ciudadano o Solicitante</th>
+                        <th class="py-3.5 px-4">Asunto / Trámite</th>
+                        <th class="py-3.5 px-4">Fecha de Recepción</th>
+                        <th class="py-3.5 px-4">Estado</th>
+                        <th class="py-3.5 px-4">Prioridad</th>
+                        <th class="py-3.5 px-4">Responsable Asignado</th>
+                        <th class="py-3.5 px-4 text-right">Acciones Autorizadas</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                    <tr th:if="${expedientesOficina == null or expedientesOficina.isEmpty()}">
+                        <td colspan="8" class="py-6 px-4">
+                            <div th:replace="~{components/feedback/empty-state :: emptyState('inbox', 'Sin expedientes en la unidad orgánica', 'No existen expedientes registrados actualmente para esta unidad orgánica en PostgreSQL.')}"></div>
+                        </td>
+                    </tr>
+                    <tr th:each="exp : ${expedientesOficina}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400 whitespace-nowrap">
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${exp.id})}"
+                               class="hover:underline"
+                               th:text="${exp.numeroExpediente != null ? exp.numeroExpediente : ('BORRADOR-' + exp.id)}">
+                                MPV-2026-00001
+                            </a>
+                        </td>
+                        <td class="py-3 px-4">
+                            <p class="font-semibold text-slate-200" th:text="${exp.solicitanteNombreCompleto != null ? exp.solicitanteNombreCompleto : 'Ciudadano Registrado'}">Juan Pérez</p>
+                            <p class="text-[10px] text-slate-400 font-mono" th:text="${exp.solicitanteNumeroDocumento != null ? ('Doc: ' + exp.solicitanteNumeroDocumento) : ''}"></p>
+                        </td>
+                        <td class="py-3 px-4 max-w-xs">
+                            <p class="font-semibold text-slate-200 truncate" th:text="${exp.asunto}" th:title="${exp.asunto}">Solicitud de Licencia</p>
+                            <p class="text-[10px] text-slate-400 truncate" th:text="${exp.tipoTramiteNombre}">Licencia de Edificación</p>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-300"
+                            th:text="${exp.fechaRecepcion != null ? #temporals.format(exp.fechaRecepcion, 'dd/MM/yyyy HH:mm') : (exp.fechaPresentacion != null ? #temporals.format(exp.fechaPresentacion, 'dd/MM/yyyy HH:mm') : (exp.createdAt != null ? #temporals.format(exp.createdAt, 'dd/MM/yyyy HH:mm') : '---'))}">
+                            30/10/2026 10:30
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span th:if="${exp.estadoActual != null}"
+                                  th:text="${exp.estadoActual.name()}"
+                                  th:classappend="${exp.estadoActual.name() == 'RESUELTO' or exp.estadoActual.name() == 'NOTIFICADO' or exp.estadoActual.name() == 'ARCHIVADO'} ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                                                  (${exp.estadoActual.name() == 'OBSERVADO'} ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+                                                  (${exp.estadoActual.name() == 'EN_REVISION' or exp.estadoActual.name() == 'EN_ATENCION'} ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'))"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border">
+                                RECIBIDO
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span th:if="${exp.prioridad != null}"
+                                  th:text="${exp.prioridad.name()}"
+                                  th:classappend="${exp.prioridad.name() == 'MUY_URGENTE' or exp.prioridad.name() == 'URGENTE'} ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+                                                  (${exp.prioridad.name() == 'ALTA'} ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-slate-800 text-slate-300 border-slate-700')"
+                                  class="px-2 py-0.5 rounded text-[10px] font-bold border">
+                                NORMAL
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span th:if="${exp.responsableActualNombre != null}"
+                                  class="inline-flex items-center space-x-1 text-emerald-300 font-medium">
+                                <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                                <span th:text="${exp.responsableActualNombre}">Javier Rojas</span>
+                            </span>
+                            <span th:if="${exp.responsableActualNombre == null}"
+                                  class="inline-flex items-center space-x-1 text-amber-400/90 text-[11px]">
+                                <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                                <span>Sin asignar</span>
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${exp.id})}"
+                               class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 text-[11px] font-semibold transition-colors"
+                               title="Ver Detalle y Requisitos del Expediente">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                <span>Detalle</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}/seguimiento(id=${exp.id})}"
+                               class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-medium transition-colors"
+                               title="Ver Hoja de Ruta y Seguimiento">
+                                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                <span>Seguimiento</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/atencion/{id}(id=${exp.id})}"
+                               class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition-colors"
+                               title="Atender y Emitir Informe/Propuesta">
+                                <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                                <span>Atender</span>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- ========================================================================= -->
+    <!-- 2B. ESPACIO DE TRABAJO PARA CIUDADANO (ROLE_CIUDADANO)                    -->
+    <!-- ========================================================================= -->
+    <th:block th:if="${esCiudadano}">
+        <!-- Indicadores Rápidos del Ciudadano -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Mis Trámites Registrados', ${totalMisSolicitudes != null ? totalMisSolicitudes : 0}, 'Expedientes propios en SIGM-QUINUA', 'folder-open', 'info')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Notificaciones No Leídas', ${noLeidas != null ? noLeidas : 0}, 'Avisos y respuestas municipales', 'bell', 'warning')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Atención Virtual 24/7', 'ACTIVO', 'Mesa de Partes Virtual Quinua', 'shield-check', 'success')}"></div>
+        </div>
+
+        <!-- 8 Funciones Ciudadanas Autorizadas (Fase 7) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- 1. Registro de expedientes -->
+            <div class="bg-card border border-theme hover:border-emerald-500/50 rounded-2xl p-5 shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                        <i data-lucide="file-plus" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-100">Registro de Expedientes</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Presente solicitudes, documentos y trámites administrativos ante la Municipalidad Distrital de Quinua.
+                    </p>
+                </div>
+                <a th:href="@{/mesa-partes/nueva-solicitud}"
+                   class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold inline-flex items-center justify-center space-x-2 transition-colors">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>Registrar Trámite</span>
+                </a>
+            </div>
+
+            <!-- 2. Consulta de trámites y Documentos propios -->
+            <div class="bg-card border border-theme hover:border-blue-500/50 rounded-2xl p-5 shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center">
+                        <i data-lucide="folder-open" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-100">Consulta y Documentos Propios</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Revise sus expedientes presentados, descargue constancias oficiales y subsane observaciones.
+                    </p>
+                </div>
+                <a th:href="@{/mesa-partes/mis-solicitudes}"
+                   class="px-4 py-2 rounded-xl btn-primary text-xs font-semibold inline-flex items-center justify-center space-x-2">
+                    <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+                    <span>Ver Mis Solicitudes</span>
+                </a>
+            </div>
+
+            <!-- 3. Seguimiento de trámites -->
+            <div class="bg-card border border-theme hover:border-cyan-500/50 rounded-2xl p-5 shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-100">Seguimiento de Trámites</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Consulte la hoja de ruta y estado actual de su expediente mediante su código de seguimiento.
+                    </p>
+                </div>
+                <a th:href="@{/mesa-partes/seguimiento}"
+                   class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold inline-flex items-center justify-center space-x-2 transition-colors">
+                    <i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Seguimiento en Línea</span>
+                </a>
+            </div>
+
+            <!-- 4. Portal Ciudadano, Notificaciones y Perfil -->
+            <div class="bg-card border border-theme hover:border-purple-500/50 rounded-2xl p-5 shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                        <i data-lucide="globe" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-100">Portal, Alertas y Cuenta</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Acceda al portal ciudadano institucional, revise sus notificaciones o gestione su perfil personal.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a th:href="@{/}"
+                       class="flex-1 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold text-center transition-colors">
+                        Portal
+                    </a>
+                    <a th:href="@{/dashboard/notificaciones}"
+                       class="flex-1 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[11px] font-semibold text-center transition-colors">
+                        Alertas
+                    </a>
+                    <a th:href="@{/dashboard/perfil}"
+                       class="flex-1 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 text-[11px] font-semibold text-center transition-colors">
+                        Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Mis Expedientes Recientes (Solo Expedientes Propios del Ciudadano) -->
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-md">
+            <div class="px-5 py-4 border-b border-theme flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-2.5">
+                    <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                    <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                        Mis Expedientes y Documentos Recientes
+                    </h2>
+                </div>
+                <a th:href="@{/mesa-partes/mis-solicitudes}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span>Ver Todos Mis Trámites</span>
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827]/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-theme font-semibold">
+                    <tr>
+                        <th class="py-3 px-4">N° Expediente</th>
+                        <th class="py-3 px-4">Trámite / Asunto</th>
+                        <th class="py-3 px-4">Fecha Presentación</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                    <tr th:if="${misSolicitudesRecientes == null or misSolicitudesRecientes.isEmpty()}">
+                        <td colspan="5" class="py-6 px-4">
+                            <div th:replace="~{components/feedback/empty-state :: emptyState('folder-open', 'Aún no registra expedientes', 'Puede presentar un nuevo trámite virtual en cualquier momento desde este panel.')}"></div>
+                        </td>
+                    </tr>
+                    <tr th:each="sol : ${misSolicitudesRecientes}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400 whitespace-nowrap"
+                            th:text="${sol.numeroExpediente != null ? sol.numeroExpediente : 'BORRADOR'}">MPV-2026-00001</td>
+                        <td class="py-3 px-4">
+                            <p class="font-semibold text-slate-200" th:text="${sol.asunto}">Asunto</p>
+                            <p class="text-[10px] text-slate-400" th:text="${sol.tipoTramiteNombre}">Tipo de trámite</p>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-400"
+                            th:text="${sol.fechaPresentacion != null ? sol.fechaPresentacion : (sol.fechaRegistro != null ? sol.fechaRegistro : 'En borrador')}">30/10/2026</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span th:replace="~{components/feedback/status-badge :: statusBadge(${sol.estado != null ? sol.estado : 'REGISTRADO'})}"></span>
+                        </td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
+                            <a th:if="${sol.uuid != null}"
+                               th:href="@{/mesa-partes/solicitud/{uuid}(uuid=${sol.uuid})}"
+                               class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 text-[11px] font-semibold">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                <span>Ver Detalle</span>
+                            </a>
+                            <a th:if="${sol.uuid != null and sol.numeroExpediente != null}"
+                               th:href="@{/mesa-partes/expedientes/{uuid}/constancia(uuid=${sol.uuid})}"
+                               class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-medium">
+                                <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                <span>Cargo PDF</span>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- ========================================================================= -->
+    <!-- 2C. ESPACIO DE TRABAJO PARA OPERADORES Y ADMINISTRADORES (FASE 6)         -->
+    <!-- ========================================================================= -->
+    <th:block th:if="${!esJefeOficina and !esCiudadano}">
+        <!-- Tarjetas de Acceso únicamente a los Módulos Autorizados -->
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="grid" class="w-4 h-4 text-blue-400"></i>
+                    <span>Módulos y Servicios Municipales Autorizados</span>
+                </h2>
+                <span class="text-[11px] text-slate-400">Acceso controlado por rol, permisos y unidad orgánica</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Servicio 1: Operador de Mesa de Partes Virtual -->
+                <div th:if="${esAdmin or countMpv > 0}"
+                     class="bg-card border border-theme hover:border-blue-500/50 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-11 h-11 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center">
+                                <i data-lucide="inbox" class="w-6 h-6"></i>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-blue-950/80 border border-blue-800/60 text-blue-300 text-[10px] font-bold uppercase tracking-wider">
+                                Servicio 01 • MPV
+                            </span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Mesa de Partes Virtual</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Recepción de expedientes ciudadanos, registro, derivación entre unidades orgánicas, seguimiento y gestión documental.
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700/50 flex flex-wrap gap-2">
+                        <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                           class="px-3.5 py-2 rounded-lg btn-primary text-xs font-semibold inline-flex items-center space-x-1.5">
+                            <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
+                            <span>Recepción y Bandeja</span>
+                        </a>
+                        <a th:href="@{/mesa-partes/nueva-solicitud}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="file-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Registro</span>
+                        </a>
+                        <a th:href="@{/dashboard/mesa-partes/derivaciones}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="git-branch" class="w-3.5 h-3.5 text-purple-400"></i>
+                            <span>Derivaciones</span>
+                        </a>
+                        <a th:href="@{/dashboard/mesa-partes/mis-expedientes}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
+                            <span>Seguimiento</span>
+                        </a>
+                        <a th:href="@{/dashboard/documentos}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="folder-archive" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Documentos</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Servicio 2: Operador de Mercados Municipales -->
+                <div th:if="${esAdmin or countMercados > 0}"
+                     class="bg-card border border-theme hover:border-emerald-500/50 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-11 h-11 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                                Servicio 02 • MKT
+                            </span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Mercados Municipales</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Gestión de comerciantes, puestos de venta, asignaciones/contratos e inspecciones sanitarias de mercados.
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700/50 flex flex-wrap gap-2">
+                        <a th:href="@{/dashboard/mercados}"
+                           class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                            <span>Puestos y Mercados</span>
+                        </a>
+                        <a th:href="@{/dashboard/mercados/comerciantes}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Comerciantes</span>
+                        </a>
+                        <a th:href="@{/dashboard/mercados/contratos}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="file-signature" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Asignaciones y Contratos</span>
+                        </a>
+                        <a th:href="@{/dashboard/mercados/inspecciones}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Inspecciones</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Servicio 3: Operador de Serenazgo -->
+                <div th:if="${esAdmin or countSerenazgo > 0}"
+                     class="bg-card border border-theme hover:border-indigo-500/50 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
+                                <i data-lucide="shield" class="w-6 h-6"></i>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
+                                Servicio 03 • SC
+                            </span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Seguridad Ciudadana y Serenazgo</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Registro de incidencias, atención de alertas ciudadanas, patrullajes municipales e intervenciones operativas.
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700/50 flex flex-wrap gap-2">
+                        <a th:href="@{/dashboard/serenazgo}"
+                           class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                            <span>Central Serenazgo</span>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/incidencias}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Incidencias</span>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/alertas}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="siren" class="w-3.5 h-3.5 text-rose-400"></i>
+                            <span>Alertas</span>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/patrullaje}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="route" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>Patrullajes</span>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/intervenciones}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Intervenciones</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Servicio 4: Operador de Tributación -->
+                <div th:if="${esAdmin or countTributaria > 0}"
+                     class="bg-card border border-theme hover:border-amber-500/50 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-11 h-11 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                                <i data-lucide="receipt" class="w-6 h-6"></i>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-amber-950/80 border border-amber-800/60 text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                                Servicio 04 • M4
+                            </span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100">Recaudación Tributaria Municipal</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Padrón de contribuyentes, consultas prediales/cuenta corriente y recaudación en caja según permisos asignados.
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700/50 flex flex-wrap gap-2">
+                        <a th:href="@{/dashboard/tributaria}"
+                           class="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="landmark" class="w-3.5 h-3.5"></i>
+                            <span>Panel Tributario</span>
+                        </a>
+                        <a th:href="@{/dashboard/tributaria/contribuyentes}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Contribuyentes</span>
+                        </a>
+                        <a th:href="@{/dashboard/tributaria/predios}"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="building" class="w-3.5 h-3.5 text-cyan-400"></i>
+                            <span>Consultas y Predios</span>
+                        </a>
+                        <a th:href="@{/dashboard/tributaria/cajas}"
+                           sec:authorize="hasAuthority('TRIBUTARIA_CAJA_ACCEDER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'TRIBUTACION')"
+                           class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center space-x-1.5 transition-colors">
+                            <i data-lucide="credit-card" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Pagos y Caja</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+</div>
+</body>
+</html>

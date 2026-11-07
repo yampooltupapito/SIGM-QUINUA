@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title=${notificacion.codigoNotificacion} + ' | Notificación Tributaria',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Ficha de Notificación</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header de la Notificación -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/notificaciones}" class="hover:underline">Notificaciones</a>
+                <span>/</span>
+                <span th:text="${notificacion.codigoNotificacion}">NOTIF-2026-000001</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-black text-slate-100 tracking-tight" th:text="${notificacion.codigoNotificacion}"></h1>
+                <span th:class="${notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).AUTORIZADA} ? 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30' :
+                               (${notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).VALIDADA} ? 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30' :
+                               (${notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).ANULADA} ? 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30' :
+                               'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30'))"
+                      th:text="${notificacion.estadoAdministrativo.etiqueta}"></span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="${notificacion.tipoNotificacionNombre} + ' (' + ${notificacion.categoria.nombre} + ')'"></p>
+        </div>
+
+        <!-- Botones de Acción de Estado -->
+        <div class="flex flex-wrap gap-2">
+            <!-- Botón Validar (para pasar de Borrador a Validada) -->
+            <form th:if="${notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).BORRADOR or notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).OBSERVADA}"
+                  th:action="@{/dashboard/tributaria/notificaciones/{id}/validar(id=${notificacion.id})}" method="post"
+                  sec:authorize="hasAuthority('TRIBUTARIA_NOTIFICACIONES_VALIDAR') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_TRIBUTACION')">
+                <button type="submit" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Validar Datos</span>
+                </button>
+            </form>
+
+            <!-- Botón Autorizar y Emitir Cédula PDF -->
+            <form th:if="${notificacion.estadoAdministrativo == T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).VALIDADA}"
+                  th:action="@{/dashboard/tributaria/notificaciones/{id}/autorizar(id=${notificacion.id})}" method="post"
+                  sec:authorize="hasAuthority('TRIBUTARIA_NOTIFICACIONES_AUTORIZAR') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_TRIBUTACION')">
+                <button type="submit" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span>Autorizar y Emitir Cédula</span>
+                </button>
+            </form>
+
+            <!-- Botón Descargar PDF Cédula Oficial -->
+            <a th:href="@{/dashboard/tributaria/notificaciones/{id}/pdf(id=${notificacion.id})}" target="_blank"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Descargar Cédula PDF</span>
+            </a>
+
+            <!-- Botón Anular -->
+            <button th:if="${notificacion.estadoAdministrativo != T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).ANULADA and notificacion.estadoAdministrativo != T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.EstadoAdministrativoNotificacion).CERRADA}"
+                    type="button" onclick="document.getElementById('modalAnular').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_NOTIFICACIONES_ANULAR') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1.5">
+                <i data-lucide="slash" class="w-4 h-4"></i>
+                <span>Anular</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center space-x-3">
+        <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Barra de Pestañas / Tabs -->
+    <div class="flex overflow-x-auto border-b border-slate-700/60 space-x-2 bg-[#202c3d] p-2 rounded-xl text-xs">
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='resumen')}"
+           th:class="${tabActiva == 'resumen'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Resumen
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='programacion')}"
+           th:class="${tabActiva == 'programacion'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Asignación y Notificador
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='intentos')}"
+           th:class="${tabActiva == 'intentos'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Intentos de Entrega (<span th:text="${intentos.size()}">0</span>)
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='evidencias')}"
+           th:class="${tabActiva == 'evidencias'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Evidencias (<span th:text="${evidencias.size()}">0</span>)
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='cargo')}"
+           th:class="${tabActiva == 'cargo'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Cargo de Recepción
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='validacion')}"
+           th:class="${tabActiva == 'validacion'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Validación Legal
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='plazos')}"
+           th:class="${tabActiva == 'plazos'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Control de Plazos
+        </a>
+        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${notificacion.id},tab='historial')}"
+           th:class="${tabActiva == 'historial'} ? 'bg-blue-600 text-white font-bold px-3.5 py-2 rounded-lg' : 'text-slate-400 hover:text-slate-200 px-3.5 py-2 rounded-lg transition-colors'">
+            Historial de Actuaciones
+        </a>
+    </div>
+
+    <!-- CONTENIDO DE CADA PESTAÑA -->
+
+    <!-- TAB 1: RESUMEN -->
+    <div th:if="${tabActiva == 'resumen'}" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Datos del Destinatario y Domicilio -->
+            <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2 border-b border-slate-700/60 pb-2.5">
+                    <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
+                    <span>Datos del Destinatario y Notificación</span>
+                </h3>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Destinatario</span>
+                        <span class="text-slate-200 font-bold" th:text="${notificacion.destinatarioNombre}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Documento Identidad</span>
+                        <span class="text-slate-200 font-mono" th:text="${notificacion.destinatarioNumeroDoc}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Contribuyente Padrón</span>
+                        <span class="text-slate-200" th:text="${notificacion.contribuyenteNombre + ' (' + notificacion.contribuyenteNumeroDoc + ')'}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Representante Legal</span>
+                        <span class="text-slate-200" th:text="${notificacion.representanteNombre != null ? notificacion.representanteNombre : 'Titular Directo'}"></span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Domicilio Notificación Inmutable</span>
+                        <span class="text-slate-200" th:text="${notificacion.domicilioNotificacion}"></span>
+                        <span th:if="${notificacion.referenciaUbicacion != null}" class="text-slate-400 block text-[11px]" th:text="'Ref: ' + ${notificacion.referenciaUbicacion}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Medio de Notificación</span>
+                        <span class="text-slate-200 font-medium" th:text="${notificacion.medioNotificacionNombre}"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Fecha Programada</span>
+                        <span class="text-slate-200" th:text="${notificacion.fechaProgramada != null ? #temporals.format(notificacion.fechaProgramada, 'dd/MM/yyyy') : 'No programada'}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Obligaciones Tributarias Vinculadas -->
+            <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2 border-b border-slate-700/60 pb-2.5">
+                    <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Obligaciones Tributarias Vinculadas</span>
+                </h3>
+                <div th:if="${detalles.empty}" class="text-xs text-slate-500 py-4 text-center">
+                    No hay detalle de obligaciones tributarias individuales vinculadas.
+                </div>
+                <div th:unless="${detalles.empty}" class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                        <tr class="bg-slate-800/60 text-slate-400 uppercase text-[10px] border-b border-slate-700">
+                            <th class="py-2 px-3">Obligación</th>
+                            <th class="py-2 px-3">Concepto</th>
+                            <th class="py-2 px-3">Período</th>
+                            <th class="py-2 px-3 text-right">Insoluto</th>
+                            <th class="py-2 px-3 text-right">Interés</th>
+                            <th class="py-2 px-3 text-right">Total</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                        <tr th:each="d : ${detalles}">
+                            <td class="py-2 px-3 font-mono text-blue-400" th:text="${d.obligacion.codigoObligacion}"></td>
+                            <td class="py-2 px-3" th:text="${d.obligacion.concepto.nombre}"></td>
+                            <td class="py-2 px-3" th:text="${d.periodo}"></td>
+                            <td class="py-2 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(d.montoInsoluto, 1, 2)}"></td>
+                            <td class="py-2 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(d.montoInteres, 1, 2)}"></td>
+                            <td class="py-2 px-3 text-right font-bold text-slate-100" th:text="'S/ ' + ${#numbers.formatDecimal(d.montoTotal, 1, 2)}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Lateral: Estados e Integridad -->
+        <div class="space-y-6">
+            <!-- Estados Técnicos y Jurídicos -->
+            <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 border-b border-slate-700/60 pb-2.5">
+                    Estados del Procedimiento
+                </h3>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Estado Administrativo</span>
+                        <div class="font-bold text-slate-200 mt-0.5" th:text="${notificacion.estadoAdministrativo.etiqueta}"></div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Estado Entrega Fáctica</span>
+                        <div class="font-bold text-emerald-400 mt-0.5" th:text="${notificacion.estadoEntrega.etiqueta}"></div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold block">Validez Legal Procesal</span>
+                        <div class="font-bold text-purple-400 mt-0.5" th:text="${notificacion.estadoValidezLegal.etiqueta}"></div>
+                        <p class="text-[10px] text-slate-500 mt-0.5">La entrega física no declara por sí sola la validez jurídica.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integridad Criptográfica y QR -->
+            <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4 text-center">
+                <h3 class="text-sm font-bold text-slate-200 border-b border-slate-700/60 pb-2.5">
+                    Verificación Criptográfica
+                </h3>
+                <div th:if="${notificacion.hashDocumento != null}" class="space-y-3">
+                    <div class="p-3 bg-slate-900 rounded-lg text-left font-mono text-[10px] text-emerald-400 break-all border border-slate-800">
+                        <span class="text-slate-500 block mb-1">HASH SHA-256 INMUTABLE:</span>
+                        <span th:text="${notificacion.hashDocumento}"></span>
+                    </div>
+                    <a th:href="@{/verificar/notificacion/{codigo}(codigo=${notificacion.codigoNotificacion})}" target="_blank"
+                       class="inline-flex items-center space-x-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Consultar Verificación Pública</span>
+                    </a>
+                </div>
+                <div th:unless="${notificacion.hashDocumento != null}" class="py-4 text-xs text-slate-500">
+                    La cédula oficial aún no ha sido autorizada. El hash SHA-256 y QR se generarán al autorizar.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: ASIGNACIÓN Y NOTIFICADOR -->
+    <div th:if="${tabActiva == 'programacion'}" class="space-y-6">
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-blue-400"></i>
+                    <span>Asignar Notificador Responsable</span>
+                </h3>
+            </div>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/asignar(id=${notificacion.id})}" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Notificador Institucional *</label>
+                    <select name="notificadorId" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar Personal --</option>
+                        <option th:each="u : ${usuariosNotificadores}" th:value="${u.id}" th:text="${u.nombreCompleto + ' (' + u.username + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha Programada de Visita *</label>
+                    <input type="date" name="fechaProgramada" required
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Sector o Ruta</label>
+                    <input type="text" name="sectorRuta" placeholder="Quinua Cercado, Huayoccari, etc."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Asignar Notificación</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Historial de Asignaciones -->
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200">Historial de Asignaciones y Reasignaciones</h3>
+            <div th:if="${asignaciones.empty}" class="text-xs text-slate-500 py-4 text-center">
+                No cuenta con asignaciones registradas.
+            </div>
+            <div th:unless="${asignaciones.empty}" class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                    <tr class="bg-slate-800/60 text-slate-400 uppercase text-[10px] border-b border-slate-700">
+                        <th class="py-2 px-3">Fecha Asignación</th>
+                        <th class="py-2 px-3">Notificador</th>
+                        <th class="py-2 px-3">Fecha Prog.</th>
+                        <th class="py-2 px-3">Sector</th>
+                        <th class="py-2 px-3">Estado</th>
+                        <th class="py-2 px-3">Motivo Reasignación</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                    <tr th:each="a : ${asignaciones}">
+                        <td class="py-2 px-3" th:text="${#temporals.format(a.fechaAsignacion, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="py-2 px-3 font-semibold text-slate-200" th:text="${a.notificador.nombreCompleto}"></td>
+                        <td class="py-2 px-3" th:text="${a.fechaProgramada != null ? #temporals.format(a.fechaProgramada, 'dd/MM/yyyy') : '-'}"></td>
+                        <td class="py-2 px-3" th:text="${a.sectorRuta != null ? a.sectorRuta : '-'}"></td>
+                        <td class="py-2 px-3 font-semibold" th:text="${a.estado.etiqueta}"></td>
+                        <td class="py-2 px-3 text-slate-400" th:text="${a.motivoReasignacion != null ? a.motivoReasignacion : '-'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: INTENTOS DE ENTREGA -->
+    <div th:if="${tabActiva == 'intentos'}" class="space-y-6">
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="navigation" class="w-4 h-4 text-blue-400"></i>
+                    <span>Registrar Actuación / Intento de Notificación</span>
+                </h3>
+            </div>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/intentos(id=${notificacion.id})}" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Medio Utilizado *</label>
+                    <input type="text" name="medioUtilizado" required value="Entrega Física Presencial"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado Fáctico *</label>
+                    <select name="resultado" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar Resultado --</option>
+                        <option th:each="r : ${T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.ResultadoIntentoNotificacion).values()}"
+                                th:value="${r}" th:text="${r.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Referencia Ubicación</label>
+                    <input type="text" name="ubicacionReferencia" placeholder="Frente a la posta médica..."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Acta de Visita</label>
+                    <textarea name="observaciones" rows="2" placeholder="Circunstancias de la visita, motivo de no ubicación o negativas..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar Intento</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Listado de Intentos Realizados -->
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200">Actuaciones Realizadas en Campo</h3>
+            <div th:if="${intentos.empty}" class="text-xs text-slate-500 py-6 text-center">
+                No hay intentos ni diligencias registradas para esta notificación.
+            </div>
+            <div th:unless="${intentos.empty}" class="space-y-3">
+                <div th:each="it : ${intentos}" class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/50 space-y-2 text-xs">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-bold text-slate-200 text-sm" th:text="${it.resultado.etiqueta}"></span>
+                            <span class="text-slate-400 block text-[10px]" th:text="'Notificador: ' + ${it.notificador.nombreCompleto} + ' | Medio: ' + ${it.medioUtilizado}"></span>
+                        </div>
+                        <span class="text-slate-400 font-mono text-[11px]" th:text="${#temporals.format(it.fechaHoraIntento, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <p class="text-slate-300" th:text="${it.observaciones != null ? it.observaciones : 'Sin observaciones'}"></p>
+                    <div th:if="${it.ubicacionReferencia != null}" class="text-[10px] text-slate-400" th:text="'Ubicación ref: ' + ${it.ubicacionReferencia}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: EVIDENCIAS -->
+    <div th:if="${tabActiva == 'evidencias'}" class="space-y-6">
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="paperclip" class="w-4 h-4 text-blue-400"></i>
+                    <span>Adjuntar Nueva Evidencia (Fotografía, Acta o Cargo Escaneado)</span>
+                </h3>
+            </div>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/evidencias(id=${notificacion.id})}" method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Evidencia *</label>
+                    <select name="tipoEvidencia" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="te : ${T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.TipoEvidenciaNotificacion).values()}"
+                                th:value="${te}" th:text="${te.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Archivo de Respaldo (PDF, JPG, PNG) *</label>
+                    <input type="file" name="archivo" required
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Detalle</label>
+                    <input type="text" name="observaciones" placeholder="Fotografía de aviso en puerta..."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center space-x-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Incorporar Evidencia Segura</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Grid de Evidencias -->
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200">Evidencias Verificables Registradas</h3>
+            <div th:if="${evidencias.empty}" class="text-xs text-slate-500 py-6 text-center">
+                No se han adjuntado evidencias documentales ni fotográficas.
+            </div>
+            <div th:unless="${evidencias.empty}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div th:each="ev : ${evidencias}" class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/50 space-y-2 text-xs">
+                    <div class="flex items-center space-x-2 text-blue-400 font-bold">
+                        <i data-lucide="file" class="w-4 h-4 flex-shrink-0"></i>
+                        <span th:text="${ev.tipoEvidencia.etiqueta}"></span>
+                    </div>
+                    <div class="text-slate-300 font-semibold truncate" th:text="${ev.nombreArchivo}"></div>
+                    <div class="text-[10px] text-slate-400" th:text="'Tamaño: ' + ${ev.tamanoBytes / 1024} + ' KB | Formato: ' + ${ev.mimeType}"></div>
+                    <div class="p-2 bg-slate-900 rounded font-mono text-[9px] text-emerald-400 break-all border border-slate-800" th:text="'Hash: ' + ${ev.hashArchivo}"></div>
+                    <p class="text-slate-400 text-[11px]" th:text="${ev.observaciones}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: CARGO DE RECEPCIÓN -->
+    <div th:if="${tabActiva == 'cargo'}" class="space-y-6">
+        <div th:if="${cargo == null}" class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Registrar Cargo de Recepción Formal</span>
+                </h3>
+            </div>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/cargo(id=${notificacion.id})}" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Nombre Completo del Receptor *</label>
+                    <input type="text" name="receptorIdentificado" required placeholder="Nombres y apellidos de quien recibió"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">N° Documento Identidad (DNI)</label>
+                    <input type="text" name="receptorNumeroDoc" placeholder="8 dígitos"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Vínculo con el Contribuyente *</label>
+                    <select name="tipoVinculoReceptor" required
+                            class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="tv : ${T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.TipoVinculoReceptor).values()}"
+                                th:value="${tv}" th:text="${tv.etiqueta}"></option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-6 py-2">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="tieneFirma" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-300">Cuenta con Firma</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="tieneSello" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-300">Cuenta con Sello</span>
+                    </label>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block font-semibold text-slate-300 mb-1">Observaciones del Cargo</label>
+                    <input type="text" name="observaciones" placeholder="Se negó a firmar pero se identificó, etc."
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors flex items-center space-x-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Asentar Cargo de Recepción</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div th:unless="${cargo == null}" class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                <span>Cargo de Recepción Registrado Formalmente</span>
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Receptor Identificado</span>
+                    <span class="text-slate-200 font-bold" th:text="${cargo.receptorIdentificado}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Documento Identidad</span>
+                    <span class="text-slate-200 font-mono" th:text="${cargo.receptorNumeroDoc != null ? cargo.receptorNumeroDoc : 'No proporcionado'}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Vínculo</span>
+                    <span class="text-slate-200" th:text="${cargo.tipoVinculoReceptor.etiqueta}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Fecha Declarada</span>
+                    <span class="text-slate-200" th:text="${#temporals.format(cargo.fechaRecepcionDeclarada, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Firma del Receptor</span>
+                    <span th:class="${cargo.tieneFirma} ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'"
+                          th:text="${cargo.tieneFirma ? 'SÍ TIENE FIRMA' : 'NO TIENE FIRMA'}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Sello Institucional / Empresa</span>
+                    <span th:class="${cargo.tieneSello} ? 'text-emerald-400 font-bold' : 'text-slate-400'"
+                          th:text="${cargo.tieneSello ? 'SÍ TIENE SELLO' : 'NO'}"></span>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Observaciones del Notificador</span>
+                    <span class="text-slate-300" th:text="${cargo.observaciones != null ? cargo.observaciones : 'Sin observaciones'}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: VALIDACIÓN LEGAL PROCEDIMENTAL -->
+    <div th:if="${tabActiva == 'validacion'}" class="space-y-6">
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                    <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>
+                    <span>Calificación Procedimental y Checklist Legal</span>
+                </h3>
+            </div>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/validar-procedimiento(id=${notificacion.id})}" method="post" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700/40">
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumpleDestinatarioIdentificado" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">1. Destinatario plenamente individualizado conforme a padrón</span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumpleDomicilioValido" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">2. Domicilio fiscal, procesal o fijado verificado en Quinua</span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumpleDocumentoAdjunto" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">3. Copia íntegra del acto administrativo adjuntada</span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumplePlazoProcedimental" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">4. Cumplimiento de plazos procedimentales reglamentarios</span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumpleEvidenciaMinima" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">5. Constatación fáctica con evidencia verificable o fotografía</span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 cursor-pointer">
+                        <input type="checkbox" name="cumpleDatosReceptorYCargo" value="true" class="rounded bg-slate-900 border-slate-700 text-blue-600">
+                        <span class="text-slate-200 font-medium">6. Cargo suscrito con nombre, DNI, fecha y hora cierta</span>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Decisión de Calificación Legal *</label>
+                        <select name="resultado" required
+                                class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="rv : ${T(pe.gob.municipalidad.sigm.modules.recaudaciontributaria.enums.ResultadoValidacionProcedimental).values()}"
+                                    th:value="${rv}" th:text="${rv.etiqueta}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Fundamentación Jurídica / Sustento *</label>
+                        <input type="text" name="sustento" required placeholder="Conforme al Art. 104 del Código Tributario peruano..."
+                               class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors flex items-center space-x-2 shadow-sm">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Asentar Calificación Legal</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Historial de Validaciones -->
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200">Historial de Calificaciones Jurídicas</h3>
+            <div th:if="${validaciones.empty}" class="text-xs text-slate-500 py-4 text-center">
+                Aún no cuenta con calificaciones procedimentales registradas.
+            </div>
+            <div th:unless="${validaciones.empty}" class="space-y-3">
+                <div th:each="v : ${validaciones}" class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/50 space-y-2 text-xs">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-bold text-slate-200 text-sm" th:text="${v.resultado.etiqueta}"></span>
+                            <span class="text-slate-400 block text-[10px]" th:text="'Revisor: ' + ${v.revisor.nombreCompleto} + ' (' + ${v.revisor.username} + ')'"></span>
+                        </div>
+                        <span class="text-slate-400 font-mono text-[11px]" th:text="${#temporals.format(v.fechaValidacion, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <p class="text-purple-300 font-semibold" th:text="'Sustento: ' + ${v.sustento}"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 7: CONTROL DE PLAZOS -->
+    <div th:if="${tabActiva == 'plazos'}" class="space-y-6">
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="calendar" class="w-4 h-4 text-amber-400"></i>
+                <span>Cómputo y Control de Plazo Procesal</span>
+            </h3>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/plazos(id=${notificacion.id})}" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tipo de Término / Plazo *</label>
+                    <input type="text" name="tipoPlazo" required value="Plazo de Impugnación / Reclamación (20 días hábiles)"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Fecha Hito Inicial *</label>
+                    <input type="date" name="fechaHitoInicial" required
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Número de Días *</label>
+                    <input type="number" name="numeroDias" required min="1" value="20"
+                           class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tipo de Días *</label>
+                    <select name="diasHabiles" class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="true">Días Hábiles (Lunes a Viernes)</option>
+                        <option value="false">Días Calendario</option>
+                    </select>
+                </div>
+                <div class="md:col-span-4 flex justify-end">
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg transition-colors flex items-center space-x-2 shadow-sm">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        <span>Calcular y Activar Monitoreo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div th:if="${controlPlazo != null}" class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 border-b border-slate-700/60 pb-3">Estado del Plazo Procesal</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Término Legal</span>
+                    <span class="text-slate-200 font-bold" th:text="${controlPlazo.tipoPlazo}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Hito Inicial</span>
+                    <span class="text-slate-200" th:text="${#temporals.format(controlPlazo.fechaHitoInicial, 'dd/MM/yyyy')}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Fecha de Vencimiento</span>
+                    <span class="text-rose-400 font-bold text-sm" th:text="${#temporals.format(controlPlazo.fechaVencimiento, 'dd/MM/yyyy')}"></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Días Restantes</span>
+                    <span class="text-amber-400 font-black text-sm" th:text="${controlPlazo.diasRestantes} + ' días'"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 8: HISTORIAL DE ACTUACIONES -->
+    <div th:if="${tabActiva == 'historial'}" class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-6">
+        <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2 border-b border-slate-700/60 pb-3">
+            <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+            <span>Trazabilidad y Línea de Tiempo de Eventos Inmutables</span>
+        </h3>
+        <div th:if="${historial.empty}" class="text-xs text-slate-500 py-6 text-center">
+            No hay eventos registrados.
+        </div>
+        <div th:unless="${historial.empty}" class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-700">
+            <div th:each="h : ${historial}" class="relative text-xs">
+                <div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-[#202c3d]"></div>
+                <div class="flex justify-between items-start">
+                    <span class="font-bold text-slate-200" th:text="${h.tipoEvento.etiqueta}"></span>
+                    <span class="text-slate-400 font-mono text-[10px]" th:text="${#temporals.format(h.fechaEvento, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                </div>
+                <p class="text-slate-300 mt-1" th:text="${h.descripcion}"></p>
+                <div class="text-[10px] text-slate-500 mt-0.5" th:text="'Operador: ' + (${h.usuario != null ? h.usuario.username : 'SISTEMA'}) + ' | IP: ' + ${h.ipOrigen}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ANULAR NOTIFICACIÓN -->
+    <div id="modalAnular" class="fixed inset-0 bg-slate-950/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-md w-full p-6 rounded-xl border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center space-x-3 text-rose-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6 flex-shrink-0"></i>
+                <h3 class="text-base font-bold text-slate-100">Anular Notificación Tributaria</h3>
+            </div>
+            <p class="text-xs text-slate-400">
+                La anulación formal invalida la actuación sin alterar deudas ni cobros previos. Se exige fundamentar el motivo legal o procedimental.
+            </p>
+            <form th:action="@{/dashboard/tributaria/notificaciones/{id}/anular(id=${notificacion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de Anulación *</label>
+                    <textarea name="motivoAnulacion" required rows="3" placeholder="Sustente el motivo de la anulación..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modalAnular').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-sm">
+                        Confirmar Anulación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block th:fragment="scripts">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>
+

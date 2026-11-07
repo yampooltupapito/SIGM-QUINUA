@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Nuevo Pago en Ventanilla / Caja — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Notificaciones de error -->
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}" class="text-sm font-medium">Error</span>
+    </div>
+
+    <!-- Alerta de Sesión de Caja Activa del Cajero -->
+    <div th:if="${sesionActiva != null}" class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="store" class="w-5 h-5 text-blue-400"></i>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Sesión de Caja Activa:</span>
+                <span class="text-sm font-medium text-white" th:text="${sesionActiva.codigoSesion} + ' — ' + ${sesionActiva.cajaNombre}">SES-2026-00001</span>
+                <span class="text-xs text-slate-400" th:text="'(Apertura: ' + ${#temporals.format(sesionActiva.fechaApertura, 'dd/MM/yyyy HH:mm')} + ')'"></span>
+            </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Ventanilla Operativa</span>
+    </div>
+    <div th:if="${sesionActiva == null}" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400"></i>
+            <div>
+                <span class="text-sm font-bold text-amber-200">No tiene una sesión de caja abierta en este momento.</span>
+                <p class="text-xs text-amber-400/80">Para registrar cobros en efectivo presencial debe aperturar un turno de caja previamente. Los pagos externos (depósitos/transferencias) sí pueden registrarse.</p>
+            </div>
+        </div>
+        <a th:href="@{/dashboard/tributaria/cajas}" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold rounded-lg transition-colors">
+            Ir a Cajas Municipales
+        </a>
+    </div>
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria/pagos}" class="hover:text-blue-400 transition-colors">Pagos Tributarios</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Registro de Pago</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="hand-coins" class="w-6 h-6 text-emerald-400"></i>
+                Atención en Ventanilla y Registro de Pagos
+            </h1>
+        </div>
+        <a th:href="@{/dashboard/tributaria/pagos}" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver a Pagos</span>
+        </a>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form id="pagoForm" th:action="@{/dashboard/tributaria/pagos/form-submit}" method="post" class="space-y-6">
+        <input type="hidden" id="sesionCajaId" name="sesionCajaId" th:value="${sesionActiva != null ? sesionActiva.id : ''}">
+        <input type="hidden" id="idempotencyKey" name="idempotencyKey">
+
+        <!-- Paso 1: Selección del Contribuyente -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-[#334155] pb-3">
+                <div class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs">1</div>
+                <h3 class="text-sm font-semibold text-white">Identificación del Sujeto Pasivo (Contribuyente)</h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Seleccione o Busque Contribuyente *</label>
+                    <select id="contribuyenteSelect" name="contribuyenteId" required
+                            class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                        <option value="">-- Seleccionar Contribuyente Registrado en Quinua --</option>
+                        <option th:each="c : ${contribuyentes}"
+                                th:value="${c.id}"
+                                th:text="${c.numeroDocumento} + ' — ' + ${c.nombreRazonSocial}"
+                                th:selected="${c.id == selectedContribuyenteId}"></option>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" id="btnCargarDeudas"
+                            class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        <span>Consultar Deudas</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paso 2: Obligaciones Exigibles y Selección para Cobro -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-[#334155] pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs">2</div>
+                    <h3 class="text-sm font-semibold text-white">Obligaciones Tributarias Pendientes de Pago</h3>
+                </div>
+                <span id="deudasCountBadge" class="text-xs text-slate-400">0 obligaciones encontradas</span>
+            </div>
+
+            <div id="loadingDeudas" class="hidden py-8 text-center text-slate-400">
+                <i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto mb-2 text-blue-400"></i>
+                <p class="text-xs">Consultando obligaciones del contribuyente...</p>
+            </div>
+
+            <div id="noDeudasMsg" class="py-8 text-center text-slate-500">
+                <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 opacity-40 text-emerald-400"></i>
+                <p class="text-sm font-medium text-slate-300">Seleccione un contribuyente y pulse "Consultar Deudas"</p>
+                <p class="text-xs text-slate-500 mt-0.5">Se cargarán las obligaciones pendientes sin saldar.</p>
+            </div>
+
+            <div id="tablaDeudasContainer" class="hidden overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#1e293b] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                        <tr>
+                            <th class="py-2.5 px-3 w-10 text-center">Sel.</th>
+                            <th class="py-2.5 px-3">Código Obligación</th>
+                            <th class="py-2.5 px-3">Concepto Tributario</th>
+                            <th class="py-2.5 px-3">Período / Cuota</th>
+                            <th class="py-2.5 px-3">Predio</th>
+                            <th class="py-2.5 px-3 text-right">Saldo Pendiente</th>
+                            <th class="py-2.5 px-3 text-right w-36">Importe a Aplicar (S/)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deudasTbody" class="divide-y divide-[#334155]">
+                        <!-- Rellenado dinámicamente con JavaScript -->
+                    </tbody>
+                    <tfoot class="bg-[#1e293b] font-semibold border-t border-[#334155]">
+                        <tr>
+                            <td colspan="5" class="py-3 px-3 text-right text-slate-300">Total a Imputar a Obligaciones:</td>
+                            <td colspan="2" class="py-3 px-3 text-right text-emerald-400 font-mono text-sm">
+                                S/ <span id="lblTotalAplicado">0.00</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paso 3: Medio de Pago y Detalles de Recaudación -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-[#334155] pb-3">
+                <div class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs">3</div>
+                <h3 class="text-sm font-semibold text-white">Detalles del Pago y Medio de Cancelación</h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Medio de Pago *</label>
+                    <select id="medioPagoSelect" name="medioPago" required
+                            class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                        <option th:each="m : ${mediosPago}" th:value="${m.name()}" th:text="${m.descripcion}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Importe Total Recaudado (S/) *</label>
+                    <input type="number" id="importeTotalInput" name="importeTotal" step="0.01" min="0.01" required
+                           placeholder="0.00"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">N° Operación Bancaria / Voucher</label>
+                    <input type="text" id="numOpInput" name="numeroOperacionBancaria" placeholder="Ej: 12485901"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Banco de Origen</label>
+                    <input type="text" name="bancoOrigen" placeholder="Ej: Banco de la Nación"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones o Notas de Ventanilla</label>
+                <textarea name="observaciones" rows="2" placeholder="Notas sobre el cobro, recibo provisional o sustento..."
+                          class="w-full bg-[#101827] border border-[#334155] rounded-lg p-2.5 text-xs text-white placeholder-slate-500 focus:ring-1 focus:ring-blue-500"></textarea>
+            </div>
+        </div>
+
+        <!-- Botón de Confirmación y Enlace -->
+        <div class="flex items-center justify-between p-4 rounded-xl bg-[#1e293b] border border-[#334155]">
+            <div class="text-xs text-slate-400">
+                <i data-lucide="info" class="w-4 h-4 inline-block mr-1 text-blue-400"></i>
+                Al confirmar, se generarán automáticamente los abonos contables en la cuenta corriente del contribuyente.
+            </div>
+            <button type="submit" id="btnConfirmarPago"
+                    class="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                <span>Confirmar y Procesar Cobro</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    // Generar clave de idempotencia única para este intento
+    document.getElementById('idempotencyKey').value = 'IDEMP-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+
+    const contribSelect = document.getElementById('contribuyenteSelect');
+    const btnCargar = document.getElementById('btnCargarDeudas');
+    const loading = document.getElementById('loadingDeudas');
+    const noDeudas = document.getElementById('noDeudasMsg');
+    const tableContainer = document.getElementById('tablaDeudasContainer');
+    const tbody = document.getElementById('deudasTbody');
+    const lblTotal = document.getElementById('lblTotalAplicado');
+    const importeTotalInput = document.getElementById('importeTotalInput');
+    const form = document.getElementById('pagoForm');
+
+    btnCargar.addEventListener('click', () => {
+        const id = contribSelect.value;
+        if (!id) {
+            alert('Por favor, seleccione un contribuyente primero.');
+            return;
+        }
+        cargarDeudas(id);
+    });
+
+    async function cargarDeudas(contribuyenteId) {
+        loading.classList.remove('hidden');
+        noDeudas.classList.add('hidden');
+        tableContainer.classList.add('hidden');
+        tbody.innerHTML = '';
+
+        try {
+            const res = await fetch(`/dashboard/tributaria/pagos/api/contribuyente/${contribuyenteId}/obligaciones`);
+            if (!res.ok) throw new Error('Error al consultar obligaciones');
+            const data = await res.json();
+
+            loading.classList.add('hidden');
+            if (!data || data.length === 0) {
+                noDeudas.classList.remove('hidden');
+                noDeudas.querySelector('p').textContent = 'El contribuyente no tiene obligaciones tributarias pendientes de pago.';
+                return;
+            }
+
+            document.getElementById('deudasCountBadge').textContent = `${data.length} obligaciones pendientes`;
+            tableContainer.classList.remove('hidden');
+
+            data.forEach((o, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-colors';
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 text-center">
+                        <input type="checkbox" class="chk-obl rounded bg-[#101827] border-[#334155] text-blue-600 focus:ring-0" data-idx="${idx}" checked>
+                        <input type="hidden" name="aplicaciones[${idx}].obligacionId" value="${o.obligacionId}">
+                        ${o.cuotas && o.cuotas.length > 0 ? `<input type="hidden" name="aplicaciones[${idx}].cuotaId" value="${o.cuotas[0].cuotaId}">` : ''}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-blue-400">${o.codigoObligacion}</td>
+                    <td class="py-2.5 px-3 font-medium text-white">${o.conceptoNombre}</td>
+                    <td class="py-2.5 px-3 text-slate-300">Año ${o.anioPeriodo} (Cuota ${o.cuotaNumero}/${o.totalCuotas})</td>
+                    <td class="py-2.5 px-3 text-slate-400">${o.predioCodigo}</td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-200">S/ ${parseFloat(o.saldoPendiente).toFixed(2)}</td>
+                    <td class="py-2.5 px-3 text-right">
+                        <input type="number" step="0.01" min="0.01" max="${o.saldoPendiente}"
+                               name="aplicaciones[${idx}].importeAplicado"
+                               value="${parseFloat(o.saldoPendiente).toFixed(2)}"
+                               class="inp-monto w-32 bg-[#101827] border border-[#334155] rounded px-2 py-1 text-right text-xs font-mono font-bold text-emerald-400 focus:ring-1 focus:ring-blue-500">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            vincularEventosCalculo();
+            recalcularTotales();
+        } catch (e) {
+            loading.classList.add('hidden');
+            noDeudas.classList.remove('hidden');
+            noDeudas.querySelector('p').textContent = 'Error al cargar deudas: ' + e.message;
+        }
+    }
+
+    function vincularEventosCalculo() {
+        document.querySelectorAll('.chk-obl').forEach(chk => {
+            chk.addEventListener('change', (e) => {
+                const tr = e.target.closest('tr');
+                const inp = tr.querySelector('.inp-monto');
+                inp.disabled = !e.target.checked;
+                if (!e.target.checked) inp.dataset.prevVal = inp.value;
+                recalcularTotales();
+            });
+        });
+
+        document.querySelectorAll('.inp-monto').forEach(inp => {
+            inp.addEventListener('input', recalcularTotales);
+        });
+    }
+
+    function recalcularTotales() {
+        let total = 0;
+        document.querySelectorAll('.chk-obl').forEach(chk => {
+            if (chk.checked) {
+                const tr = chk.closest('tr');
+                const val = parseFloat(tr.querySelector('.inp-monto').value) || 0;
+                total += val;
+            }
+        });
+        lblTotal.textContent = total.toFixed(2);
+        importeTotalInput.value = total.toFixed(2);
+    }
+
+    form.addEventListener('submit', (e) => {
+        const totalAplicado = parseFloat(lblTotal.textContent) || 0;
+        const totalCobrado = parseFloat(importeTotalInput.value) || 0;
+
+        if (totalAplicado <= 0) {
+            e.preventDefault();
+            alert('Debe seleccionar al menos una obligación a pagar con un importe válido mayor a cero.');
+            return;
+        }
+
+        if (Math.abs(totalAplicado - totalCobrado) > 0.001) {
+            e.preventDefault();
+            alert(`Inconsistencia financiera: El total a imputar (S/ ${totalAplicado.toFixed(2)}) debe coincidir exactamente con el importe total recaudado (S/ ${totalCobrado.toFixed(2)}).`);
+            return;
+        }
+
+        // Deshabilitar inputs de filas no seleccionadas para no enviar basura
+        document.querySelectorAll('.chk-obl').forEach(chk => {
+            if (!chk.checked) {
+                const tr = chk.closest('tr');
+                tr.querySelectorAll('input').forEach(inp => inp.disabled = true);
+            }
+        });
+    });
+
+    if (contribSelect.value) {
+        cargarDeudas(contribSelect.value);
+    }
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Administración de Predios — Recaudación Tributaria | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error en la operación</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium">Predios</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="building-2" class="w-6 h-6 text-blue-500"></i>
+                <span>Administración de Predios</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Registro y gestión de información predial y relaciones tributarias municipales.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Botón Exportar Excel -->
+            <a th:href="@{/dashboard/tributaria/predios/exportar/excel(query=${filtro.query},clasificacion=${filtro.clasificacion},uso=${filtro.uso},sector=${filtro.sector},zona=${filtro.zona},estado=${filtro.estado})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700"
+               title="Exportar listado a Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Excel</span>
+            </a>
+
+            <!-- Botón Exportar PDF -->
+            <a th:href="@{/dashboard/tributaria/predios/exportar/pdf(query=${filtro.query},clasificacion=${filtro.clasificacion},uso=${filtro.uso},sector=${filtro.sector},zona=${filtro.zona},estado=${filtro.estado})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700"
+               title="Exportar listado a PDF">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>PDF</span>
+            </a>
+
+            <!-- Botón Registrar Predio -->
+            <a th:href="@{/dashboard/tributaria/predios/nuevo}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md hover:shadow-blue-600/20 flex items-center space-x-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Registrar predio</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Estadísticos Reales de Base de Datos -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Total de Predios</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-white" th:text="${estadisticas.total}">0</span>
+                <i data-lucide="home" class="w-4 h-4 text-blue-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Predios Urbanos</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-emerald-400" th:text="${estadisticas.urbanos}">0</span>
+                <i data-lucide="building" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Predios Rurales</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-amber-400" th:text="${estadisticas.rurales}">0</span>
+                <i data-lucide="trees" class="w-4 h-4 text-amber-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Predios Activos</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-teal-400" th:text="${estadisticas.activos}">0</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 flex flex-col justify-between">
+            <span class="text-xs text-slate-400 font-medium">Predios Observados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-rose-400" th:text="${estadisticas.observados}">0</span>
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador y Filtros Avanzados -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+        <form th:action="@{/dashboard/tributaria/predios}" method="GET" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div class="lg:col-span-2">
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Búsqueda rápida</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" name="query" th:value="${filtro.query}" placeholder="Código, catastro, dirección..."
+                               class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Clasificación</label>
+                    <select name="clasificacion" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todas las clases</option>
+                        <option th:each="c : ${clasificaciones}" th:value="${c}" th:text="${c.name()}"
+                                th:selected="${filtro.clasificacion == c}">URBANO</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Uso Declarado</label>
+                    <select name="uso" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todos los usos</option>
+                        <option th:each="u : ${usos}" th:value="${u}" th:text="${u.nombre}"
+                                th:selected="${filtro.uso == u}">Vivienda</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado</label>
+                    <select name="estado" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">Todos los estados</option>
+                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.name()}"
+                                th:selected="${filtro.estado == e}">ACTIVO</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center space-x-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Filtrar</span>
+                    </button>
+                    <a th:href="@{/dashboard/tributaria/predios}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs transition-colors flex items-center justify-center" title="Limpiar filtros">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Predios -->
+    <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+        <div th:if="${predios.isEmpty()}" class="p-12 text-center text-slate-400">
+            <i data-lucide="home" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+            <p class="text-sm font-medium">No se encontraron predios registrados</p>
+            <p class="text-xs text-slate-500 mt-1">Intente ajustar los filtros de búsqueda o registre un nuevo predio municipal.</p>
+            <div class="mt-4">
+                <a th:href="@{/dashboard/tributaria/predios/nuevo}"
+                   sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                   class="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Registrar predio</span>
+                </a>
+            </div>
+        </div>
+
+        <div th:unless="${predios.isEmpty()}" class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Cód. Catastral</th>
+                        <th class="px-4 py-3">Dirección o Referencia</th>
+                        <th class="px-4 py-3">Tipo / Clasif.</th>
+                        <th class="px-4 py-3">Área Terreno</th>
+                        <th class="px-4 py-3">Área Const.</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:each="p : ${predios.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-blue-400">
+                            <a th:href="@{/dashboard/tributaria/predios/{id}(id=${p.id})}" class="hover:underline flex items-center space-x-1">
+                                <span th:text="${p.codigoPredio}">PR-000001</span>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 font-mono text-slate-300">
+                            <span th:if="${p.codigoCatastral != null and !p.codigoCatastral.isBlank()}" th:text="${p.codigoCatastral}">05011001001</span>
+                            <span th:unless="${p.codigoCatastral != null and !p.codigoCatastral.isBlank()}" class="text-slate-600 italic">Sin catastro</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-slate-200 font-medium max-w-xs truncate" th:text="${p.direccion}">Jr. Sucre N° 120, Quinua</div>
+                            <div class="text-[10px] text-slate-500" th:if="${p.sectorNombre != null or p.referencia != null}">
+                                <span th:text="${p.sectorNombre}">Sector 1</span>
+                                <span th:if="${p.referencia != null}" th:text="' • ' + ${p.referencia}">Ref: Frente a la plaza</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium"
+                                  th:classappend="${p.tipoPredio == 'RURAL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}"
+                                  th:text="${p.tipoPredio}">URBANO</span>
+                        </td>
+                        <td class="px-4 py-3 font-mono text-slate-300">
+                            <span th:text="${#numbers.formatDecimal(p.areaTerreno, 1, 2) + ' ' + (p.unidadMedidaArea != null ? p.unidadMedidaArea : 'M2')}">250.00 M2</span>
+                        </td>
+                        <td class="px-4 py-3 font-mono text-slate-400">
+                            <span th:text="${#numbers.formatDecimal(p.areaConstruida, 1, 2) + ' ' + (p.unidadMedidaArea != null ? p.unidadMedidaArea : 'M2')}">120.00 M2</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span th:class="${'px-2 py-0.5 rounded text-[10px] font-semibold border ' + p.badgeClass}"
+                                  th:text="${p.estado}">ACTIVO</span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end space-x-1.5">
+                                <a th:href="@{/dashboard/tributaria/predios/{id}(id=${p.id})}"
+                                   class="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-blue-400 rounded transition-colors"
+                                   title="Ver Ficha Predial">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                                <a th:href="@{/dashboard/tributaria/predios/{id}/editar(id=${p.id})}"
+                                   sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                                   class="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded transition-colors"
+                                   title="Editar Predio">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${predios.totalPages > 1}" class="px-4 py-3 bg-slate-900/40 border-t border-theme flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div>
+                Mostrando página <span class="font-bold text-slate-200" th:text="${predios.number + 1}">1</span> de <span class="font-bold text-slate-200" th:text="${predios.totalPages}">10</span>
+                (<span th:text="${predios.totalElements}">100</span> predios en total)
+            </div>
+            <div class="flex items-center space-x-1">
+                <a th:if="${predios.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/predios(page=${predios.number - 1},query=${filtro.query},clasificacion=${filtro.clasificacion},uso=${filtro.uso},estado=${filtro.estado})}"
+                   class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors">
+                    Anterior
+                </a>
+                <span class="px-2 py-1 text-slate-500">|</span>
+                <a th:if="${predios.hasNext()}"
+                   th:href="@{/dashboard/tributaria/predios(page=${predios.number + 1},query=${filtro.query},clasificacion=${filtro.clasificacion},uso=${filtro.uso},estado=${filtro.estado})}"
+                   class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

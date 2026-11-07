@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Centro de Reportes y Estadísticas — Mercados Municipales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional y Breadcrumb -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Mercados Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-blue-400 font-semibold">Centro de Reportes</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-500"></i>
+                <span>Centro de Reportes, Estadísticas y Analítica</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Inteligencia de negocios, analítica institucional, auditoría financiera y generación de padrones en PDF/Excel para la Municipalidad Distrital de Quinua.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <a th:href="@{/dashboard/mercados/reportes/exportaciones}"
+               class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 border border-theme transition-colors shadow-sm">
+                <i data-lucide="history" class="w-4 h-4 mr-1.5 text-blue-400"></i>
+                Historial de Exportaciones
+            </a>
+            <a th:href="@{/dashboard/mercados/reportes/ejecutivo}"
+               class="inline-flex items-center px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1.5"></i>
+                Dashboard Ejecutivo
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Indicadores Consolidados (Mes Actual) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Mercados Activos</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-white" th:text="${kpis.mercadosActivos}">0</span>
+                <span class="text-[10px] text-emerald-400 font-medium">Operativos</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Puestos Totales</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-white" th:text="${kpis.totalPuestos}">0</span>
+                <span class="text-[10px] text-blue-400 font-medium" th:text="${kpis.puestosOcupados} + ' ocup.'">0 ocup.</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tasa Ocupación</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-white" th:text="${kpis.porcentajeOcupacionTexto}">0.0%</span>
+                <span class="text-[10px] text-indigo-400 font-medium">Efectiva</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Comerciantes</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-white" th:text="${kpis.totalComerciantes}">0</span>
+                <span class="text-[10px] text-slate-400 font-medium">Titulares</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Recaudación Neta</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-emerald-400" th:text="'S/ ' + ${kpis.recaudacionPeriodo}">S/ 0.00</span>
+                <span class="text-[10px] text-slate-400 font-medium">Mes</span>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Incidencias</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xl font-bold text-amber-400" th:text="${kpis.incidenciasAbiertas}">0</span>
+                <span class="text-[10px] text-amber-400/80 font-medium">Abiertas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catálogo de Categorías de Reportes -->
+    <div>
+        <h2 class="text-base font-bold text-white mb-3.5 flex items-center space-x-2">
+            <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+            <span>Módulos y Categorías de Reportes Institucionales</span>
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- 1. Ocupación y Puestos -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-blue-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="store" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Infraestructura</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Puestos y Ocupación Comercial</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Tasa de ocupación por mercado, sector y pabellón. Padrón oficial de puestos disponibles, ocupados y en mantenimiento.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <div class="space-x-2">
+                        <a th:href="@{/dashboard/mercados/reportes/ocupacion}" class="text-xs text-blue-400 hover:text-blue-300 font-medium">Ocupación &rarr;</a>
+                        <span class="text-slate-600">|</span>
+                        <a th:href="@{/dashboard/mercados/reportes/puestos}" class="text-xs text-blue-400 hover:text-blue-300 font-medium">Puestos &rarr;</a>
+                    </div>
+                    <button onclick="abrirModalExportar('OCUPACION')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Padrón de Comerciantes -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-indigo-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Padrón</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Comerciantes y Titularidades</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Padrón general de comerciantes naturales y jurídicos, giros comerciales, asignaciones activas y protección de datos sensibles.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/comerciantes}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">Ver Padrón &rarr;</a>
+                    <button onclick="abrirModalExportar('COMERCIANTES')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Contratos y Asignaciones -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-emerald-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="file-check-2" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Legal</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Contratos y Autorizaciones</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Actos jurídicos de ocupación formal, contratos vigentes, autorizaciones comerciales y modalidades de merced conductiva.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <div class="space-x-2">
+                        <a th:href="@{/dashboard/mercados/reportes/contratos}" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Contratos &rarr;</a>
+                        <span class="text-slate-600">|</span>
+                        <a th:href="@{/dashboard/mercados/reportes/autorizaciones}" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Licencias &rarr;</a>
+                    </div>
+                    <button onclick="abrirModalExportar('CONTRATOS')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Vencimientos Legales -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-rose-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="calendar-alert" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Vigencia</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Vencimientos y Alertas</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Instrumentos próximos a expirar en 30 y 60 días, contratos vencidos sin renovación y gestión preventiva de vigencias.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/vencimientos}" class="text-xs text-rose-400 hover:text-rose-300 font-medium">Alertas de Vencimiento &rarr;</a>
+                    <button onclick="abrirModalExportar('VENCIMIENTOS')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Recaudación y Finanzas -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Finanzas</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">Recaudación y Amortizaciones</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Ingresos efectivos por merced conductiva y servicios conexos, medios de pago, recaudación por caja y arqueos conciliados.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/recaudacion}" class="text-xs text-amber-400 hover:text-amber-300 font-medium">Ver Recaudación &rarr;</a>
+                    <button onclick="abrirModalExportar('RECAUDACION')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 6. Deudas y Antigüedad de Saldos -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-orange-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">Morosidad</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">Deudas y Antigüedad de Saldos</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Clasificación de obligaciones morosas en rangos (corriente, 1-30, 31-60, >60 días). Cartera morosa institucional.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/deudas}" class="text-xs text-orange-400 hover:text-orange-300 font-medium">Estado de Deuda &rarr;</a>
+                    <button onclick="abrirModalExportar('DEUDAS')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 7. Fiscalización e Inspecciones -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-cyan-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Control</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Inspecciones y Hallazgos</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Operativos sanitarios, de pesos y medidas, control estructural, actas de fiscalización y medidas correctivas dictadas.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/inspecciones}" class="text-xs text-cyan-400 hover:text-cyan-300 font-medium">Ver Inspecciones &rarr;</a>
+                    <button onclick="abrirModalExportar('INSPECCIONES')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 8. Incidencias Operativas -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-purple-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Operaciones</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">Incidencias y Reclamos</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Registro de incidentes de seguridad, servicios básicos, salubridad y tiempos de resolución de la administración del mercado.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/incidencias}" class="text-xs text-purple-400 hover:text-purple-300 font-medium">Ver Incidencias &rarr;</a>
+                    <button onclick="abrirModalExportar('INCIDENCIAS')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 9. Renovaciones y Cambios de Titular -->
+            <div class="bg-card border border-theme rounded-xl p-5 hover:border-teal-500/50 transition-all flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20 group-hover:scale-110 transition-transform">
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">Trámites</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white group-hover:text-teal-400 transition-colors">Renovaciones y Transferencias</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        Control de solicitudes de prórroga contractual, transferencias de titularidad, herencias y regularizaciones administrativas.
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between">
+                    <a th:href="@{/dashboard/mercados/reportes/renovaciones}" class="text-xs text-teal-400 hover:text-teal-300 font-medium">Ver Renovaciones &rarr;</a>
+                    <button onclick="abrirModalExportar('RENOVACIONES')" class="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Exportar">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Sección de Últimas Exportaciones Realizadas -->
+    <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+                <h3 class="text-sm font-bold text-white">Últimas Exportaciones Generadas</h3>
+            </div>
+            <a th:href="@{/dashboard/mercados/reportes/exportaciones}" class="text-xs text-blue-400 hover:underline">Ver historial completo &rarr;</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(ultimasExportaciones)}" class="text-center py-6 text-slate-400 text-xs">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+            No se han registrado exportaciones recientes.
+        </div>
+
+        <div th:unless="${#lists.isEmpty(ultimasExportaciones)}" class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/60 border-b border-theme">
+                    <tr>
+                        <th class="px-3 py-2">Tipo de Reporte</th>
+                        <th class="px-3 py-2">Formato</th>
+                        <th class="px-3 py-2">Mercado</th>
+                        <th class="px-3 py-2">Fecha y Hora</th>
+                        <th class="px-3 py-2">Registros</th>
+                        <th class="px-3 py-2 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/60">
+                    <tr th:each="exp : ${ultimasExportaciones}" class="hover:bg-slate-800/40">
+                        <td class="px-3 py-2.5 font-medium text-white" th:text="${exp.tipoReporteTitulo}">Reporte</td>
+                        <td class="px-3 py-2.5">
+                            <span th:class="${exp.formato.name() == 'EXCEL' ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20'}"
+                                  th:text="${exp.formato}">XLSX</span>
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-300" th:text="${exp.mercadoNombre}">Todos</td>
+                        <td class="px-3 py-2.5 text-slate-400" th:text="${#temporals.format(exp.fechaGeneracion, 'dd/MM/yyyy HH:mm')}">-</td>
+                        <td class="px-3 py-2.5 text-slate-300" th:text="${exp.cantidadRegistros}">0</td>
+                        <td class="px-3 py-2.5 text-right">
+                            <a th:href="@{${exp.urlDescarga}}" class="inline-flex items-center px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-400 text-[11px] font-medium border border-theme">
+                                <i data-lucide="download" class="w-3 h-3 mr-1"></i> Descargar
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Exportación Rápida -->
+    <div id="modalExportar" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-3 border-b border-theme">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="download-cloud" class="w-5 h-5 text-blue-400"></i>
+                    <h3 class="text-sm font-bold text-white">Exportación Rápida de Reporte</h3>
+                </div>
+                <button onclick="cerrarModalExportar()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formExportar" class="mt-4 space-y-4">
+                <input type="hidden" id="expTipoReporte" name="tipoReporte">
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Mercado</label>
+                    <select id="expMercadoId" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option value="">Todos los Mercados</option>
+                        <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Período</label>
+                    <select id="expPeriodo" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option th:each="p : ${periodos}" th:value="${p}" th:text="${p.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Formato</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-theme bg-slate-900 cursor-pointer hover:border-emerald-500">
+                            <input type="radio" name="expFormato" value="EXCEL" checked class="text-emerald-500 focus:ring-0">
+                            <span class="text-xs font-medium text-slate-200 flex items-center">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1 text-emerald-400"></i> Excel (.xlsx)
+                            </span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-theme bg-slate-900 cursor-pointer hover:border-rose-500">
+                            <input type="radio" name="expFormato" value="PDF" class="text-rose-500 focus:ring-0">
+                            <span class="text-xs font-medium text-slate-200 flex items-center">
+                                <i data-lucide="file-text" class="w-4 h-4 mr-1 text-rose-400"></i> PDF Oficial
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-theme flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModalExportar()" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+                    <button type="button" onclick="ejecutarExportacion()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 flex items-center">
+                        <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Generar y Descargar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    function abrirModalExportar(tipo) {
+        document.getElementById('expTipoReporte').value = tipo;
+        document.getElementById('modalExportar').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalExportar() {
+        document.getElementById('modalExportar').classList.add('hidden');
+    }
+
+    async function ejecutarExportacion() {
+        const tipoReporte = document.getElementById('expTipoReporte').value;
+        const mercadoId = document.getElementById('expMercadoId').value || null;
+        const periodo = document.getElementById('expPeriodo').value;
+        const formato = document.querySelector('input[name="expFormato"]:checked').value;
+
+        const requestPayload = {
+            tipoReporte: tipoReporte,
+            formato: formato,
+            filtro: {
+                mercadoId: mercadoId,
+                periodo: periodo
+            }
+        };
+
+        const url = formato === 'EXCEL' ? '/api/mercados/reportes/exportar/excel' : '/api/mercados/reportes/exportar/pdf';
+
+        const token = document.querySelector('meta[name="_csrf"]')?.content;
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(requestPayload)
+            });
+
+            if (!resp.ok) {
+                alert('No se pudo generar el reporte. Verifique permisos o conectividad.');
+                return;
+            }
+
+            const blob = await resp.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `REPORTE_${tipoReporte}.${formato === 'EXCEL' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            cerrarModalExportar();
+        } catch (e) {
+            console.error('Error exportando:', e);
+            alert('Error en la descarga del archivo');
+        }
+    }
+</script>
+</th:block>
+</body>
+</html>

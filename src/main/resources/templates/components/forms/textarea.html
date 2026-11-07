@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE TEXTAREA (Textarea)
+     ========================================================================== -->
+<div th:fragment="textarea(id, name, label, rows, value, placeholder, required, errorMsg)" class="sigm-form-group">
+    <label th:if="${!#strings.isEmpty(label)}" th:for="${id}" class="sigm-label">
+        <span th:text="${label}">Descripción</span>
+        <span th:if="${required}" class="sigm-label-required" aria-hidden="true">*</span>
+    </label>
+    <textarea th:id="${id}"
+              th:name="${name}"
+              th:rows="${rows != null ? rows : 3}"
+              th:placeholder="${placeholder}"
+              th:required="${required}"
+              th:attr="aria-invalid=${!#strings.isEmpty(errorMsg) ? 'true' : 'false'}"
+              th:classappend="${!#strings.isEmpty(errorMsg) ? 'is-invalid' : ''}"
+              class="sigm-textarea"
+              th:text="${value}"></textarea>
+    <p th:if="${!#strings.isEmpty(errorMsg)}" class="sigm-field-error" role="alert">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span th:text="${errorMsg}">Campo requerido</span>
+    </p>
+</div>
+
+</body>
+</html>
+

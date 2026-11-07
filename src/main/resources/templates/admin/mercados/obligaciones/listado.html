@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Obligaciones Comerciales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/finanzas}" class="hover:text-blue-400 transition-colors">Finanzas</a>
+                <span>/</span>
+                <span class="text-slate-200">Obligaciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Padrón de Obligaciones y Deudas Comerciales
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de cánones, merced conductiva, vencimientos, saldos y fraccionamiento en cuotas.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/obligaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_OBLIGACION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Obligación
+            </a>
+            <a th:href="@{/api/mercados/finanzas/exportar/obligaciones/excel}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+            <a th:href="@{/api/mercados/finanzas/exportar/obligaciones/pdf}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formFiltros" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Buscar Código / Titular</label>
+                <input type="text" id="filtroQ" placeholder="OBL-2026-..., DNI, Nombre"
+                       class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Mercado</label>
+                <select id="filtroMercado" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Concepto</label>
+                <select id="filtroConcepto" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Conceptos</option>
+                    <option th:each="c : ${conceptos}" th:value="${c.id}" th:text="${c.nombre}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select id="filtroEstado" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option value="PENDIENTE">PENDIENTE</option>
+                    <option value="PARCIALMENTE_PAGADA">PARCIALMENTE PAGADA</option>
+                    <option value="PAGADA">PAGADA</option>
+                    <option value="VENCIDA">VENCIDA</option>
+                    <option value="ANULADA">ANULADA</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="button" onclick="cargarObligaciones(0)"
+                        class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Dinámica de Obligaciones -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-5 py-3.5">Código Obligación</th>
+                        <th class="px-5 py-3.5">Comerciante Titular</th>
+                        <th class="px-5 py-3.5">Puesto / Mercado</th>
+                        <th class="px-5 py-3.5">Concepto</th>
+                        <th class="px-5 py-3.5 text-right">Monto Original</th>
+                        <th class="px-5 py-3.5 text-right">Saldo Pendiente</th>
+                        <th class="px-5 py-3.5">Vencimiento</th>
+                        <th class="px-5 py-3.5 text-center">Estado</th>
+                        <th class="px-5 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyObligaciones" class="divide-y divide-[#334155]/40 font-medium">
+                    <!-- Filas renderizadas vía JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div id="paginacionObligaciones" class="flex justify-between items-center px-5 py-4 border-t border-[#334155]/60 text-xs text-slate-400">
+            <!-- Paginación dinámica -->
+        </div>
+    </div>
+
+    <script th:src="@{/js/mercados/obligaciones-listado.js}"></script>
+</div>
+</body>
+</html>

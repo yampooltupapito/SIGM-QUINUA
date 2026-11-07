@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title th:text="'Seguimiento ' + ${detalle.codigoSeguimiento} + ' — Serenazgo Quinua'">Detalle de Alerta</title>
+</head>
+<body>
+<div layout:fragment="content" class="py-10 bg-slate-50 min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+        <!-- Mensajes Flash -->
+        <div th:if="${mensajeExito}" class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                <span th:text="${mensajeExito}">Operación exitosa.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div th:if="${mensajeError}" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600"></i>
+                <span th:text="${mensajeError}">Ocurrió un error.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <!-- Encabezado de la Alerta -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-6">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-lg font-bold text-blue-700" th:text="${detalle.codigoSeguimiento}">ALT-2026-00001</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold"
+                              th:classappend="${detalle.estado.name() == 'RECIBIDA' ? 'bg-blue-100 text-blue-700' :
+                                              (detalle.estado.name() == 'EN_REVISION' ? 'bg-amber-100 text-amber-700' :
+                                              (detalle.estado.name() == 'REQUIERE_INFORMACION' ? 'bg-rose-100 text-rose-700' :
+                                              (detalle.estado.name() == 'VINCULADA' || detalle.estado.name() == 'CONVERTIDA_EN_INCIDENCIA' ? 'bg-indigo-100 text-indigo-700' :
+                                              (detalle.estado.name() == 'CERRADA' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'))))}"
+                              th:text="${detalle.estado}">RECIBIDA</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Registrado el <span th:text="${#temporals.format(detalle.fechaRecepcion, 'dd/MM/yyyy HH:mm')}">25/10/2026 10:30</span>
+                        vía <span th:text="${detalle.canalRecepcion}">PORTAL_CIUDADANO</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a th:href="@{/portal/seguridad/seguimiento}" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span>Nueva Consulta</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen Informativo para el Ciudadano -->
+            <div class="mt-6 space-y-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tipo de Situación</span>
+                    <p class="text-sm font-semibold text-slate-800" th:text="${detalle.tipoReporteNombre}">Ruidos Molestos</p>
+                </div>
+
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Título</span>
+                    <h2 class="text-base font-bold text-slate-900" th:text="${detalle.titulo}">Reporte de música a alto volumen</h2>
+                </div>
+
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Descripción</span>
+                    <p class="text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 leading-relaxed" th:text="${detalle.descripcion}">
+                        Descripción detallada...
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Ubicación</span>
+                        <p class="text-xs text-slate-800 mt-0.5" th:text="${detalle.ubicacionDescripcion}">Jr. Sucre cuadra 3</p>
+                    </div>
+                    <div th:if="${detalle.sectorNombre}">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Sector Referencial</span>
+                        <p class="text-xs text-slate-800 mt-0.5" th:text="${detalle.sectorNombre}">Sector 1 - Casco Urbano</p>
+                    </div>
+                </div>
+
+                <!-- Resultado Administrativo si está Cerrada -->
+                <div th:if="${detalle.resultadoCiudadano != null and !detalle.resultadoCiudadano.isEmpty()}" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                    <span class="font-bold uppercase tracking-wider text-emerald-800 block">Resultado Administrativo Municipal</span>
+                    <p th:text="${detalle.resultadoCiudadano}">La situación fue inspeccionada por personal de Serenazgo en ronda preventiva.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: SOLICITUD DE INFORMACIÓN COMPLEMENTARIA ACTIVA -->
+        <div th:each="sol : ${detalle.solicitudesInfo}" th:if="${sol.estado.name() == 'PENDIENTE'}" class="bg-amber-50 rounded-3xl shadow-sm border border-amber-300 p-6 sm:p-8 space-y-4">
+            <div class="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                <i data-lucide="help-circle" class="w-5 h-5 text-amber-600"></i>
+                <span>La Municipalidad solicita información complementaria</span>
+            </div>
+            <p class="text-xs text-amber-800 leading-relaxed bg-white/60 p-4 rounded-xl border border-amber-200" th:text="${sol.requerimiento}">
+                Por favor, indique si la situación continúa y precise la altura exacta de la vía pública.
+            </p>
+
+            <form th:action="@{/portal/seguridad/responder-solicitud}" method="POST" class="space-y-3 pt-2">
+                <input type="hidden" name="codigo" th:value="${detalle.codigoSeguimiento}">
+                <input type="hidden" name="solicitudId" th:value="${sol.id}">
+                <input type="hidden" name="pinConsulta" th:value="${pinUsado}">
+
+                <label class="block text-xs font-bold text-slate-700">Tu respuesta o aclaración complementaria <span class="text-rose-500">*</span></label>
+                <textarea name="respuesta" rows="3" required maxlength="1000" placeholder="Escribe aquí los datos adicionales solicitados..." class="w-full text-xs rounded-xl border border-amber-300 py-2.5 px-3 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"></textarea>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-600/20">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Remitir Aclaración a Serenazgo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- LÍNEA DE TIEMPO CIUDADANA (SOLO EVENTOS VISIBLES) -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-8">
+            <h3 class="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <i data-lucide="milestone" class="w-4 h-4 text-blue-600"></i>
+                Evolución y Actuaciones Administrativas
+            </h3>
+
+            <div class="relative pl-6 border-l-2 border-slate-200 space-y-6">
+                <div th:each="ev : ${detalle.historial}" class="relative">
+                    <div class="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow"></div>
+                    <div class="text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-800" th:text="${ev.tipoEvento}">RECEPCION</span>
+                            <span class="text-[10px] text-slate-400" th:text="${#temporals.format(ev.fechaHora, 'dd/MM/yyyy HH:mm')}">25/10/2026 10:30</span>
+                        </div>
+                        <p class="text-slate-600 mt-1" th:text="${ev.observacionesCiudadano}">Evento registrado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

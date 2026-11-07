@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+    <title layout:title-pattern="$LAYOUT_TITLE — $CONTENT_TITLE">Portal del Comerciante — Municipalidad Distrital de Quinua</title>
+
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --sidebar-bg: #ffffff;
+            --content-bg: #f8fafc;
+        }
+        body {
+            background-color: var(--content-bg);
+            color: #1e293b;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+    </style>
+    <th:block layout:fragment="page-css"></th:block>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Topbar Institucional Ciudadano -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+                <button type="button" id="btnToggleSidebar" aria-expanded="false" aria-controls="sidebarNav"
+                        class="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100" aria-label="Abrir menú de navegación">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <a th:href="@{/portal/comerciante/dashboard}" class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm flex-shrink-0">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Municipalidad de Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <span class="block text-sm font-bold text-slate-900 tracking-tight leading-none">MUNICIPALIDAD DE QUINUA</span>
+                        <span class="block text-xs font-semibold text-blue-600 uppercase tracking-wider">Portal del Comerciante</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Acciones de Usuario y Contexto Comercial -->
+            <div class="flex items-center gap-3">
+                <a th:href="@{/portal/comerciante/notificaciones}" class="relative p-2 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors" title="Notificaciones" aria-label="Notificaciones">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="badgeNotificaciones" class="hidden absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+                </a>
+                <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                <a th:href="@{/portal/comerciante/perfil}" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-medium text-slate-700 hidden md:inline">Mi Cuenta</span>
+                </a>
+                <a th:href="@{/}" class="text-xs text-slate-500 hover:text-slate-800 hidden sm:inline-flex items-center gap-1 font-medium">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Salir
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
+
+        <!-- Sidebar de Navegación Lateral -->
+        <aside id="sidebarNav" class="w-64 bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between shrink-0 hidden lg:flex sticky top-22 self-start h-[calc(100vh-7rem)] overflow-y-auto">
+            <nav class="space-y-1" aria-label="Navegación del portal">
+                <a th:href="@{/portal/comerciante/dashboard}" th:classappend="${activeMenu == 'dashboard' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                </a>
+                <a th:href="@{/portal/comerciante/perfil}" th:classappend="${activeMenu == 'perfil' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="user" class="w-4 h-4"></i> Mi Perfil
+                </a>
+                <a th:href="@{/portal/comerciante/puestos}" th:classappend="${activeMenu == 'puestos' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="store" class="w-4 h-4"></i> Mis Puestos
+                </a>
+                <a th:href="@{/portal/comerciante/asignaciones}" th:classappend="${activeMenu == 'asignaciones' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="key-round" class="w-4 h-4"></i> Asignaciones
+                </a>
+                <a th:href="@{/portal/comerciante/contratos}" th:classappend="${activeMenu == 'contratos' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="file-signature" class="w-4 h-4"></i> Contratos
+                </a>
+                <a th:href="@{/portal/comerciante/autorizaciones}" th:classappend="${activeMenu == 'autorizaciones' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="badge-check" class="w-4 h-4"></i> Autorizaciones
+                </a>
+                <a th:href="@{/portal/comerciante/obligaciones}" th:classappend="${activeMenu == 'obligaciones' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="receipt" class="w-4 h-4"></i> Obligaciones
+                </a>
+                <a th:href="@{/portal/comerciante/pagos}" th:classappend="${activeMenu == 'pagos' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i> Mis Pagos
+                </a>
+                <a th:href="@{/portal/comerciante/estado-cuenta}" th:classappend="${activeMenu == 'estado-cuenta' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Estado de Cuenta
+                </a>
+                <a th:href="@{/portal/comerciante/solicitudes}" th:classappend="${activeMenu == 'solicitudes' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="send" class="w-4 h-4"></i> Solicitudes
+                </a>
+                <a th:href="@{/portal/comerciante/inspecciones}" th:classappend="${activeMenu == 'inspecciones' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="clipboard-check" class="w-4 h-4"></i> Inspecciones
+                </a>
+                <a th:href="@{/portal/comerciante/incidencias}" th:classappend="${activeMenu == 'incidencias' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Incidencias
+                </a>
+                <a th:href="@{/portal/comerciante/documentos}" th:classappend="${activeMenu == 'documentos' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="folder-down" class="w-4 h-4"></i> Documentos
+                </a>
+                <a th:href="@{/portal/comerciante/plano}" th:classappend="${activeMenu == 'plano' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="map" class="w-4 h-4"></i> Plano del Mercado
+                </a>
+                <a th:href="@{/portal/comerciante/ayuda}" th:classappend="${activeMenu == 'ayuda' ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i> Ayuda y Canales
+                </a>
+            </nav>
+
+            <div class="pt-4 border-t border-slate-100 text-xs text-slate-500">
+                <p class="font-medium text-slate-700">Atención Municipal</p>
+                <p>Lun - Vie: 8:00 a 16:30</p>
+                <p class="mt-1 font-mono text-[11px] text-blue-600">Quinua, Ayacucho</p>
+            </div>
+        </aside>
+
+        <!-- Contenido Central de Página -->
+        <main class="flex-1 min-w-0" layout:fragment="content">
+            <!-- Bloque reemplazado por la vista específica -->
+        </main>
+    </div>
+
+    <!-- Pie Institucional -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <p class="font-medium text-slate-700">Municipalidad Distrital de Quinua — Gestión Integral de Mercados Municipales</p>
+            <p class="mt-1">Provincia de Huamanga, Departamento de Ayacucho, Perú • Sistema SIGM-QUINUA</p>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+            const btnToggle = document.getElementById("btnToggleSidebar");
+            const sidebar = document.getElementById("sidebarNav");
+            if (btnToggle && sidebar) {
+                btnToggle.addEventListener("click", function() {
+                    const isHidden = sidebar.classList.toggle("hidden");
+                    btnToggle.setAttribute("aria-expanded", String(!isHidden));
+                });
+            }
+        });
+    </script>
+    <th:block layout:fragment="scripts"></th:block>
+    <th:block layout:fragment="page-scripts"></th:block>
+</body>
+</html>

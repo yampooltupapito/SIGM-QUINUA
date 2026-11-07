@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Registrar Nuevo Contribuyente — Recaudación Tributaria | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Mensaje de Error -->
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error en la validación de datos</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="border-b border-theme pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/contribuyentes}" class="hover:text-blue-400 transition-colors">Padrón de Contribuyentes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Nuevo Registro</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="user-plus" class="w-6 h-6 text-blue-500"></i>
+                <span>Registrar Contribuyente Tributario</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Alta en el padrón municipal distrital con asignación de código correlativo único y validación de duplicados.
+            </p>
+        </div>
+
+        <a th:href="@{/dashboard/tributaria/contribuyentes}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors border border-slate-700 flex items-center space-x-1.5 self-start">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver al Padrón</span>
+        </a>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form th:action="@{/dashboard/tributaria/contribuyentes}" th:object="${request}" method="POST" id="formContribuyente" class="space-y-6">
+
+        <!-- 1. Clasificación del Contribuyente -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2.5">
+                <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+                <span>1. Tipo de Sujeto Pasivo</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Contribuyente <span class="text-rose-400">*</span></label>
+                    <select th:field="*{tipoContribuyente}" id="selectTipoContribuyente" onchange="toggleTipoContribuyente()"
+                            class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="t : ${tiposContribuyente}" th:value="${t}" th:text="${t.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Oficina de Registro</label>
+                    <select th:field="*{oficinaRegistroId}"
+                            class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="">-- Oficina Central / Rentas --</option>
+                        <option th:each="of : ${oficinas}" th:value="${of.id}" th:text="${of.nombre}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Documento de Identidad y Verificación -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-2.5">
+                <div class="flex items-center space-x-2 text-sm font-semibold text-white">
+                    <i data-lucide="badge-check" class="w-4 h-4 text-blue-400"></i>
+                    <span>2. Identificación Oficial</span>
+                </div>
+                <span id="badgeValidacion" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-medium border"></span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Documento <span class="text-rose-400">*</span></label>
+                    <select th:field="*{tipoDocumento}" id="tipoDocumento" onchange="validarFormatoDocumento()"
+                            class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="DNI">DNI (Persona Natural)</option>
+                        <option value="RUC">RUC (Persona Natural / Jurídica)</option>
+                        <option value="CE">Carnet de Extranjería</option>
+                        <option value="PASAPORTE">Pasaporte</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Número de Documento <span class="text-rose-400">*</span></label>
+                    <div class="relative">
+                        <input type="text" th:field="*{numeroDocumento}" id="numeroDocumento" oninput="validarFormatoDocumento()"
+                               placeholder="Ej: 41234567 para DNI o 20601234567 para RUC"
+                               class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:border-blue-500 transition-colors">
+                        <button type="button" onclick="verificarDuplicadoAjax()"
+                                class="absolute right-1.5 top-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 rounded text-[11px] font-medium transition-colors">
+                            Verificar
+                        </button>
+                    </div>
+                    <p id="msgValidacionDoc" class="text-[11px] text-slate-400 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Banner de Duplicados o Advertencias -->
+            <div id="bannerDuplicados" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-xs">
+                <div class="flex items-start space-x-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <span class="font-semibold block" id="bannerDuplicadosTitulo">Advertencia de coincidencia</span>
+                        <span id="bannerDuplicadosTexto"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Datos de Persona Natural -->
+        <div id="seccionPersonaNatural" class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2.5">
+                <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
+                <span>3. Datos de la Persona Natural</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Primer Apellido (Paterno) <span class="text-rose-400">*</span></label>
+                    <input type="text" th:field="*{primerApellido}" id="primerApellido" placeholder="Ej: QUISPE"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 uppercase focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Segundo Apellido (Materno)</label>
+                    <input type="text" th:field="*{segundoApellido}" id="segundoApellido" placeholder="Ej: FLORES"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 uppercase focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Nombres <span class="text-rose-400">*</span></label>
+                    <input type="text" th:field="*{nombres}" id="nombres" placeholder="Ej: JUAN CARLOS"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Datos de Persona Jurídica -->
+        <div id="seccionPersonaJuridica" class="hidden bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2.5">
+                <i data-lucide="building-2" class="w-4 h-4 text-indigo-400"></i>
+                <span>3. Datos de la Persona Jurídica / Razón Social</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Razón Social Oficial <span class="text-rose-400">*</span></label>
+                    <input type="text" th:field="*{nombreRazonSocial}" id="nombreRazonSocial" placeholder="Ej: COOPERATIVA AGRARIA QUINUA LTDA"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 uppercase focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Nombre Comercial</label>
+                    <input type="text" th:field="*{nombreComercial}" placeholder="Ej: ARTESANÍAS QUINUA"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Representante Legal Declarado</label>
+                    <input type="text" th:field="*{representanteLegalNombre}" placeholder="Ej: CARLOS MENDOZA HUAMÁN"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Domicilio Fiscal / Rural Inicial -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2.5">
+                <i data-lucide="map-pin" class="w-4 h-4 text-blue-400"></i>
+                <span>4. Domicilio Fiscal Declarado</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">C.P. / Comunidad Campesina (Quinua)</label>
+                    <input type="text" th:field="*{comunidadCentroPoblado}" placeholder="Ej: Suso, Muruncancha, Huayllapampa..."
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo y Nombre de Vía</label>
+                    <input type="text" th:field="*{nombreVia}" placeholder="Ej: Jr. Sucre, Av. Las Heroínas..."
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">N° Municipal / Mz. Lt.</label>
+                    <input type="text" th:field="*{numeroMunicipal}" placeholder="Ej: 145 o Mz B Lt 4 (o S/N)"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Referencia de Ubicación</label>
+                    <input type="text" th:field="*{referenciaDomicilio}" placeholder="Ej: Frente al Obelisco de la Pampa de Quinua, a espaldas del Museo..."
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Canales de Contacto Iniciales -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2.5">
+                <i data-lucide="phone-call" class="w-4 h-4 text-blue-400"></i>
+                <span>5. Medios de Contacto y Notificación</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Teléfono Celular Principal</label>
+                    <input type="text" th:field="*{telefono}" placeholder="Ej: 966123456"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Correo Electrónico</label>
+                    <input type="email" th:field="*{correo}" placeholder="contribuyente@correo.com"
+                           class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Medio Preferido de Aviso</label>
+                    <select th:field="*{medioContactoPreferido}"
+                            class="w-full px-3.5 py-2.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="m : ${mediosContacto}" th:value="${m}" th:text="${m.descripcion}"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end space-x-3 pt-3">
+            <a th:href="@{/dashboard/tributaria/contribuyentes}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors border border-slate-700">
+                Cancelar
+            </a>
+            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md hover:shadow-blue-600/20 flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Confirmar y Guardar Contribuyente</span>
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- Script Nativo de Validación y Dinamismo -->
+<script layout:fragment="scripts">
+    function toggleTipoContribuyente() {
+        const tipo = document.getElementById('selectTipoContribuyente').value;
+        const secNatural = document.getElementById('seccionPersonaNatural');
+        const secJuridica = document.getElementById('seccionPersonaJuridica');
+        const tipoDoc = document.getElementById('tipoDocumento');
+
+        if (tipo === 'PERSONA_JURIDICA') {
+            secNatural.classList.add('hidden');
+            secJuridica.classList.remove('hidden');
+            tipoDoc.value = 'RUC';
+        } else {
+            secNatural.classList.remove('hidden');
+            secJuridica.classList.add('hidden');
+            if (tipoDoc.value === 'RUC') {
+                tipoDoc.value = 'DNI';
+            }
+        }
+        validarFormatoDocumento();
+    }
+
+    function validarFormatoDocumento() {
+        const tipo = document.getElementById('tipoDocumento').value;
+        const num = document.getElementById('numeroDocumento').value.trim();
+        const msg = document.getElementById('msgValidacionDoc');
+        const badge = document.getElementById('badgeValidacion');
+
+        badge.classList.remove('hidden', 'bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20', 'bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+
+        if (!num) {
+            msg.textContent = '';
+            badge.classList.add('hidden');
+            return;
+        }
+
+        if (tipo === 'DNI') {
+            if (/^[0-9]{8}$/.test(num)) {
+                msg.textContent = 'DNI con formato válido (8 dígitos).';
+                msg.className = 'text-[11px] text-emerald-400 mt-1';
+                badge.textContent = 'Formato DNI Válido';
+                badge.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+            } else {
+                msg.textContent = 'El DNI debe tener exactamente 8 dígitos numéricos.';
+                msg.className = 'text-[11px] text-rose-400 mt-1';
+                badge.textContent = 'Formato Inválido';
+                badge.classList.add('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+            }
+        } else if (tipo === 'RUC') {
+            if (validarRucModulo11(num)) {
+                msg.textContent = 'RUC con estructura y dígito verificador Módulo 11 oficial SUNAT válido.';
+                msg.className = 'text-[11px] text-emerald-400 mt-1';
+                badge.textContent = 'Módulo 11 Válido';
+                badge.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+            } else {
+                msg.textContent = 'El RUC debe tener 11 dígitos, prefijo válido (10/15/16/17/20) y dígito verificador correcto.';
+                msg.className = 'text-[11px] text-rose-400 mt-1';
+                badge.textContent = 'RUC Inválido';
+                badge.classList.add('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+            }
+        } else {
+            msg.textContent = 'Documento extranjero (CE/Pasaporte).';
+            msg.className = 'text-[11px] text-slate-400 mt-1';
+            badge.classList.add('hidden');
+        }
+    }
+
+    function validarRucModulo11(ruc) {
+        if (!/^(10|15|16|17|20)[0-9]{9}$/.test(ruc)) return false;
+        const factores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+        let suma = 0;
+        for (let i = 0; i < 10; i++) {
+            suma += parseInt(ruc.charAt(i), 10) * factores[i];
+        }
+        let complemento = 11 - (suma % 11);
+        let digitoEsperado = complemento === 10 ? 0 : (complemento === 11 ? 1 : complemento);
+        return parseInt(ruc.charAt(10), 10) === digitoEsperado;
+    }
+
+    function verificarDuplicadoAjax() {
+        const tipoDoc = document.getElementById('tipoDocumento').value;
+        const numDoc = document.getElementById('numeroDocumento').value.trim();
+        const nom = document.getElementById('selectTipoContribuyente').value === 'PERSONA_NATURAL'
+                ? document.getElementById('primerApellido').value : document.getElementById('nombreRazonSocial').value;
+
+        if (!numDoc) return;
+
+        fetch(`/api/v1/tributaria/contribuyentes/verificar-duplicado?tipoDocumento=${tipoDoc}&numeroDocumento=${numDoc}&nombreRazonSocial=${encodeURIComponent(nom || '')}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const banner = document.getElementById('bannerDuplicados');
+            const titulo = document.getElementById('bannerDuplicadosTitulo');
+            const texto = document.getElementById('bannerDuplicadosTexto');
+
+            if (data.existeDuplicadoExacto) {
+                banner.classList.remove('hidden');
+                banner.className = 'p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs';
+                titulo.textContent = 'Documento Duplicado Detectado';
+                texto.textContent = data.mensajeDuplicadoExacto;
+            } else if (data.coincidenciasPotenciales && data.coincidenciasPotenciales.length > 0) {
+                banner.classList.remove('hidden');
+                banner.className = 'p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-xs';
+                titulo.textContent = 'Posibles Coincidencias en el Padrón';
+                texto.textContent = 'Se encontraron registros con nombres similares: ' + data.coincidenciasPotenciales.join(', ');
+            } else {
+                banner.classList.remove('hidden');
+                banner.className = 'p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-xs';
+                titulo.textContent = 'Documento Disponible';
+                texto.textContent = 'No existen registros previos para este documento en la base tributaria.';
+            }
+        })
+        .catch(err => console.error('Error al verificar duplicado:', err));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleTipoContribuyente();
+    });
+</script>
+</body>
+</html>

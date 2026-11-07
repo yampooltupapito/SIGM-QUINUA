@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Arbitrios Municipales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Arbitrios Municipales</h2>
+                    <p class="text-xs text-slate-500">Limpieza pública, parques y jardines, y serenazgo del distrito de Quinua</p>
+                </div>
+                <div class="text-xs text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                    Total: <strong class="text-slate-800" th:text="${obligaciones != null ? obligaciones.size() : 0}">0</strong> cuota(s)
+                </div>
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-start space-x-3 text-xs text-emerald-900">
+                <i data-lucide="sparkles" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed">
+                    <span class="font-bold">Tasas por Prestación de Servicios Públicos:</span>
+                    Los arbitrios financian el costo efectivo del mantenimiento de áreas verdes, recojo de residuos sólidos y patrullaje de serenazgo en el distrito de Quinua, ratificados formalmente por ordenanza municipal.
+                </div>
+            </div>
+
+            <!-- Tabla de Arbitrios -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Concepto Específico</th>
+                                <th class="py-3 px-4">Periodo / Mes</th>
+                                <th class="py-3 px-4">Predio Beneficiado</th>
+                                <th class="py-3 px-4">Vencimiento</th>
+                                <th class="py-3 px-4 text-right">Monto (S/)</th>
+                                <th class="py-3 px-4 text-right">Saldo (S/)</th>
+                                <th class="py-3 px-4 text-center">Estado</th>
+                                <th class="py-3 px-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${obligaciones == null || obligaciones.empty}">
+                                <td colspan="8" class="text-center py-10 text-slate-400">
+                                    <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    No registra arbitrios liquidados para el contribuyente seleccionado.
+                                </td>
+                            </tr>
+                            <tr th:each="ob : ${obligaciones}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-900 block" th:text="${ob.conceptoNombre}">Limpieza Pública</span>
+                                    <span class="text-[11px] font-mono text-slate-400" th:text="${ob.codigoObligacion}">ARB-2026-001</span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-900" th:text="${ob.anioPeriodo}">2026</span>
+                                    <span class="text-slate-500 text-[11px]" th:text="${ob.cuotaNumero != null ? ' - Mes ' + ob.cuotaNumero : ''}"></span>
+                                </td>
+                                <td class="py-3.5 px-4 text-slate-600 max-w-[220px] truncate" th:title="${ob.predioDireccion}" th:text="${ob.predioDireccion != null ? ob.predioDireccion : '—'}">Jr. Sucre 120</td>
+                                <td class="py-3.5 px-4" th:text="${#temporals.format(ob.fechaVencimiento, 'dd/MM/yyyy')}">28/02/2026</td>
+                                <td class="py-3.5 px-4 text-right font-medium text-slate-600" th:text="${#numbers.formatDecimal(ob.importeVigente, 1, 'POINT', 2, 'POINT')}">25.00</td>
+                                <td class="py-3.5 px-4 text-right font-bold"
+                                    th:classappend="${ob.saldo > 0} ? 'text-amber-600' : 'text-emerald-600'"
+                                    th:text="${#numbers.formatDecimal(ob.saldo, 1, 'POINT', 2, 'POINT')}">0.00</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <span th:if="${ob.saldo <= 0}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">PAGADO</span>
+                                    <span th:if="${ob.saldo > 0 and ob.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">VENCIDO</span>
+                                    <span th:if="${ob.saldo > 0 and !ob.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">PENDIENTE</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <a th:href="@{'/portal/tributario/obligaciones/' + ${ob.id}}" class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+</div>
+</body>
+</html>

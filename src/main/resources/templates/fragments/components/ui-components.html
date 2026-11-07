@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     1. ENCABEZADO DE PÁGINA INSTITUCIONAL (pageHeader)
+     Uso: <div th:replace="~{fragments/components/ui-components :: pageHeader('users', 'Gestión de Usuarios', 'Administración de cuentas y perfiles')}"></div>
+     ========================================================================== -->
+<div th:fragment="pageHeader(icono, titulo, subtitulo)"
+     class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-theme">
+    <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-blue-600/15 rounded-xl border border-blue-500/30 text-blue-400 flex-shrink-0">
+            <i th:attr="data-lucide=${icono != null ? icono : 'layers'}" class="w-6 h-6"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-slate-100 tracking-tight" th:text="${titulo}">Título de Sección</h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="${subtitulo}">Descripción de la sección municipal</p>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     2. TARJETA KPI INSTITUCIONAL (kpiCard)
+     Uso: <div th:replace="~{fragments/components/ui-components :: kpiCard('Total Registros', '500', 'Activos en el padrón', 'users', 'blue')}"></div>
+     ========================================================================== -->
+<div th:fragment="kpiCard(etiqueta, valor, subtexto, icono, color)"
+     class="bg-card rounded-xl border border-theme p-5 shadow-md hover:border-slate-600 transition-colors">
+    <div class="flex items-start justify-between">
+        <div>
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider" th:text="${etiqueta}">Métrica</p>
+            <p class="text-2xl font-extrabold text-slate-100 mt-1.5" th:text="${valor}">0</p>
+            <p th:if="${subtexto != null}" class="text-[11px] text-slate-400 mt-1" th:text="${subtexto}">Detalle</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0"
+             th:classappend="${color == 'emerald'} ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
+                             (${color == 'amber'} ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' :
+                             (${color == 'rose'} ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' :
+                             (${color == 'indigo'} ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' :
+                             'bg-blue-500/15 text-blue-400 border-blue-500/30')))">
+            <i th:attr="data-lucide=${icono != null ? icono : 'activity'}" class="w-5 h-5"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     3. INSIGNIA DE ESTADO (statusBadge)
+     Uso: <span th:replace="~{fragments/components/ui-components :: statusBadge(${item.estado})}"></span>
+     ========================================================================== -->
+<span th:fragment="statusBadge(estado)"
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+      th:classappend="${estado == 'ACTIVO' or estado == 'VIGENTE' or estado == 'RESUELTO' or estado == 'RESUELTA' or estado == 'PAGADO' or estado == 'DISPONIBLE' or estado == 'VERIFICADO'} ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' :
+                      (${estado == 'PENDIENTE' or estado == 'EN_ATENCION' or estado == 'EN_REVISION' or estado == 'OBSERVADO' or estado == 'SUSPENDIDO'} ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
+                      (${estado == 'INACTIVO' or estado == 'ANULADO' or estado == 'RECHAZADO' or estado == 'VENCIDO' or estado == 'CANCELADO'} ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' :
+                      'bg-blue-500/15 text-blue-300 border-blue-500/30'))"
+      th:text="${estado != null ? estado : 'REGISTRADO'}">
+    ESTADO
+</span>
+
+<!-- ==========================================================================
+     4. ESTADO VACÍO PARA TABLAS Y LISTADOS (emptyState)
+     Uso: <div th:replace="~{fragments/components/ui-components :: emptyState('inbox', 'Sin registros', 'No se encontraron resultados para los filtros aplicados.')}"></div>
+     ========================================================================== -->
+<div th:fragment="emptyState(icono, titulo, mensaje)"
+     class="py-12 px-6 text-center bg-card/50 rounded-xl border border-dashed border-theme">
+    <div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-slate-400">
+        <i th:attr="data-lucide=${icono != null ? icono : 'inbox'}" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-sm font-bold text-slate-200" th:text="${titulo}">No se encontraron registros</h3>
+    <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto" th:text="${mensaje}">No existen datos disponibles para los criterios seleccionados.</p>
+</div>
+
+<!-- ==========================================================================
+     5. BANNER DE ALERTA / MENSAJE FLASH (alertBanner)
+     Uso: <div th:replace="~{fragments/components/ui-components :: alertBanner('success', ${successMessage})}"></div>
+     ========================================================================== -->
+<div th:fragment="alertBanner(tipo, mensaje)" th:if="${mensaje != null and !#strings.isEmpty(mensaje)}"
+     role="alert"
+     class="p-4 rounded-xl border text-xs font-medium flex items-center justify-between shadow-sm mb-4 animate-fade-in"
+     th:classappend="${tipo == 'success'} ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' :
+                     (${tipo == 'warning'} ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' :
+                     'bg-rose-500/10 border-rose-500/30 text-rose-300')">
+    <div class="flex items-center space-x-2.5">
+        <i th:attr="data-lucide=${tipo == 'success' ? 'check-circle' : (tipo == 'warning' ? 'alert-triangle' : 'alert-octagon')}"
+           class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${mensaje}">Mensaje del sistema</span>
+    </div>
+    <button type="button" onclick="this.parentElement.remove()" aria-label="Cerrar alerta" class="p-1 opacity-75 hover:opacity-100">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+</div>
+
+</body>
+</html>
+

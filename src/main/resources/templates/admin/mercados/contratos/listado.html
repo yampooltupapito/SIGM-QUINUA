@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Contratos de Ocupación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Contratos de Ocupación</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Contratos de Ocupación y Conducción
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de instrumentos contractuales, vigencias, formalizaciones y resoluciones de puestos comerciales.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/contratos/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_CONTRATO_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nuevo Contrato
+            </a>
+
+            <!-- Exportar Excel -->
+            <a th:href="@{/api/mercados/contratos/exportar/excel(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoContratoCodigo=${tipoSeleccionado},fechaDesde=${fechaDesde},fechaHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+
+            <!-- Exportar PDF -->
+            <a th:href="@{/api/mercados/contratos/exportar/pdf(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoContratoCodigo=${tipoSeleccionado},fechaDesde=${fechaDesde},fechaHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas del Módulo de Contratos -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Contratos</span>
+            <p class="text-xl font-bold text-white mt-1" th:text="${stats.contratosRegistrados}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">Vigentes</span>
+            <p class="text-xl font-bold text-emerald-400 mt-1" th:text="${stats.contratosVigentes}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider block">En Revisión</span>
+            <p class="text-xl font-bold text-blue-400 mt-1" th:text="${stats.contratosRevision}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block">Suspendidos</span>
+            <p class="text-xl font-bold text-amber-400 mt-1" th:text="${stats.contratosSuspendidos}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <span class="text-[10px] font-semibold text-rose-400 uppercase tracking-wider block">Vencidos / Fin</span>
+            <p class="text-xl font-bold text-rose-400 mt-1" th:text="${stats.contratosVencidos}">0</p>
+        </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d]">
+        <form method="get" th:action="@{/dashboard/mercados/contratos}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Buscar</label>
+                <input type="text" name="termino" th:value="${termino}" placeholder="Código, DNI, comerciante, puesto..."
+                       class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${m.id == mercadoIdSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.name()}"
+                            th:selected="${est == estadoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Modalidad</label>
+                <select name="tipoContratoCodigo" class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las Modalidades</option>
+                    <option th:each="tc : ${tiposContrato}" th:value="${tc.codigo}" th:text="${tc.nombre}"
+                            th:selected="${tc.codigo == tipoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Desde</label>
+                <input type="date" name="fechaDesde" th:value="${fechaDesde}"
+                       class="w-full bg-[#101827] text-slate-200 text-xs rounded-xl px-3 py-2 border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/contratos}" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl border border-[#334155] transition-colors" title="Limpiar Filtros">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Contratos -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                <tr>
+                    <th class="px-5 py-3">Código</th>
+                    <th class="px-5 py-3">Titular Comerciante</th>
+                    <th class="px-5 py-3">Mercado / Puesto</th>
+                    <th class="px-5 py-3">Modalidad</th>
+                    <th class="px-5 py-3">Vigencia</th>
+                    <th class="px-5 py-3">Estado</th>
+                    <th class="px-5 py-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40">
+                <tr th:if="${contratos.empty}">
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                        <svg class="w-10 h-10 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="font-medium">No se encontraron contratos registrados con los criterios seleccionados.</p>
+                    </td>
+                </tr>
+
+                <tr th:each="c : ${contratos.content}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="px-5 py-3.5">
+                        <a th:href="@{/dashboard/mercados/contratos/{id}(id=${c.id})}"
+                           class="font-mono font-bold text-blue-400 hover:underline" th:text="${c.codigoContrato}">CONT-2026-000001</a>
+                        <span th:if="${c.codigoAsignacion != null}" class="block text-[10px] text-slate-500 font-mono" th:text="${'Asig: ' + c.codigoAsignacion}"></span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="font-semibold text-white" th:text="${c.comercianteNombre}">Juan Pérez</div>
+                        <span class="text-[10px] text-slate-400" th:text="${c.comercianteDocumento}">DNI 12345678</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="font-medium text-slate-200" th:text="${c.mercadoNombre}">Mercado Central</span>
+                        <div class="text-[10px] text-slate-400" th:text="${'Puesto: ' + c.puestoCodigo + ' (N° ' + c.puestoNumero + ')'}">Puesto A-01</div>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span class="text-xs text-slate-300" th:text="${c.tipoContratoNombre}">Uso de Espacio</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="text-[11px] text-slate-200">
+                            <span th:text="${c.fechaInicio}"></span>
+                            <span class="text-slate-500"> al </span>
+                            <span th:text="${c.fechaFin != null ? c.fechaFin : 'Indefinido'}"></span>
+                        </div>
+                        <span th:if="${c.diasRestantes != null && c.diasRestantes >= 0}"
+                              class="text-[9px] font-semibold text-slate-400"
+                              th:text="${c.diasRestantes + ' días restantes'}"></span>
+                        <span th:if="${c.diasRestantes != null && c.diasRestantes < 0}"
+                              class="text-[9px] font-bold text-rose-400">Vencido</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <span th:if="${c.estado.name() == 'BORRADOR'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700">BORRADOR</span>
+                        <span th:if="${c.estado.name() == 'EN_REVISION'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-900/40 text-blue-400 border border-blue-800">EN REVISIÓN</span>
+                        <span th:if="${c.estado.name() == 'OBSERVADO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-900/40 text-rose-400 border border-rose-800">OBSERVADO</span>
+                        <span th:if="${c.estado.name() == 'APROBADO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-900/40 text-indigo-400 border border-indigo-800">APROBADO</span>
+                        <span th:if="${c.estado.name() == 'VIGENTE'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-900/40 text-emerald-400 border border-emerald-800">VIGENTE</span>
+                        <span th:if="${c.estado.name() == 'SUSPENDIDO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-900/40 text-amber-400 border border-amber-800">SUSPENDIDO</span>
+                        <span th:if="${c.estado.name() == 'VENCIDO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-950 text-rose-400 border border-rose-800">VENCIDO</span>
+                        <span th:if="${c.estado.name() == 'TERMINADO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-800 text-slate-400 border border-slate-700">TERMINADO</span>
+                        <span th:if="${c.estado.name() == 'ANULADO'}" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-950 text-slate-500 border border-slate-800">ANULADO</span>
+                    </td>
+                    <td class="px-5 py-3.5 text-right space-x-2">
+                        <a th:href="@{/dashboard/mercados/contratos/{id}(id=${c.id})}"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                           title="Ver Expediente de Contrato">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
+                        <a th:href="@{/api/mercados/contratos/{id}/pdf(id=${c.id})}"
+                           target="_blank"
+                           class="inline-flex items-center p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 hover:text-rose-300 rounded-lg transition-colors"
+                           title="Descargar Contrato PDF">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${contratos.totalPages > 1}" class="px-6 py-4 bg-[#101827] border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <span class="text-slate-400" th:text="${'Mostrando página ' + (contratos.number + 1) + ' de ' + contratos.totalPages + ' (' + contratos.totalElements + ' contratos)'}"></span>
+            <div class="flex items-center gap-2">
+                <a th:if="${!contratos.first}"
+                   th:href="@{/dashboard/mercados/contratos(page=${contratos.number - 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Anterior</a>
+                <span class="px-3 py-1 bg-blue-600 text-white font-semibold rounded-lg" th:text="${contratos.number + 1}"></span>
+                <a th:if="${!contratos.last}"
+                   th:href="@{/dashboard/mercados/contratos(page=${contratos.number + 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Siguiente</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

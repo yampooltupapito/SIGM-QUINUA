@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja de Renovaciones de Ocupación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/gestiones-ocupacion/dashboard}" class="hover:text-blue-400">Gestiones de Ocupación</a>
+                <span>/</span>
+                <span class="text-slate-200">Renovaciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Bandeja de Renovaciones de Ocupación
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de solicitudes de prórroga para asignaciones, contratos y autorizaciones comerciales.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <a th:href="@{/dashboard/mercados/renovaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_RENOVACION_CREAR')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Nueva Solicitud</span>
+            </a>
+            <a th:href="@{/dashboard/mercados/gestiones-ocupacion/reportes/excel}"
+               sec:authorize="hasAuthority('MERCADOS_GESTION_OCUPACION_EXPORTAR')"
+               class="px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form method="get" th:action="@{/dashboard/mercados/renovaciones}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 items-end">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${m.id == mercadoId}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="e : ${estados}" th:value="${e}" th:text="${e.label}" th:selected="${e == estado}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Desde</label>
+                <input type="date" name="fechaDesde" th:value="${fechaDesde}" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Hasta</label>
+                <input type="date" name="fechaHasta" th:value="${fechaHasta}" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/mercados/renovaciones}" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Solicitudes -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-[#101827]/60 border-b border-slate-700/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Tipo Renovación</th>
+                        <th class="py-3 px-4">Mercado / Puesto</th>
+                        <th class="py-3 px-4">Comerciante Titular</th>
+                        <th class="py-3 px-4">Fecha Presentación</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-xs text-slate-300">
+                    <tr th:each="ren : ${renovacionesPage.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${ren.codigoSolicitud}">SOL-MER-2026-000001</td>
+                        <td class="py-3 px-4" th:text="${ren.tipoSolicitudLabel}">Renovación de Asignación</td>
+                        <td class="py-3 px-4">
+                            <span class="font-semibold text-white" th:text="${ren.mercadoNombre}">Mercado Central</span>
+                            <span class="text-[10px] text-slate-400 block" th:text="'Puesto ' + ${ren.puestoNumero}">Puesto 04</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="font-medium text-white block" th:text="${ren.comercianteActualNombre}">Juan Pérez</span>
+                            <span class="text-[10px] text-slate-400" th:text="${ren.comercianteActualDocumento}">DNI 12345678</span>
+                        </td>
+                        <td class="py-3 px-4" th:text="${#temporals.format(ren.fechaPresentacion, 'dd/MM/yyyy')}">17/10/2026</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${ren.estadoBadgeClass}"
+                                  th:text="${ren.estadoLabel}">PRESENTADA</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <a th:href="@{'/dashboard/mercados/gestiones-ocupacion/' + ${ren.id}}"
+                               class="px-2.5 py-1.5 bg-[#202c3d] hover:bg-slate-700 text-blue-400 hover:text-blue-300 rounded-lg text-xs font-medium border border-slate-700/60 inline-flex items-center gap-1 transition-colors">
+                                <span>Expediente</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${renovacionesPage.totalElements == 0}">
+                        <td colspan="7" class="py-8 text-center text-slate-400">
+                            No se encontraron solicitudes de renovación registradas en este período.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

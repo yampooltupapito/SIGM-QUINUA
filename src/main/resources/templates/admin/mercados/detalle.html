@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${mercado.nombre + ' — Ficha Integral | SIGM-QUINUA'}">Detalle del Mercado Municipal | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Módulos Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados Municipales</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados/listado}" class="text-blue-400 hover:text-blue-300 transition-colors">Padrón</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300" th:text="${mercado.codigo}">MER-001</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                    <i data-lucide="store" class="w-6 h-6 text-blue-500"></i>
+                    <span th:text="${mercado.nombre}">Mercado Central de Quinua</span>
+                </h1>
+                <span th:text="${mercado.estado.descripcion}"
+                      th:classappend="${mercado.estado.name() == 'ACTIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (mercado.estado.name() == 'SUSPENDIDO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : (mercado.estado.name() == 'EN_MANTENIMIENTO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-slate-700/50 text-slate-300 border-slate-600/30'))}"
+                      class="px-2.5 py-0.5 rounded-full text-xs font-semibold border">
+                    ACTIVO
+                </span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 mt-1 flex items-center space-x-2">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span th:text="${mercado.direccion + (mercado.distrito != null ? ', ' + mercado.distrito : '')}">Jr. Sucre s/n, Quinua</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button type="button"
+                    sec:authorize="hasAuthority('MERCADOS_MERCADO_CAMBIAR_ESTADO') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    th:data-mercado-id="${mercado.id}"
+                    th:data-mercado-nombre="${mercado.nombre}"
+                    th:data-mercado-codigo="${mercado.codigo}"
+                    th:data-mercado-estado="${mercado.estado.name()}"
+                    class="btn-abrir-modal-estado inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-400 border border-amber-500/20 text-xs font-semibold transition-colors">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>Cambiar Estado</span>
+            </button>
+
+            <a th:href="@{/dashboard/mercados/{id}/editar(id=${mercado.id})}"
+               sec:authorize="hasAuthority('MERCADOS_MERCADO_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-theme text-xs font-semibold transition-colors">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span>Editar Datos</span>
+            </a>
+
+            <a th:href="@{/dashboard/mercados/listado}"
+               class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen Rápido de Puestos -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Capacidad</span>
+            <div class="text-lg font-bold text-white mt-1" th:text="${mercado.capacidadReferencial ?: 0}">0</div>
+            <div class="text-[10px] text-slate-400">Referencial</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider">Total Puestos</span>
+            <div class="text-lg font-bold text-white mt-1" th:text="${detalle.resumenPuestos.total}">0</div>
+            <div class="text-[10px] text-slate-400">Registrados en BD</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Disponibles</span>
+            <div class="text-lg font-bold text-emerald-400 mt-1" th:text="${detalle.resumenPuestos.disponibles}">0</div>
+            <div class="text-[10px] text-slate-400">Listos para asignar</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Ocupados</span>
+            <div class="text-lg font-bold text-indigo-400 mt-1" th:text="${detalle.resumenPuestos.ocupados}">0</div>
+            <div class="text-[10px] text-slate-400">Con concesión activa</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Reservados</span>
+            <div class="text-lg font-bold text-amber-400 mt-1" th:text="${detalle.resumenPuestos.reservados}">0</div>
+            <div class="text-[10px] text-slate-400">En trámite</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 shadow-sm">
+            <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider">Inhabilitados</span>
+            <div class="text-lg font-bold text-rose-400 mt-1" th:text="${detalle.resumenPuestos.inhabilitados}">0</div>
+            <div class="text-[10px] text-slate-400">Mantenimiento/clausura</div>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-theme">
+        <nav class="flex space-x-4 overflow-x-auto" aria-label="Tabs">
+            <button type="button" data-tab-target="tab-general"
+                    class="tab-link active border-b-2 border-blue-500 py-3 px-1 text-sm font-semibold text-white flex items-center space-x-2">
+                <i data-lucide="info" class="w-4 h-4"></i>
+                <span>Información General</span>
+            </button>
+            <button type="button" data-tab-target="tab-sectores"
+                    class="tab-link border-b-2 border-transparent py-3 px-1 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-400 flex items-center space-x-2">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Sectores (<span th:text="${detalle.sectores.size()}">0</span>)</span>
+            </button>
+            <button type="button" data-tab-target="tab-pabellones"
+                    class="tab-link border-b-2 border-transparent py-3 px-1 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-400 flex items-center space-x-2">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                <span>Pabellones (<span th:text="${detalle.pabellones.size()}">0</span>)</span>
+            </button>
+            <button type="button" data-tab-target="tab-puestos"
+                    class="tab-link border-b-2 border-transparent py-3 px-1 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-400 flex items-center space-x-2">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+                <span>Puestos (<span th:text="${detalle.resumenPuestos.total}">0</span>)</span>
+            </button>
+            <button type="button" data-tab-target="tab-documentos"
+                    class="tab-link border-b-2 border-transparent py-3 px-1 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-400 flex items-center space-x-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Documentos Institucionales (<span th:text="${detalle.documentos.size()}">0</span>)</span>
+            </button>
+            <button type="button" data-tab-target="tab-historial"
+                    class="tab-link border-b-2 border-transparent py-3 px-1 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-400 flex items-center space-x-2">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>Historial de Estados (<span th:text="${detalle.historialEstados.size()}">0</span>)</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Contenido de Pestañas -->
+
+    <!-- TAB 1: INFORMACIÓN GENERAL -->
+    <div id="tab-general" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Ficha Catastral y Ubicación -->
+            <div class="bg-card border border-theme rounded-2xl p-5 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2 text-white font-semibold pb-2 border-b border-theme text-sm">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Ubicación y Jurisdicción</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Departamento</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.departamento ?: 'No especificado'}">Ayacucho</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Provincia</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.provincia ?: 'No especificado'}">Huamanga</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Distrito</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.distrito ?: 'No especificado'}">Quinua</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Capacidad de Puestos</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.capacidadReferencial + ' puestos'}">100 puestos</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block">Dirección Oficial</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.direccion}">Jr. Sucre s/n</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block">Referencia</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.referenciaUbicacion ?: 'Sin referencia registrada'}">Frente a la plaza</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Coordenadas (Lat, Lng)</span>
+                        <span class="text-slate-200 font-mono"
+                              th:text="${(mercado.latitud != null and mercado.longitud != null) ? mercado.latitud + ', ' + mercado.longitud : 'No registradas'}">
+                            -13.0425, -74.1408
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Ver en Mapa</span>
+                        <a th:if="${mercado.latitud != null and mercado.longitud != null}"
+                           th:href="'https://www.google.com/maps?q=' + ${mercado.latitud} + ',' + ${mercado.longitud}"
+                           target="_blank"
+                           class="inline-flex items-center space-x-1 text-blue-400 hover:text-blue-300 font-medium mt-0.5">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                            <span>Abrir Mapa Externo</span>
+                        </a>
+                        <span th:unless="${mercado.latitud != null and mercado.longitud != null}" class="text-slate-400 italic">No disponible</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Administración y Auditoría -->
+            <div class="bg-card border border-theme rounded-2xl p-5 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2 text-white font-semibold pb-2 border-b border-theme text-sm">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-blue-400"></i>
+                    <span>Administración y Trazabilidad</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block">Oficina Administradora</span>
+                        <span class="text-slate-200 font-medium" th:text="${mercado.oficinaAdministradoraNombre ?: 'Sin oficina asignada'}">Subgerencia de Fiscalización</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Código Interno</span>
+                        <span class="text-slate-200 font-mono font-medium" th:text="${mercado.codigo}">MER-001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Versión de Registro</span>
+                        <span class="text-slate-200 font-mono" th:text="'v' + ${mercado.version}">v1</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Fecha de Registro</span>
+                        <span class="text-slate-200" th:text="${#temporals.format(mercado.fechaRegistro, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Última Actualización</span>
+                        <span class="text-slate-200" th:text="${#temporals.format(mercado.updatedAt, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block">Descripción</span>
+                        <p class="text-slate-300 italic text-xs mt-1" th:text="${mercado.descripcion ?: 'Sin descripción detallada registrada.'}">
+                            Descripción del mercado
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: SECTORES -->
+    <div id="tab-sectores" class="tab-content hidden space-y-4">
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-theme flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Sectores del Mercado</h3>
+                    <p class="text-xs text-slate-400">Zonificación de giros comerciales (Carnes, Verduras, Abarrotes, etc.)</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-blue-600/10 text-blue-400 border border-blue-500/20 text-xs font-semibold"
+                      th:text="${detalle.sectores.size()} + ' sectores'">0 sectores</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="p-3">Código</th>
+                            <th class="p-3">Nombre</th>
+                            <th class="p-3">Descripción</th>
+                            <th class="p-3">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="sec : ${detalle.sectores}" class="hover:bg-slate-800/40">
+                            <td class="p-3 font-mono font-medium text-white" th:text="${sec.codigo}">SEC-01</td>
+                            <td class="p-3 font-medium text-slate-200" th:text="${sec.nombre}">Sector Carnes</td>
+                            <td class="p-3 text-slate-400" th:text="${sec.descripcion ?: '-'}">-</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      th:text="${sec.estado}">ACTIVO</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${detalle.sectores.isEmpty()}">
+                            <td colspan="4" class="p-6 text-center text-slate-500">
+                                No hay sectores registrados para este mercado todavía. Podrán crearse en la administración de sectores.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: PABELLONES -->
+    <div id="tab-pabellones" class="tab-content hidden space-y-4">
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-theme flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Pabellones y Pasajes</h3>
+                    <p class="text-xs text-slate-400">Distribución física y arquitectónica del mercado</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-blue-600/10 text-blue-400 border border-blue-500/20 text-xs font-semibold"
+                      th:text="${detalle.pabellones.size()} + ' pabellones'">0 pabellones</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="p-3">Código</th>
+                            <th class="p-3">Nombre</th>
+                            <th class="p-3">Piso / Nivel</th>
+                            <th class="p-3">Sector</th>
+                            <th class="p-3">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="pab : ${detalle.pabellones}" class="hover:bg-slate-800/40">
+                            <td class="p-3 font-mono font-medium text-white" th:text="${pab.codigo}">PAB-A</td>
+                            <td class="p-3 font-medium text-slate-200" th:text="${pab.nombre}">Pabellón Principal</td>
+                            <td class="p-3 text-slate-300" th:text="${pab.nivel != null ? 'Nivel ' + pab.nivel : 'Nivel 1'}">Nivel 1</td>
+                            <td class="p-3 text-slate-400" th:text="${pab.sectorNombre ?: '-'}">-</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      th:text="${pab.estado}">ACTIVO</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${detalle.pabellones.isEmpty()}">
+                            <td colspan="5" class="p-6 text-center text-slate-500">
+                                No hay pabellones registrados para este mercado todavía.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: PUESTOS -->
+    <div id="tab-puestos" class="tab-content hidden space-y-4">
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-theme flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Catastro de Puestos Comerciales</h3>
+                    <p class="text-xs text-slate-400">Puestos censados dentro de las instalaciones del mercado</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-blue-600/10 text-blue-400 border border-blue-500/20 text-xs font-semibold"
+                      th:text="${detalle.resumenPuestos.total} + ' puestos'">0 puestos</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="p-3">Número / Código</th>
+                            <th class="p-3">Pabellón</th>
+                            <th class="p-3">Giro Autorizado</th>
+                            <th class="p-3">Dimensiones</th>
+                            <th class="p-3">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="pst : ${detalle.puestos}" class="hover:bg-slate-800/40">
+                            <td class="p-3 font-mono font-medium text-white" th:text="${pst.numero}">P-101</td>
+                            <td class="p-3 text-slate-300" th:text="${pst.pabellonNombre ?: '-'}">Pabellón A</td>
+                            <td class="p-3 text-slate-200" th:text="${pst.tipoPuestoNombre ?: 'General'}">General</td>
+                            <td class="p-3 text-slate-400" th:text="${pst.areaMetrosCuadrados != null ? pst.areaMetrosCuadrados + ' m²' : '-'}">-</td>
+                            <td class="p-3">
+                                <span th:text="${pst.estado}"
+                                      th:classappend="${pst.estado == 'DISPONIBLE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : (pst.estado == 'OCUPADO' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20')}"
+                                      class="px-2 py-0.5 rounded-full text-[10px] font-semibold border">DISPONIBLE</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${detalle.puestos.isEmpty()}">
+                            <td colspan="5" class="p-6 text-center text-slate-500">
+                                No se encontraron puestos catastrados en este mercado todavía.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${detalle.resumenPuestos.total > detalle.puestos.size()}" class="p-4 bg-slate-900/60 border-t border-theme flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
+                <span class="flex items-center space-x-1.5">
+                    <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+                    <span>Mostrando los primeros <strong class="text-white" th:text="${detalle.puestos.size()}">50</strong> puestos de un total censado de <strong class="text-white" th:text="${detalle.resumenPuestos.total}">10000</strong>.</span>
+                </span>
+                <a th:href="@{/dashboard/mercados/puestos/listado(mercadoId=${mercado.id})}"
+                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors">
+                    <span>Ver Catastro Completo con Filtros</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: DOCUMENTOS INSTITUCIONALES -->
+    <div id="tab-documentos" class="tab-content hidden space-y-4">
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-theme flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Expediente y Documentación Técnica</h3>
+                    <p class="text-xs text-slate-400">Planos, actas, resoluciones de creación e informes técnicos de fiscalización</p>
+                </div>
+                <button type="button" id="btnAsociarDocumento"
+                        sec:authorize="hasAuthority('MERCADOS_MERCADO_DOCUMENTOS') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <span>Asociar Documento</span>
+                </button>
+            </div>
+
+            <!-- Formulario de asociación de documento (oculto por defecto) -->
+            <div id="formAsociarDocContainer" class="hidden p-4 bg-slate-900/60 border-b border-theme">
+                <form id="formAsociarDoc" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Tipo de Documento *</label>
+                        <select id="docTipo" name="tipo" required
+                                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-theme text-white text-xs">
+                            <option value="PLANO">Plano de Distribución</option>
+                            <option value="RESOLUCION">Resolución Municipal</option>
+                            <option value="INFORME_TECNICO">Informe Técnico</option>
+                            <option value="ACTA_INSPECCION">Acta de Inspección</option>
+                            <option value="REGLAMENTO_INTERNO">Reglamento Interno</option>
+                            <option value="OTRO">Otro Documento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Título del Documento *</label>
+                        <input type="text" id="docTitulo" name="titulo" required maxlength="255"
+                               placeholder="Ej: Plano Catastral Actualizado 2026"
+                               class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-theme text-white text-xs"/>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">ID Documento Núcleo (Opcional)</label>
+                        <input type="text" id="docDocumentoId" name="documentoId" placeholder="UUID del gestor documental"
+                               class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-theme text-white text-xs"/>
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button type="submit" id="btnGuardarDoc"
+                                class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors">
+                            Guardar Registro
+                        </button>
+                        <button type="button" id="btnCancelarDoc"
+                                class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">
+                            Cancelar
+                        </button>
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-slate-300 font-semibold mb-1">Observaciones</label>
+                        <input type="text" id="docObservaciones" name="observaciones" maxlength="500"
+                               placeholder="Detalles sobre el archivo o expediente físico archivado..."
+                               class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-theme text-white text-xs"/>
+                    </div>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="p-3">Tipo</th>
+                            <th class="p-3">Título</th>
+                            <th class="p-3">Observaciones</th>
+                            <th class="p-3">Fecha Registro</th>
+                            <th class="p-3">Registrado Por</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDocsBody" class="divide-y divide-theme">
+                        <tr th:each="doc : ${detalle.documentos}" class="hover:bg-slate-800/40">
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-600/10 text-blue-400 border border-blue-500/20"
+                                      th:text="${doc.tipo.descripcion}">PLANO</span>
+                            </td>
+                            <td class="p-3 font-medium text-white" th:text="${doc.titulo}">Plano General</td>
+                            <td class="p-3 text-slate-400" th:text="${doc.observaciones ?: '-'}">-</td>
+                            <td class="p-3 text-slate-400" th:text="${#temporals.format(doc.fechaRegistro, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                            <td class="p-3 text-slate-300" th:text="${doc.usuarioCreacion ?: 'ADMIN'}">ADMIN</td>
+                        </tr>
+                        <tr th:if="${detalle.documentos.isEmpty()}">
+                            <td colspan="5" class="p-6 text-center text-slate-500">
+                                No hay documentos asociados formalmente a este mercado municipal.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: HISTORIAL DE CAMBIOS DE ESTADO -->
+    <div id="tab-historial" class="tab-content hidden space-y-4">
+        <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-theme">
+                <h3 class="text-sm font-semibold text-white">Línea de Tiempo Operativa y de Estados</h3>
+                <p class="text-xs text-slate-400">Registro inmutable de suspensiones, mantenimientos y reactivaciones</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="p-3">Fecha y Hora</th>
+                            <th class="p-3">Estado Anterior</th>
+                            <th class="p-3">Nuevo Estado</th>
+                            <th class="p-3">Motivo / Justificación</th>
+                            <th class="p-3">Usuario Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="hist : ${detalle.historialEstados}" class="hover:bg-slate-800/40">
+                            <td class="p-3 text-slate-300 font-mono" th:text="${#temporals.format(hist.fecha, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300 border border-theme"
+                                      th:text="${hist.estadoAnterior != null ? hist.estadoAnterior.descripcion : '-'}">ACTIVO</span>
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                      th:text="${hist.estadoNuevo.descripcion}">ACTIVO</span>
+                            </td>
+                            <td class="p-3 text-slate-200" th:text="${hist.motivo}">Registro inicial del mercado</td>
+                            <td class="p-3 text-slate-400 font-medium" th:text="${hist.usuario ?: 'SISTEMA'}">ADMIN</td>
+                        </tr>
+                        <tr th:if="${detalle.historialEstados.isEmpty()}">
+                            <td colspan="5" class="p-6 text-center text-slate-500">
+                                No se registran modificaciones de estado adicionales para este mercado.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inclusión del Fragmento Modal de Cambio de Estado -->
+    <div th:replace="~{admin/mercados/componentes/modal-estado :: modalEstado}"></div>
+
+</div>
+
+<!-- Scripts específicos del detalle -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-detalle.js}"></script>
+    <script th:src="@{/js/mercados/mercados-listado.js}"></script>
+</th:block>
+</body>
+</html>

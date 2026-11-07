@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Vinculación de Cuentas Tributarias | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Vinculación de Cuentas Tributarias</h2>
+                    <p class="text-xs text-slate-500">Gestión de acreditaciones y autorizaciones de acceso tributario conforme a la Ley N° 29733</p>
+                </div>
+            </div>
+
+            <!-- Panel Informativo de Seguridad -->
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-start space-x-3 text-xs text-blue-900">
+                <i data-lucide="shield-check" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed">
+                    <span class="font-bold">Política de Confidencialidad y Verificación de Identidad:</span>
+                    Para consultar información fiscal de una persona natural o jurídica en Quinua se requiere acreditación formal. Si sus datos de ciudadano autenticado coinciden plenamente con el titular tributario registrado en el padrón, la vinculación puede aprobarse automáticamente. En el caso de representantes legales, apoderados o sucesiones, la solicitud pasará por calificación del equipo de Rentas.
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Columna Izquierda: Formulario de Nueva Vinculación -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i>
+                            Solicitar Nueva Vinculación
+                        </h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Asocie una cuenta tributaria propia o bajo representación</p>
+                    </div>
+
+                    <form th:action="@{/portal/tributario/vinculaciones/solicitar}" th:object="${solicitudRequest}" method="post" class="space-y-3.5 text-xs">
+                        <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}"/>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Tipo de Documento Tributario *</label>
+                            <select th:field="*{tipoDocumento}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:border-blue-600 transition-colors">
+                                <option value="DNI">DNI — Documento Nacional de Identidad</option>
+                                <option value="RUC">RUC — Registro Único de Contribuyentes</option>
+                                <option value="CE">CE — Carné de Extranjería</option>
+                            </select>
+                            <span th:if="${#fields.hasErrors('tipoDocumento')}" th:errors="*{tipoDocumento}" class="text-rose-600 text-[11px]"></span>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Número de Documento *</label>
+                            <input type="text" th:field="*{numeroDocumento}" placeholder="Ej. 40552100 ó 20452345671" maxlength="15"
+                                   class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:border-blue-600 transition-colors"/>
+                            <span th:if="${#fields.hasErrors('numeroDocumento')}" th:errors="*{numeroDocumento}" class="text-rose-600 text-[11px]"></span>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Código de Contribuyente (Opcional)</label>
+                            <input type="text" th:field="*{codigoContribuyente}" placeholder="Ej. CONT-0042"
+                                   class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:border-blue-600 transition-colors"/>
+                            <span class="text-[10px] text-slate-400">Si conoce su código municipal registrado.</span>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Tipo de Representación o Vinculación *</label>
+                            <select th:field="*{tipoVinculacion}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:border-blue-600 transition-colors">
+                                <option value="TITULAR_VERIFICADO">Titular del Predio / Tributo</option>
+                                <option value="REPRESENTANTE_ACREDITADO">Representante Legal (Poder inscrito)</option>
+                                <option value="APODERADO_ACREDITADO">Apoderado con Carta Poder Registrada</option>
+                                <option value="OTRA_RELACION_AUTORIZADA">Otra Relación Autorizada (Sucesión indivisa, curador, etc.)</option>
+                            </select>
+                            <span th:if="${#fields.hasErrors('tipoVinculacion')}" th:errors="*{tipoVinculacion}" class="text-rose-600 text-[11px]"></span>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Motivo y Sustento de la Solicitud *</label>
+                            <textarea th:field="*{sustento}" rows="3" placeholder="Indique la relación con el contribuyente, partida registral, número de expediente de mesa de partes, etc."
+                                      class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:border-blue-600 transition-colors"></textarea>
+                            <span th:if="${#fields.hasErrors('sustento')}" th:errors="*{sustento}" class="text-rose-600 text-[11px]"></span>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Vigencia hasta (Opcional si es temporal)</label>
+                            <input type="date" th:field="*{fechaVigenciaHasta}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"/>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors text-xs flex items-center justify-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i> Enviar Solicitud de Vinculación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Columna Derecha: Tabla de Cuentas Vinculadas y Solicitudes -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Cuentas Tributarias Vinculadas</h3>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                    <tr>
+                                        <th class="py-3 px-4">Contribuyente</th>
+                                        <th class="py-3 px-4">Tipo Vinculación</th>
+                                        <th class="py-3 px-4">Solicitud</th>
+                                        <th class="py-3 px-4 text-center">Estado</th>
+                                        <th class="py-3 px-4 text-center">Activo</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr th:if="${vinculaciones == null || vinculaciones.empty}">
+                                        <td colspan="5" class="text-center py-10 text-slate-400">
+                                            <i data-lucide="link-2-off" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                            Aún no registra solicitudes de vinculación en el portal.
+                                        </td>
+                                    </tr>
+                                    <tr th:each="v : ${vinculaciones}" class="hover:bg-slate-50/70 transition-colors">
+                                        <td class="py-3.5 px-4">
+                                            <span class="font-bold text-slate-900 block" th:text="${v.contribuyenteNombre}">Juan Pérez Quispe</span>
+                                            <span class="text-[11px] font-mono text-slate-500" th:text="${v.contribuyenteDocumento} + (${v.contribuyenteCodigo != null ? ' (' + v.contribuyenteCodigo + ')' : ''})">40552100</span>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="font-medium text-slate-700" th:text="${v.tipoVinculacion.etiqueta}">Titular</span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500" th:text="${#temporals.format(v.fechaSolicitud, 'dd/MM/yyyy')}">28/02/2026</td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span th:if="${v.estado.name() == 'APROBADA'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">APROBADA</span>
+                                            <span th:if="${v.estado.name() == 'PENDIENTE'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">EN EVALUACIÓN</span>
+                                            <span th:if="${v.estado.name() == 'RECHAZADA'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200" th:title="${v.motivoRechazoRevocacion}">RECHAZADA</span>
+                                            <span th:if="${v.estado.name() == 'REVOCADA'}" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">REVOCADA</span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span th:if="${v.activo and v.vigente}" class="text-emerald-600 font-bold" title="Habilitado para consulta"><i data-lucide="check" class="w-4 h-4 mx-auto"></i></span>
+                                            <span th:unless="${v.activo and v.vigente}" class="text-slate-300" title="Inactivo o pendiente"><i data-lucide="minus" class="w-4 h-4 mx-auto"></i></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-100 rounded-xl text-xs text-slate-600 space-y-1">
+                        <div class="font-bold text-slate-800">¿Cómo alternar entre varios contribuyentes?</div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Una vez que cuente con más de una vinculación aprobada, utilice el selector desplegable en la parte superior derecha de la cabecera ("Perfil Tributario") para conmutar entre sus cuentas sin necesidad de cerrar sesión.
+                        </p>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

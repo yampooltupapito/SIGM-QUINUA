@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Matriz de Permisos Granulares</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="grid" class="w-5 h-5 text-blue-500"></i>
+                <span>Matriz Visual de Permisos Granulares</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Configuración matricial de autorizaciones por Módulo Institucional y Tipo de Acción.</p>
+        </div>
+        <div id="contenedorBtnGuardar" th:classappend="${matriz.rolId == null} ? 'hidden' : ''">
+            <button type="button" onclick="guardarPermisosMatriz()" id="btnGuardarPermisos" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Guardar Permisos del Rol</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Selector de Rol -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <label class="text-xs font-semibold text-slate-300 uppercase whitespace-nowrap">Rol Seleccionado:</label>
+            <select id="selectRolMatriz" onchange="cambiarRolMatriz(this.value)"
+                    class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 min-w-[260px]">
+                <option value="">-- Seleccionar Rol para Configurar --</option>
+                <option th:each="r : ${rolesDisponibles}"
+                        th:value="${r.id}"
+                        th:text="${r.nombre} + ' (' + ${r.codigo} + ')'"
+                        th:selected="${r.id == rolSeleccionadoId}">
+                    Administrador (ROLE_ADMIN)
+                </option>
+            </select>
+        </div>
+        <div id="infoRolEditando" class="text-xs text-slate-400 hidden">
+            Editando privilegios para: <span id="lblRolEditando" class="font-bold text-blue-400"></span>
+        </div>
+    </div>
+
+    <!-- Mensaje si no hay rol seleccionado -->
+    <div id="msgSeleccioneRol" class="bg-card p-8 rounded-xl border border-slate-700/60 text-center text-slate-400">
+        <i data-lucide="mouse-pointer-click" class="w-10 h-10 mx-auto mb-3 text-blue-400 opacity-60"></i>
+        <h3 class="text-sm font-bold text-slate-200 mb-1">Seleccione un Rol</h3>
+        <p class="text-xs text-slate-400 max-w-md mx-auto">Seleccione uno de los roles del desplegable superior para cargar y configurar su matriz de permisos por módulo y acción.</p>
+    </div>
+
+    <!-- Matriz de Permisos por Módulo (Renderizada dinámicamente) -->
+    <div id="seccionMatrizPermisos" class="space-y-4 hidden">
+        <div class="bg-card p-4 rounded-xl border border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+            <span>Marque o desmarque los permisos granulares por módulo y haga clic en <strong class="text-slate-200">"Guardar Permisos del Rol"</strong>.</span>
+            <div class="space-x-2">
+                <button type="button" onclick="marcarTodaLaMatriz(true)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-blue-300 font-semibold border border-slate-700">Marcar Todo</button>
+                <button type="button" onclick="marcarTodaLaMatriz(false)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-semibold border border-slate-700">Desmarcar Todo</button>
+            </div>
+        </div>
+        <div id="contenedorModulosMatriz" class="space-y-4"></div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    let rolActualId = /*[[${matriz.rolId}]]*/ null;
+
+    async function cambiarRolMatriz(rolId) {
+        if (!rolId) {
+            rolActualId = null;
+            document.getElementById("msgSeleccioneRol").classList.remove("hidden");
+            document.getElementById("seccionMatrizPermisos").classList.add("hidden");
+            document.getElementById("contenedorBtnGuardar").classList.add("hidden");
+            document.getElementById("infoRolEditando").classList.add("hidden");
+            return;
+        }
+
+        rolActualId = parseInt(rolId, 10);
+        try {
+            const res = await fetchApi("/api/admin/permisos/matriz?rolId=" + rolActualId);
+            const m = res.data;
+            const asignados = new Set(m.permisosAsignadosIds || []);
+
+            document.getElementById("lblRolEditando").innerText = (m.rolNombre || "") + (m.rolCodigo ? " (" + m.rolCodigo + ")" : "");
+            document.getElementById("infoRolEditando").classList.remove("hidden");
+            document.getElementById("contenedorBtnGuardar").classList.remove("hidden");
+            document.getElementById("msgSeleccioneRol").classList.add("hidden");
+            document.getElementById("seccionMatrizPermisos").classList.remove("hidden");
+
+            const cont = document.getElementById("contenedorModulosMatriz");
+            cont.innerHTML = (m.modulos || []).map(mod => {
+                const permsHtml = (mod.permisos || []).map(p => `
+                    <label class="flex items-start space-x-2.5 p-2.5 rounded-lg bg-slate-900/70 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors">
+                        <input type="checkbox" value="${p.id}" name="permisoCheck" data-modulo="${mod.moduloId}" data-accion="${p.accion}"
+                               ${asignados.has(p.id) ? 'checked' : ''}
+                               class="mt-0.5 w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-0 cursor-pointer bg-slate-900">
+                        <div class="min-w-0 flex-1">
+                            <span class="font-semibold text-slate-200 block text-xs leading-snug">${p.nombre}</span>
+                            <div class="flex items-center space-x-1.5 mt-1">
+                                <span class="px-1.5 py-0.5 rounded bg-blue-950/80 border border-blue-800/70 text-blue-300 font-mono text-[9px] font-bold">${p.accion}</span>
+                                <span class="text-[10px] font-mono text-slate-400 truncate">${p.codigo}</span>
+                            </div>
+                        </div>
+                    </label>
+                `).join("");
+
+                return `
+                    <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm" id="fila_mod_${mod.moduloId}">
+                        <div class="px-5 py-3.5 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                <span class="font-bold text-slate-100 text-xs">${mod.moduloNombre}</span>
+                                <span class="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-700">${mod.moduloCodigo || ''}</span>
+                            </div>
+                            <div class="space-x-1.5">
+                                <button type="button" onclick="marcarModulo('${mod.moduloId}', true)"
+                                        class="text-[10px] text-blue-400 hover:text-blue-300 font-semibold px-2.5 py-1 bg-slate-900 border border-slate-700 rounded">
+                                    Marcar Módulo
+                                </button>
+                                <button type="button" onclick="marcarModulo('${mod.moduloId}', false)"
+                                        class="text-[10px] text-slate-400 hover:text-slate-300 font-semibold px-2.5 py-1 bg-slate-900 border border-slate-700 rounded">
+                                    Desmarcar Módulo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            ${permsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    function marcarModulo(moduloId, estado) {
+        document.querySelectorAll(`input[name="permisoCheck"][data-modulo="${moduloId}"]`).forEach(chk => {
+            chk.checked = estado;
+        });
+    }
+
+    function marcarTodaLaMatriz(estado) {
+        document.querySelectorAll('input[name="permisoCheck"]').forEach(chk => {
+            chk.checked = estado;
+        });
+    }
+
+    async function guardarPermisosMatriz() {
+        if (!rolActualId) return;
+
+        const checks = document.querySelectorAll('input[name="permisoCheck"]:checked');
+        const permisoIds = Array.from(checks).map(c => parseInt(c.value, 10));
+
+        const btn = document.getElementById("btnGuardarPermisos");
+        btn.disabled = true;
+        btn.innerText = "Guardando...";
+
+        try {
+            await fetchApi("/api/admin/roles/" + rolActualId + "/permisos", {
+                method: "PUT",
+                body: JSON.stringify({ rolId: rolActualId, permisoIds: permisoIds })
+            });
+            mostrarToast("Permisos actualizados y sesiones invalidadas para el rol.", "success");
+        } catch (err) {
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Guardar Permisos del Rol</span>';
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const hashMatch = window.location.hash.match(/^#rol-(\d+)$/);
+        const urlParams = new URLSearchParams(window.location.search);
+        const initId = (hashMatch && hashMatch[1]) || urlParams.get("rolId") || rolActualId;
+        if (initId) {
+            const sel = document.getElementById("selectRolMatriz");
+            if (sel) sel.value = String(initId);
+            cambiarRolMatriz(initId);
+        }
+    });
+
+    window.cambiarRolMatriz = cambiarRolMatriz;
+    window.marcarModulo = marcarModulo;
+    window.marcarTodaLaMatriz = marcarTodaLaMatriz;
+    window.guardarPermisosMatriz = guardarPermisosMatriz;
+    /*]]>*/
+</script>
+</th:block>
+</body>
+</html>

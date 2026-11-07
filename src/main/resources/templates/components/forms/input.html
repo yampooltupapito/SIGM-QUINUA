@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE INPUT ESTÁNDAR (Input)
+     Uso: <div th:replace="~{components/forms/input :: input('dni', 'numeroDocumento', 'DNI del Administrado', 'text', '', 'Ej. 45892314', true, null)}"></div>
+     ========================================================================== -->
+<div th:fragment="input(id, name, label, type, value, placeholder, required, errorMsg)" class="sigm-form-group">
+    <label th:if="${!#strings.isEmpty(label)}" th:for="${id}" class="sigm-label">
+        <span th:text="${label}">Etiqueta</span>
+        <span th:if="${required}" class="sigm-label-required" aria-hidden="true">*</span>
+    </label>
+    <input th:id="${id}"
+           th:name="${name}"
+           th:type="${!#strings.isEmpty(type) ? type : 'text'}"
+           th:value="${value}"
+           th:placeholder="${placeholder}"
+           th:required="${required}"
+           th:attr="aria-invalid=${!#strings.isEmpty(errorMsg) ? 'true' : 'false'}"
+           th:classappend="${!#strings.isEmpty(errorMsg) ? 'is-invalid' : ''}"
+           class="sigm-input"/>
+    <p th:if="${!#strings.isEmpty(errorMsg)}" class="sigm-field-error" role="alert">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span th:text="${errorMsg}">Error de validación</span>
+    </p>
+</div>
+
+</body>
+</html>
+

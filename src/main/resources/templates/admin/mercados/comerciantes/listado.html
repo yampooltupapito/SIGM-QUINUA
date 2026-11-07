@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Padrón de Comerciantes | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Padrón de Comerciantes</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Padrón Oficial de Comerciantes Municipales
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Catastro y control de comerciantes (personas naturales y jurídicas) del Distrito de Quinua.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/comerciantes/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_COMERCIANTE_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'OPERADOR')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nuevo Comerciante
+            </a>
+
+            <!-- Exportar Excel -->
+            <a th:href="@{/api/mercados/comerciantes/exportar/excel(termino=${filter.termino},tipoComerciante=${filter.tipoComerciante},estado=${filter.estado},actividadId=${filter.actividadId})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+
+            <!-- Exportar PDF -->
+            <a th:href="@{/api/mercados/comerciantes/exportar/pdf(termino=${filter.termino},tipoComerciante=${filter.tipoComerciante},estado=${filter.estado},actividadId=${filter.actividadId})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas Estadísticas Reales (PostgreSQL) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-slate-400">Total Empadronados</p>
+            <p class="text-xl font-bold text-white mt-1" th:text="${stats.totalComerciantes}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-blue-400">Personas Naturales</p>
+            <p class="text-xl font-bold text-blue-400 mt-1" th:text="${stats.personasNaturales}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-purple-400">Personas Jurídicas</p>
+            <p class="text-xl font-bold text-purple-400 mt-1" th:text="${stats.personasJuridicas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-emerald-400">Activos</p>
+            <p class="text-xl font-bold text-emerald-400 mt-1" th:text="${stats.activos}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-amber-400">Pendientes Verificación</p>
+            <p class="text-xl font-bold text-amber-400 mt-1" th:text="${stats.pendientesVerificacion}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-rose-400">Suspendidos / Inactivos</p>
+            <p class="text-xl font-bold text-rose-400 mt-1" th:text="${stats.suspendidos + stats.inactivos}">0</p>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+        <form method="get" th:action="@{/dashboard/mercados/comerciantes}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div>
+                <input type="text" name="termino" th:value="${filter.termino}" placeholder="Buscar código, nombre, RUC, DNI..."
+                       class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <select name="tipoComerciante" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todos los tipos...</option>
+                    <option th:each="t : ${tiposComerciante}" th:value="${t}" th:text="${t.descripcion}" th:selected="${filter.tipoComerciante == t}"></option>
+                </select>
+            </div>
+
+            <div>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todos los estados...</option>
+                    <option th:each="e : ${estadosComerciante}" th:value="${e}" th:text="${e.descripcion}" th:selected="${filter.estado == e}"></option>
+                </select>
+            </div>
+
+            <div>
+                <select name="actividadId" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">Todas las actividades...</option>
+                    <option th:each="act : ${actividades}" th:value="${act.id}" th:text="${act.nombre}" th:selected="${filter.actividadId == act.id}"></option>
+                </select>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium py-2 px-3 rounded-xl border border-[#334155] transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/comerciantes}" class="bg-[#101827] hover:bg-slate-800 text-slate-400 hover:text-white p-2 rounded-xl border border-[#334155] flex items-center justify-center transition-colors" title="Limpiar filtros">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Comerciantes -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 font-semibold border-b border-[#202c3d] uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-5 py-3">Código</th>
+                        <th class="px-5 py-3">Titular / Razón Social</th>
+                        <th class="px-5 py-3">Tipo / Doc</th>
+                        <th class="px-5 py-3">Actividad Principal</th>
+                        <th class="px-5 py-3">Contacto</th>
+                        <th class="px-5 py-3">Estado</th>
+                        <th class="px-5 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#202c3d]">
+                    <tr th:each="c : ${comerciantes}" class="hover:bg-[#202c3d]/50 transition-colors">
+                        <td class="px-5 py-3 font-mono font-bold text-blue-400" th:text="${c.codigoComerciante}"></td>
+                        <td class="px-5 py-3">
+                            <a th:href="@{/dashboard/mercados/comerciantes/{id}(id=${c.id})}"
+                               class="font-semibold text-white hover:text-blue-400 transition-colors block"
+                               th:text="${c.titularNombre}"></a>
+                            <span class="text-[11px] text-slate-400" th:text="${'Reg: ' + #temporals.format(c.fechaRegistro, 'dd/MM/yyyy')}"></span>
+                        </td>
+                        <td class="px-5 py-3">
+                            <span th:if="${c.tipoComerciante.name() == 'PERSONA_NATURAL'}" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-400 mb-0.5">Natural</span>
+                            <span th:if="${c.tipoComerciante.name() == 'PERSONA_JURIDICA'}" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 mb-0.5">Jurídica</span>
+                            <div class="font-mono text-slate-300" th:text="${c.tipoDocumento + ': ' + c.documentoEnmascarado}"></div>
+                        </td>
+                        <td class="px-5 py-3 text-slate-300" th:text="${c.actividadPrincipal}"></td>
+                        <td class="px-5 py-3">
+                            <div th:text="${c.telefono != null ? c.telefono : '-'}"></div>
+                            <div class="text-[11px] text-slate-400" th:text="${c.correo != null ? c.correo : '-'}"></div>
+                        </td>
+                        <td class="px-5 py-3">
+                            <span th:if="${c.estado.name() == 'ACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Activo</span>
+                            <span th:if="${c.estado.name() == 'PENDIENTE_VERIFICACION'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pendiente</span>
+                            <span th:if="${c.estado.name() == 'SUSPENDIDO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">Suspendido</span>
+                            <span th:if="${c.estado.name() == 'INACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">Inactivo</span>
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a th:href="@{/dashboard/mercados/comerciantes/{id}(id=${c.id})}"
+                                   class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors" title="Ver detalle completo">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </a>
+
+                                <a th:href="@{/dashboard/mercados/comerciantes/{id}/editar(id=${c.id})}"
+                                   sec:authorize="hasAuthority('MERCADOS_COMERCIANTE_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                                   class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors" title="Editar comerciante">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </a>
+
+                                <button type="button"
+                                        th:data-id="${c.id}"
+                                        th:data-nombre="${c.titularNombre}"
+                                        th:data-estado="${c.estado}"
+                                        onclick="abrirModalEstado(this.getAttribute('data-id'), this.getAttribute('data-nombre'), this.getAttribute('data-estado'))"
+                                        sec:authorize="hasAuthority('MERCADOS_COMERCIANTE_CAMBIAR_ESTADO') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                                        class="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded-lg transition-colors" title="Cambiar estado">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(comerciantes)}">
+                        <td colspan="7" class="px-5 py-8 text-center text-slate-400">
+                            No se encontraron comerciantes empadronados con los criterios de búsqueda especificados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${pagina.totalPages > 1}" class="bg-[#101827] px-6 py-3 border-t border-[#202c3d] flex items-center justify-between">
+            <span class="text-xs text-slate-400" th:text="${'Mostrando ' + (pagina.number * pagina.size + 1) + ' a ' + ((pagina.number + 1) * pagina.size > pagina.totalElements ? pagina.totalElements : (pagina.number + 1) * pagina.size) + ' de ' + pagina.totalElements + ' comerciantes'}"></span>
+            <div class="flex gap-1">
+                <a th:if="${pagina.hasPrevious()}" th:href="@{/dashboard/mercados/comerciantes(page=${pagina.number - 1},termino=${filter.termino},tipoComerciante=${filter.tipoComerciante},estado=${filter.estado},actividadId=${filter.actividadId})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs border border-[#334155]">Anterior</a>
+                <a th:if="${pagina.hasNext()}" th:href="@{/dashboard/mercados/comerciantes(page=${pagina.number + 1},termino=${filter.termino},tipoComerciante=${filter.tipoComerciante},estado=${filter.estado},actividadId=${filter.actividadId})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs border border-[#334155]">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir modal de cambio de estado -->
+    <div th:replace="~{admin/mercados/comerciantes/componentes/modal-estado :: div}"></div>
+
+    <!-- Script Cliente -->
+    <script th:src="@{/js/mercados/comerciantes-listado.js}"></script>
+</div>
+</body>
+</html>

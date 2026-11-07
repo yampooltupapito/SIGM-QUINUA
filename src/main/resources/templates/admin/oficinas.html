@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Estructura Orgánica y Oficinas</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="building" class="w-5 h-5 text-blue-500"></i>
+                <span>Oficinas y Dependencias Municipales</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Estructura orgánica institucional, dependencias jerárquicas y asignación de personal.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="abrirModal('modalAsignarTrabajador')" class="flex items-center space-x-2 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold">
+                <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+                <span>Asignar Personal</span>
+            </button>
+            <button onclick="abrirModal('modalNuevaOficina')" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nueva Oficina</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas: Lista de Oficinas / Árbol Jerárquico -->
+    <div class="flex items-center space-x-4 border-b border-slate-700/60 pb-2 text-xs font-semibold">
+        <button onclick="mostrarVista('tabla')" id="tabTabla" class="text-blue-400 border-b-2 border-blue-500 pb-2 px-1 flex items-center space-x-2">
+            <i data-lucide="list" class="w-4 h-4"></i>
+            <span>Listado General de Oficinas</span>
+        </button>
+        <button onclick="mostrarVista('arbol')" id="tabArbol" class="text-slate-400 hover:text-slate-200 pb-2 px-1 flex items-center space-x-2">
+            <i data-lucide="git-merge" class="w-4 h-4"></i>
+            <span>Organigrama / Jerarquía Institucional</span>
+        </button>
+    </div>
+
+    <!-- VISTA TABLA -->
+    <div id="vistaTabla" class="space-y-4">
+        <!-- Buscador -->
+        <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+            <form th:action="@{/admin/oficinas}" method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar por código, nombre o sigla</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input type="text" name="term" th:value="${term}" placeholder="Ej. ALC, Alcaldía, SG, Rentas..."
+                               class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors">
+                        Buscar
+                    </button>
+                    <a th:href="@{/admin/oficinas}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs border border-slate-700 transition-colors">
+                        Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabla -->
+        <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700/60 uppercase tracking-wider text-[11px]">
+                        <tr>
+                            <th class="px-4 py-3">Código</th>
+                            <th class="px-4 py-3">Nombre de la Oficina</th>
+                            <th class="px-4 py-3">Sigla</th>
+                            <th class="px-4 py-3">Oficina Superior (Padre)</th>
+                            <th class="px-4 py-3 text-center">Nivel</th>
+                            <th class="px-4 py-3">Estado</th>
+                            <th class="px-4 py-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                        <tr th:if="${oficinasPage.content.empty}">
+                            <td colspan="7" class="px-4 py-8 text-center text-slate-500">
+                                <i data-lucide="building-2" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                                <p>No se encontraron oficinas registradas.</p>
+                            </td>
+                        </tr>
+                        <tr th:each="o : ${oficinasPage.content}" class="hover:bg-slate-800/30 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-blue-400" th:text="${o.codigo}">ALC</td>
+                            <td class="px-4 py-3 font-semibold text-slate-100" th:text="${o.nombre}">Alcaldía Municipal</td>
+                            <td class="px-4 py-3 text-slate-400 font-semibold" th:text="${o.sigla != null ? o.sigla : '—'}">ALC</td>
+                            <td class="px-4 py-3 text-slate-300">
+                                <span th:if="${o.oficinaPadreNombre != null}" th:text="${o.oficinaPadreNombre}">Gerencia Municipal</span>
+                                <span th:unless="${o.oficinaPadreNombre != null}" class="text-slate-500 italic">Órgano Máximo</span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold" th:text="${o.nivelJerarquico}">1</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span th:if="${o.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-emerald-400 text-[11px] font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Activa</span>
+                                </span>
+                                <span th:unless="${o.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-slate-500 text-[11px] font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                    <span>Inactiva</span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end space-x-1">
+                                    <button th:data-id="${o.id}" onclick="abrirEditarOficina(this.dataset.id)" title="Editar Oficina"
+                                            class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    </button>
+                                    <button th:if="${o.estado == 'ACTIVO'}" th:data-id="${o.id}" onclick="cambiarEstadoOficina(this.dataset.id, 'desactivar')" title="Desactivar"
+                                            class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                        <i data-lucide="toggle-right" class="w-4 h-4 text-emerald-400"></i>
+                                    </button>
+                                    <button th:unless="${o.estado == 'ACTIVO'}" th:data-id="${o.id}" onclick="cambiarEstadoOficina(this.dataset.id, 'activar')" title="Activar"
+                                            class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                        <i data-lucide="toggle-left" class="w-4 h-4 text-slate-500"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA ÁRBOL JERÁRQUICO -->
+    <div id="vistaArbol" class="hidden bg-card p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+        <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+            <i data-lucide="network" class="w-4 h-4 text-blue-400"></i>
+            <span>Estructura Jerárquica Institucional (Sin ciclos)</span>
+        </h3>
+        <p class="text-xs text-slate-400">Representación visual del árbol de dependencias administrativas.</p>
+        <div id="arbolContenedor" class="bg-slate-900/60 p-4 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 space-y-2">
+            <!-- Se carga vía JavaScript recursivo -->
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVA OFICINA -->
+    <div id="modalNuevaOficina" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-500"></i>
+                    <span>Crear Nueva Oficina Municipal</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevaOficina')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formNuevaOficina" data-no-loading="true" onsubmit="guardarNuevaOficina(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Código Único *</label>
+                        <input type="text" id="no_codigo" required maxlength="50" placeholder="Ej. SUB_RENTAS"
+                               oninput="this.value = this.value.toUpperCase().replace(/\s+/g, '_')"
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Sigla</label>
+                        <input type="text" id="no_sigla" maxlength="30" placeholder="Ej. SR"
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 uppercase">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre de la Unidad Orgánica *</label>
+                    <input type="text" id="no_nombre" required maxlength="150" placeholder="Ej. Subgerencia de Rentas y Recaudación"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Oficina Superior (Dependencia Jerárquica)</label>
+                    <select id="no_oficinaPadreId" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        <option value="">-- Sin dependencia superior (Nivel 1) --</option>
+                        <option th:each="of : ${oficinasTodas}" th:value="${of.id}" th:text="${of.nombre} + ' (' + ${of.codigo} + ')'"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción / Funciones Principales</label>
+                    <textarea id="no_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalNuevaOficina')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Oficina</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR OFICINA -->
+    <div id="modalEditarOficina" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Editar Oficina</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEditarOficina')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formEditarOficina" data-no-loading="true" onsubmit="guardarEdicionOficina(event)" class="p-6 space-y-4">
+                <input type="hidden" id="eo_id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Código (No modificable)</label>
+                        <input type="text" id="eo_codigo" disabled class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Sigla</label>
+                        <input type="text" id="eo_sigla" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 uppercase">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre *</label>
+                    <input type="text" id="eo_nombre" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Oficina Superior (Validación estricta de no ciclos)</label>
+                    <select id="eo_oficinaPadreId" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        <option value="">-- Sin dependencia superior (Nivel 1) --</option>
+                        <option th:each="of : ${oficinasTodas}" th:value="${of.id}" th:text="${of.nombre} + ' (' + ${of.codigo} + ')'"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="eo_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalEditarOficina')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ASIGNAR TRABAJADOR A OFICINA -->
+    <div id="modalAsignarTrabajador" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Asignar Personal a Oficina Municipal</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalAsignarTrabajador')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formAsignarTrabajador" data-no-loading="true" onsubmit="guardarAsignacionTrabajador(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">ID de Persona o Trabajador *</label>
+                    <input type="number" id="at_personaId" required placeholder="Ingrese ID de la persona en el sistema"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Oficina Destino *</label>
+                    <select id="at_oficinaId" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        <option value="">-- Seleccione Oficina --</option>
+                        <option th:each="of : ${oficinasTodas}" th:value="${of.id}" th:text="${of.nombre} + ' (' + ${of.codigo} + ')'"></option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Cargo Institucional</label>
+                        <select id="at_cargoId" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                            <option value="">-- Sin Cargo Específico --</option>
+                            <option th:each="c : ${cargosDisponibles}" th:value="${c.id}" th:text="${c.nombre}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Tipo de Actor *</label>
+                        <select id="at_tipoActorId" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                            <option th:each="a : ${actoresDisponibles}" th:value="${a.id}" th:text="${a.nombre}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 pt-2">
+                    <input type="checkbox" id="at_principal" checked class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                    <label for="at_principal" class="text-xs text-slate-300">Marcar como Oficina Principal para este trabajador</label>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalAsignarTrabajador')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Confirmar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    function mostrarVista(tipo) {
+        const vistaTabla = document.getElementById("vistaTabla");
+        const vistaArbol = document.getElementById("vistaArbol");
+        const tabTabla = document.getElementById("tabTabla");
+        const tabArbol = document.getElementById("tabArbol");
+
+        if (tipo === 'arbol') {
+            vistaTabla.classList.add("hidden");
+            vistaArbol.classList.remove("hidden");
+            tabArbol.className = "text-blue-400 border-b-2 border-blue-500 pb-2 px-1 flex items-center space-x-2";
+            tabTabla.className = "text-slate-400 hover:text-slate-200 pb-2 px-1 flex items-center space-x-2";
+            cargarArbol();
+        } else {
+            vistaArbol.classList.add("hidden");
+            vistaTabla.classList.remove("hidden");
+            tabTabla.className = "text-blue-400 border-b-2 border-blue-500 pb-2 px-1 flex items-center space-x-2";
+            tabArbol.className = "text-slate-400 hover:text-slate-200 pb-2 px-1 flex items-center space-x-2";
+        }
+    }
+
+    async function cargarArbol() {
+        try {
+            const res = await fetchApi("/api/admin/oficinas/arbol");
+            const contenedor = document.getElementById("arbolContenedor");
+            contenedor.innerHTML = renderNodos(res.data, 0);
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    function renderNodos(nodos, nivel) {
+        if (!nodos || nodos.length === 0) return "";
+        let html = '<ul class="space-y-1.5 ' + (nivel > 0 ? 'ml-6 pl-3 border-l border-slate-700' : '') + '">';
+        for (const n of nodos) {
+            html += `
+                <li>
+                    <div class="flex items-center space-x-2 py-1">
+                        <span class="w-2 h-2 rounded-full ${n.estado === 'ACTIVO' ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                        <span class="font-bold text-blue-400">[${n.codigo}]</span>
+                        <span class="font-semibold text-slate-100">${n.nombre}</span>
+                        ${n.sigla ? `<span class="text-slate-500 text-[10px]">(${n.sigla})</span>` : ''}
+                        <span class="text-[10px] text-slate-400 ml-2">Nivel ${n.nivelJerarquico}</span>
+                    </div>
+                    ${renderNodos(n.suboficinas, nivel + 1)}
+                </li>
+            `;
+        }
+        html += '</ul>';
+        return html;
+    }
+
+    async function guardarNuevaOficina(e) {
+        e.preventDefault();
+        const padreVal = document.getElementById("no_oficinaPadreId").value;
+        const codigoNormalizado = document.getElementById("no_codigo").value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+        document.getElementById("no_codigo").value = codigoNormalizado;
+
+        const body = {
+            codigo: codigoNormalizado,
+            nombre: document.getElementById("no_nombre").value.trim(),
+            sigla: document.getElementById("no_sigla").value.trim().toUpperCase() || null,
+            oficinaPadreId: padreVal ? parseInt(padreVal, 10) : null,
+            descripcion: document.getElementById("no_descripcion").value.trim() || null
+        };
+
+        try {
+            await fetchApi("/api/admin/oficinas", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Oficina registrada exitosamente.", "success");
+            cerrarModal("modalNuevaOficina");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function abrirEditarOficina(id) {
+        try {
+            const res = await fetchApi("/api/admin/oficinas/" + id);
+            const o = res.data;
+            document.getElementById("eo_id").value = o.id;
+            document.getElementById("eo_codigo").value = o.codigo || "";
+            document.getElementById("eo_nombre").value = o.nombre || "";
+            document.getElementById("eo_sigla").value = o.sigla || "";
+            document.getElementById("eo_descripcion").value = o.descripcion || "";
+            document.getElementById("eo_oficinaPadreId").value = o.oficinaPadreId || "";
+            abrirModal("modalEditarOficina");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarEdicionOficina(e) {
+        e.preventDefault();
+        const id = document.getElementById("eo_id").value;
+        const padreVal = document.getElementById("eo_oficinaPadreId").value;
+        const body = {
+            nombre: document.getElementById("eo_nombre").value.trim(),
+            sigla: document.getElementById("eo_sigla").value.trim().toUpperCase() || null,
+            oficinaPadreId: padreVal ? parseInt(padreVal, 10) : null,
+            descripcion: document.getElementById("eo_descripcion").value.trim() || null
+        };
+
+        try {
+            await fetchApi("/api/admin/oficinas/" + id, {
+                method: "PUT",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Oficina actualizada correctamente.", "success");
+            cerrarModal("modalEditarOficina");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function cambiarEstadoOficina(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} esta oficina?`)) return;
+        try {
+            await fetchApi(`/api/admin/oficinas/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Oficina ${accion === "activar" ? "activada" : "desactivada"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function guardarAsignacionTrabajador(e) {
+        e.preventDefault();
+        const cargoVal = document.getElementById("at_cargoId").value;
+        const body = {
+            personaId: parseInt(document.getElementById("at_personaId").value, 10),
+            oficinaId: parseInt(document.getElementById("at_oficinaId").value, 10),
+            cargoId: cargoVal ? parseInt(cargoVal, 10) : null,
+            tipoActorId: parseInt(document.getElementById("at_tipoActorId").value, 10),
+            principal: document.getElementById("at_principal").checked
+        };
+
+        try {
+            await fetchApi("/api/admin/oficinas/asignar-trabajador", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Personal asignado a oficina exitosamente.", "success");
+            cerrarModal("modalAsignarTrabajador");
+        } catch (err) {}
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const selCargo = document.getElementById("at_cargoId");
+        if (selCargo && selCargo.options.length <= 1) {
+            try {
+                const resC = await fetchApi("/api/admin/cargos/todos");
+                (resC.data || []).forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.textContent = c.nombre;
+                    selCargo.appendChild(opt);
+                });
+            } catch (_) {}
+        }
+        const selActor = document.getElementById("at_tipoActorId");
+        if (selActor && selActor.options.length === 0) {
+            try {
+                const resA = await fetchApi("/api/admin/actores/todos");
+                (resA.data || []).forEach(a => {
+                    const opt = document.createElement("option");
+                    opt.value = a.id;
+                    opt.textContent = a.nombre;
+                    selActor.appendChild(opt);
+                });
+            } catch (_) {}
+        }
+    });
+
+    window.mostrarVista = mostrarVista;
+    window.cargarArbol = cargarArbol;
+    window.guardarNuevaOficina = guardarNuevaOficina;
+    window.abrirEditarOficina = abrirEditarOficina;
+    window.guardarEdicionOficina = guardarEdicionOficina;
+    window.cambiarEstadoOficina = cambiarEstadoOficina;
+    window.guardarAsignacionTrabajador = guardarAsignacionTrabajador;
+</script>
+</th:block>
+</body>
+</html>

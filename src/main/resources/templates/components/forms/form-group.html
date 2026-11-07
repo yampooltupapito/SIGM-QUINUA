@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE FORM GROUP (Contenedor de etiqueta, control y mensajes)
+     ========================================================================== -->
+<div th:fragment="formGroup(id, label, required, helpText, errorMsg, controlFragment)" class="sigm-form-group">
+    <label th:if="${!#strings.isEmpty(label)}" th:for="${id}" class="sigm-label">
+        <span th:text="${label}">Campo</span>
+        <span th:if="${required}" class="sigm-label-required" aria-hidden="true">*</span>
+    </label>
+    <th:block th:if="${controlFragment != null}">
+        <th:block th:replace="${controlFragment}"></th:block>
+    </th:block>
+    <p th:if="${!#strings.isEmpty(helpText) and #strings.isEmpty(errorMsg)}" class="sigm-field-help" th:text="${helpText}">Texto de ayuda</p>
+    <p th:if="${!#strings.isEmpty(errorMsg)}" class="sigm-field-error" role="alert">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span th:text="${errorMsg}">Error en el campo</span>
+    </p>
+</div>
+
+</body>
+</html>
+

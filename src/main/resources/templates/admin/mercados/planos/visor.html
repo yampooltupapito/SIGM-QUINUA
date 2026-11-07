@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Visor de Plano - ' + ${mercado.nombre} + ' | SIGM-QUINUA'">Visor de Plano | SIGM-QUINUA</title>
+    <style>
+        .elemento-interactivo {
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
+            outline: none;
+        }
+        .elemento-interactivo:hover {
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+        }
+        .elemento-interactivo:focus-visible {
+            filter: drop-shadow(0 0 10px #38bdf8);
+            stroke: #38bdf8 !important;
+            stroke-width: 3px !important;
+        }
+        .puesto-seleccionado rect {
+            stroke: #38bdf8 !important;
+            stroke-width: 3.5px !important;
+            filter: drop-shadow(0 0 12px #38bdf8);
+        }
+        .grid-background {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-4">
+
+    <!-- Barra de Navegación y Encabezado Superior -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/planos}" class="hover:text-blue-400">Planos</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${mercado.nombre}">Mercado</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2" th:text="${plano.nombre}">
+                    Plano de Mercado
+                </h1>
+                <span th:if="${versionActual != null}"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      th:classappend="${versionActual.estado.name() == 'PUBLICADA'} ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/60' : 'bg-amber-950/80 text-amber-400 border border-amber-700/60'"
+                      th:text="'v' + ${versionActual.numeroVersion} + ' (' + ${versionActual.estadoLabel} + ')'">
+                    v1 (Publicada)
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Selector de Versión -->
+            <form method="get" th:action="@{/dashboard/mercados/planos/{id}(id=${mercado.id})}" class="flex items-center">
+                <select name="versionId" onchange="this.form.submit()"
+                        class="bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+                    <option th:each="v : ${plano.historialVersiones}"
+                            th:value="${v.id}"
+                            th:text="'v' + ${v.numeroVersion} + ' - ' + ${v.estadoLabel}"
+                            th:selected="${versionActual != null && v.id == versionActual.id}">
+                    </option>
+                </select>
+            </form>
+
+            <a th:href="@{/dashboard/mercados/planos/{id}/editar(id=${mercado.id})}"
+               sec:authorize="hasAuthority('MERCADOS_PLANO_EDITAR')"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Editar Plano</span>
+            </a>
+
+            <a th:href="@{/dashboard/mercados/planos/{id}/versiones(id=${mercado.id})}"
+               sec:authorize="hasAuthority('MERCADOS_PLANO_VERSIONES_VER')"
+               class="p-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700/60 transition-colors"
+               title="Ver historial de versiones">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Herramientas de Navegación y Filtros -->
+    <div th:replace="~{admin/mercados/planos/componentes/herramientas :: herramientasVisor}"></div>
+
+    <!-- Lienzo Central del Plano SVG -->
+    <div class="relative bg-[#101827] rounded-2xl border border-[#202c3d] shadow-2xl overflow-hidden grid-background"
+         style="height: calc(100vh - 350px); min-height: 520px;"
+         id="contenedorLienzoSvg">
+
+        <!-- SVG Interactivo -->
+        <svg id="svgPlano"
+             class="w-full h-full select-none"
+             th:attr="viewBox='0 0 ' + ${plano.anchoBase} + ' ' + ${plano.altoBase}">
+
+            <!-- Grupo de transformación para Pan & Zoom -->
+            <g id="grupoTransformacionPlano">
+
+                <!-- Imagen de Referencia de Fondo si está configurada y visible -->
+                <image th:if="${versionActual != null && versionActual.imagenReferenciaUrl != null && versionActual.imagenVisible}"
+                       th:href="@{${versionActual.imagenReferenciaUrl}}"
+                       th:attr="x=${versionActual.imagenPosX}, y=${versionActual.imagenPosY}, opacity=${versionActual.imagenOpacidad}"
+                       width="100%" height="100%" preserveAspectRatio="none"/>
+
+                <!-- Elementos del Plano Renderizados -->
+                <g th:each="elem : ${plano.elementos}">
+
+                    <!-- Elemento Tipo: PUESTO COMERCIAL -->
+                    <g th:if="${elem.tipoElemento.name() == 'PUESTO'}"
+                       class="elemento-interactivo elemento-puesto"
+                       tabindex="0"
+                       role="button"
+                       th:attr="data-id=${elem.id},
+                                data-puesto-id=${elem.referenciaEntidadId},
+                                data-codigo=${elem.codigoVisual},
+                                data-numero=${elem.puestoNumero},
+                                data-sector-nombre=${elem.sectorNombre},
+                                data-estado-visual=${elem.estadoVisual != null ? elem.estadoVisual.name() : 'DISPONIBLE'},
+                                data-color-hex=${elem.colorHex},
+                                data-x=${elem.coordenadaX},
+                                data-y=${elem.coordenadaY},
+                                data-ancho=${elem.ancho},
+                                data-alto=${elem.alto},
+                                aria-label='Puesto ' + ${elem.puestoNumero != null ? elem.puestoNumero : elem.codigoVisual} + ', Estado: ' + ${elem.estadoVisualLabel}"
+                       onclick="seleccionarPuesto(this)"
+                       onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); seleccionarPuesto(this); }"
+                       th:style="'transform-origin: ' + (${elem.coordenadaX} + ${elem.ancho}/2) + 'px ' + (${elem.coordenadaY} + ${elem.alto}/2) + 'px; transform: rotate(' + ${elem.rotacion} + 'deg);'">
+
+                        <!-- Rectángulo del Puesto -->
+                        <rect th:attr="x=${elem.coordenadaX}, y=${elem.coordenadaY}, width=${elem.ancho}, height=${elem.alto}"
+                              rx="6" ry="6"
+                              th:fill="${elem.colorHex != null ? elem.colorHex : '#10b981'}"
+                              fill-opacity="0.88"
+                              stroke="#ffffff"
+                              stroke-width="1.5"
+                              stroke-opacity="0.3"/>
+
+                        <!-- Etiqueta de Código / Número de Puesto -->
+                        <text th:attr="x=${elem.coordenadaX} + ${elem.ancho}/2, y=${elem.coordenadaY} + ${elem.alto}/2 + 4"
+                              text-anchor="middle"
+                              fill="#ffffff"
+                              font-size="11"
+                              font-weight="bold"
+                              font-family="monospace"
+                              pointer-events="none"
+                              th:text="${elem.puestoNumero != null ? elem.puestoNumero : elem.codigoVisual}">P-101</text>
+                    </g>
+
+                    <!-- Elementos Tipo: SECTOR / PABELLON / ZONA (Áreas Contenedoras) -->
+                    <g th:if="${elem.tipoElemento.name() == 'SECTOR' || elem.tipoElemento.name() == 'PABELLON' || elem.tipoElemento.name() == 'ZONA' || elem.tipoElemento.name() == 'AREA_COMUN'}"
+                       class="elemento-area"
+                       pointer-events="none"
+                       th:style="'transform-origin: ' + (${elem.coordenadaX} + ${elem.ancho}/2) + 'px ' + (${elem.coordenadaY} + ${elem.alto}/2) + 'px; transform: rotate(' + ${elem.rotacion} + 'deg);'">
+
+                        <rect th:attr="x=${elem.coordenadaX}, y=${elem.coordenadaY}, width=${elem.ancho}, height=${elem.alto}"
+                              rx="8" ry="8"
+                              fill="rgba(30, 41, 59, 0.4)"
+                              stroke="#475569"
+                              stroke-width="1.8"
+                              stroke-dasharray="6,4"/>
+
+                        <text th:attr="x=${elem.coordenadaX} + 12, y=${elem.coordenadaY} + 20"
+                              fill="#94a3b8"
+                              font-size="12"
+                              font-weight="bold"
+                              th:text="${elem.etiqueta != null ? elem.etiqueta : elem.codigoVisual}">Sector Frutas</text>
+                    </g>
+
+                    <!-- Elementos Tipo: PASILLO / CIRCULACIÓN -->
+                    <g th:if="${elem.tipoElemento.name() == 'PASILLO'}"
+                       class="elemento-pasillo"
+                       pointer-events="none">
+                        <rect th:attr="x=${elem.coordenadaX}, y=${elem.coordenadaY}, width=${elem.ancho}, height=${elem.alto}"
+                              rx="4" ry="4"
+                              fill="rgba(15, 23, 42, 0.6)"
+                              stroke="#334155"
+                              stroke-width="1"/>
+                        <text th:if="${elem.etiqueta != null}"
+                              th:attr="x=${elem.coordenadaX} + ${elem.ancho}/2, y=${elem.coordenadaY} + ${elem.alto}/2 + 4"
+                              text-anchor="middle"
+                              fill="#64748b"
+                              font-size="10"
+                              th:text="${elem.etiqueta}">Pasillo Central</text>
+                    </g>
+
+                    <!-- Elementos Tipo: ACCESO / SALIDA / ESCALERA / ETIQUETA -->
+                    <g th:if="${elem.tipoElemento.name() == 'ACCESO' || elem.tipoElemento.name() == 'SALIDA' || elem.tipoElemento.name() == 'ESCALERA' || elem.tipoElemento.name() == 'ETIQUETA' || elem.tipoElemento.name() == 'OTRO'}"
+                       class="elemento-decorativo"
+                       pointer-events="none">
+                        <rect th:if="${elem.tipoElemento.name() != 'ETIQUETA'}"
+                              th:attr="x=${elem.coordenadaX}, y=${elem.coordenadaY}, width=${elem.ancho}, height=${elem.alto}"
+                              rx="4" ry="4"
+                              th:fill="${elem.tipoElemento.name() == 'SALIDA' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'}"
+                              th:stroke="${elem.tipoElemento.name() == 'SALIDA' ? '#ef4444' : '#3b82f6'}"
+                              stroke-width="1.5"/>
+
+                        <text th:attr="x=${elem.coordenadaX} + ${elem.ancho}/2, y=${elem.coordenadaY} + ${elem.alto}/2 + 4"
+                              text-anchor="middle"
+                              th:fill="${elem.tipoElemento.name() == 'SALIDA' ? '#f87171' : '#60a5fa'}"
+                              font-size="10"
+                              font-weight="bold"
+                              th:text="${elem.etiqueta != null ? elem.etiqueta : elem.codigoVisual}">Acceso</text>
+                    </g>
+
+                </g>
+
+            </g>
+        </svg>
+
+        <!-- Indicador de Navegación / Controles flotantes en pantalla táctil -->
+        <div class="absolute bottom-4 right-4 bg-[#1e293b]/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-700 text-[10px] text-slate-400 pointer-events-none flex items-center gap-2">
+            <span>Usa la rueda o arrastra para desplazarte</span>
+        </div>
+
+    </div>
+
+    <!-- Leyenda Inferior Interactiva con Filtros -->
+    <div th:replace="~{admin/mercados/planos/componentes/leyenda :: leyendaPlanos}"></div>
+
+    <!-- Modal y Slide-over del Puesto Seleccionado -->
+    <div th:replace="~{admin/mercados/planos/componentes/panel-puesto :: panelPuestoModal}"></div>
+
+    <!-- Alternativa Accesible: Tabla para Lectores de Pantalla -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+        <details class="group">
+            <summary class="cursor-pointer list-none flex items-center justify-between text-xs font-bold text-slate-300">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    Vista en Lista Accesible de Puestos (Alternativa al plano visual)
+                </span>
+                <span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="mt-4 overflow-x-auto max-h-72 overflow-y-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827] text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0">
+                    <tr>
+                        <th class="p-2.5">Código</th>
+                        <th class="p-2.5">Número</th>
+                        <th class="p-2.5">Sector</th>
+                        <th class="p-2.5">Pabellón</th>
+                        <th class="p-2.5">Estado Visual</th>
+                        <th class="p-2.5 text-right">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                    <tr th:each="elem : ${plano.elementos}" th:if="${elem.tipoElemento.name() == 'PUESTO'}">
+                        <td class="p-2.5 font-mono font-bold text-white" th:text="${elem.codigoVisual}">P-101</td>
+                        <td class="p-2.5" th:text="${elem.puestoNumero}">01</td>
+                        <td class="p-2.5" th:text="${elem.sectorNombre != null ? elem.sectorNombre : '-'}">Sector A</td>
+                        <td class="p-2.5" th:text="${elem.pabellonNombre != null ? elem.pabellonNombre : '-'}">Pabellón 1</td>
+                        <td class="p-2.5">
+                            <span class="font-bold" th:style="'color: ' + ${elem.colorHex}" th:text="${elem.estadoVisualLabel}">Disponible</span>
+                        </td>
+                        <td class="p-2.5 text-right">
+                            <button type="button" th:attr="onclick='centrarEnPuesto(\'' + ${elem.referenciaEntidadId} + '\')'"
+                                    class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-semibold transition-colors">
+                                Localizar en Plano
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </div>
+
+</div>
+
+<!-- Scripts específicos del Visor -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/plano-visor.js}"></script>
+</th:block>
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Nueva Solicitud — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE LA PÁGINA -->
+    <section class="bg-gradient-to-b from-[#101827] to-slate-900 text-white py-10 border-b border-slate-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/mesa-partes}" class="hover:text-white transition-colors">Mesa de Partes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Nueva Solicitud</span>
+            </nav>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Registro de Solicitud Virtual</h1>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                        Presente sus trámites y documentos oficiales ante la Municipalidad Distrital de Quinua con valor legal conforme al TUO de la Ley N° 27444.
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <a th:href="@{/mesa-partes/mis-solicitudes}" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+                        <i data-lucide="folder-clock" class="w-4 h-4 mr-1.5 text-blue-400"></i>
+                        Mis Solicitudes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENEDOR DEL FORMULARIO Y STEPPER -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- STEPPER DE 5 PASOS -->
+        <nav aria-label="Progreso de la solicitud" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <ol class="flex items-center justify-between text-xs w-full">
+                <!-- Paso 1 -->
+                <li class="stepper-step flex-1 flex items-center gap-2 cursor-default" data-paso="1">
+                    <span class="step-badge w-8 h-8 rounded-full flex items-center justify-center font-bold bg-blue-700 text-white shadow-sm ring-4 ring-blue-100">1</span>
+                    <span class="step-label font-bold text-blue-900 hidden sm:inline">Trámite</span>
+                    <div class="flex-1 h-0.5 bg-slate-200 mx-2 hidden sm:block"></div>
+                </li>
+                <!-- Paso 2 -->
+                <li class="stepper-step flex-1 flex items-center gap-2 cursor-default" data-paso="2">
+                    <span class="step-badge w-8 h-8 rounded-full flex items-center justify-center font-bold bg-slate-100 text-slate-400 border border-slate-200">2</span>
+                    <span class="step-label font-medium text-slate-400 hidden sm:inline">Solicitante</span>
+                    <div class="flex-1 h-0.5 bg-slate-200 mx-2 hidden sm:block"></div>
+                </li>
+                <!-- Paso 3 -->
+                <li class="stepper-step flex-1 flex items-center gap-2 cursor-default" data-paso="3">
+                    <span class="step-badge w-8 h-8 rounded-full flex items-center justify-center font-bold bg-slate-100 text-slate-400 border border-slate-200">3</span>
+                    <span class="step-label font-medium text-slate-400 hidden sm:inline">Contenido</span>
+                    <div class="flex-1 h-0.5 bg-slate-200 mx-2 hidden sm:block"></div>
+                </li>
+                <!-- Paso 4 -->
+                <li class="stepper-step flex-1 flex items-center gap-2 cursor-default" data-paso="4">
+                    <span class="step-badge w-8 h-8 rounded-full flex items-center justify-center font-bold bg-slate-100 text-slate-400 border border-slate-200">4</span>
+                    <span class="step-label font-medium text-slate-400 hidden sm:inline">Adjuntos</span>
+                    <div class="flex-1 h-0.5 bg-slate-200 mx-2 hidden sm:block"></div>
+                </li>
+                <!-- Paso 5 -->
+                <li class="stepper-step flex items-center gap-2 cursor-default" data-paso="5">
+                    <span class="step-badge w-8 h-8 rounded-full flex items-center justify-center font-bold bg-slate-100 text-slate-400 border border-slate-200">5</span>
+                    <span class="step-label font-medium text-slate-400 hidden sm:inline">Presentación</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- FORMULARIO MULTI-PASO -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+
+            <!-- PASO 1: SELECCIÓN DEL TIPO DE TRÁMITE -->
+            <section class="paso-contenido space-y-6" data-paso="1">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Paso 1: Seleccione el Tipo de Trámite</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Elija el procedimiento administrativo correspondiente a su solicitud o petitorio.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <th:block th:each="tramite : ${tramites}">
+                        <label th:class="'card-tipo-tramite p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ' + (${tramite.id == tramiteIdInicial} ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50')"
+                               th:data-tramite-id="${tramite.id}">
+                            <div class="space-y-2">
+                                <div class="flex items-start justify-between gap-3">
+                                    <h3 class="text-xs font-bold text-slate-900" th:text="${tramite.nombre}">Nombre de Trámite</h3>
+                                    <input type="radio" name="tipoTramiteId" th:value="${tramite.id}" class="radio-tipo-tramite text-blue-600 focus:ring-blue-500 mt-0.5"
+                                           th:checked="${tramite.id == tramiteIdInicial}">
+                                </div>
+                                <p class="text-[11px] text-slate-600 leading-relaxed" th:text="${tramite.descripcion}">Descripción del trámite</p>
+                            </div>
+                            <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                                <span class="flex items-center gap-1 font-medium text-slate-700">
+                                    <i data-lucide="building" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span th:text="${tramite.oficinaResponsableNombre ?: 'Secretaría General'}">Oficina</span>
+                                </span>
+                                <span class="flex items-center gap-1 text-slate-500 font-mono">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span th:text="${tramite.plazoDias + ' días hábiles'}">30 días</span>
+                                </span>
+                            </div>
+                        </label>
+                    </th:block>
+                </div>
+
+                <!-- Requisitos del trámite seleccionado -->
+                <div class="pt-4 border-t border-slate-100 space-y-2">
+                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <i data-lucide="list-checks" class="w-4 h-4 text-blue-600"></i>
+                        Requisitos Oficiales Configurables
+                    </h3>
+                    <div id="contenedorRequisitos">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-400 italic">
+                            Seleccione un trámite arriba para consultar sus requisitos documentales.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PASO 2: DATOS DEL SOLICITANTE -->
+            <section class="paso-contenido hidden space-y-6" data-paso="2">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Paso 2: Datos del Solicitante</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Los datos personales han sido autenticados desde su perfil ciudadano verificado.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50/80 rounded-2xl p-5 border border-slate-200 space-y-4">
+                    <div class="flex items-center gap-2 text-xs font-bold text-emerald-700">
+                        <i data-lucide="badge-check" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Identidad Autenticada y Protegida por SIGM-QUINUA</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Nombres y Apellidos:</span>
+                            <span class="font-bold text-slate-900" th:text="${persona != null ? persona.nombreCompleto : usuario.username}">Nombres</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Documento de Identidad:</span>
+                            <span class="font-bold text-slate-900" th:text="${persona != null ? (persona.tipoDocumento + ': ' + persona.numeroDocumento) : '-'}">DNI: 00000000</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Correo Notificaciones:</span>
+                            <span class="font-bold text-slate-900" th:text="${persona != null ? persona.correo : '-'}">correo@ejemplo.com</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold block text-[11px]">Teléfono de Contacto:</span>
+                            <span class="font-bold text-slate-900" th:text="${persona != null ? persona.telefono : '-'}">999999999</span>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <span class="text-slate-400 font-semibold block text-[11px]">Dirección Domiciliaria:</span>
+                            <span class="font-bold text-slate-900" th:text="${persona != null ? persona.direccion : 'Quinua, Huamanga, Ayacucho'}">Dirección</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                        <p>
+                            Si requiere actualizar sus datos de contacto (teléfono o correo), puede gestionarlo en la sección de <a th:href="@{/perfil}" target="_blank" class="font-bold underline hover:text-amber-950">Mi Perfil</a>.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PASO 3: INFORMACIÓN DE LA SOLICITUD -->
+            <section class="paso-contenido hidden space-y-6" data-paso="3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Paso 3: Información y Petitorio</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Especifique con precisión el motivo y sustento de su solicitud administrativa.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label for="inputAsunto" class="block text-xs font-semibold text-slate-800">
+                            Asunto o Petitorio Concreto <span class="text-red-500 font-bold">*</span>
+                        </label>
+                        <input type="text" id="inputAsunto" name="asunto" maxlength="255"
+                               placeholder="Ej. Solicito constancia de posesión del predio ubicado en Jr. Sucre s/n"
+                               class="w-full text-xs rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-colors">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="inputDescripcion" class="block text-xs font-semibold text-slate-800">
+                            Fundamentación o Descripción Detallada <span class="text-red-500 font-bold">*</span>
+                        </label>
+                        <textarea id="inputDescripcion" name="descripcion" rows="5" maxlength="4000"
+                                  placeholder="Detalle los antecedentes de hecho y derecho, motivos del petitorio y precisiones necesarias para la atención de su expediente."
+                                  class="w-full text-xs rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-colors"></textarea>
+                    </div>
+
+                    <!-- Campos dinámicos del formulario del trámite -->
+                    <div id="contenedorCamposDinamicos" class="hidden"></div>
+                </div>
+            </section>
+
+            <!-- PASO 4: DOCUMENTOS ADJUNTOS -->
+            <section class="paso-contenido hidden space-y-6" data-paso="4">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Paso 4: Adjuntar Documentos y Requisitos</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Suba los archivos en formato PDF o imagen. El sistema registrará su huella criptográfica SHA-256 para garantizar su inalterabilidad.
+                    </p>
+                </div>
+
+                <!-- Zona de Carga / Dropzone -->
+                <div id="dropzoneArchivos" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-blue-50/30 transition-all cursor-pointer">
+                    <div class="max-w-md mx-auto space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs font-bold text-slate-800">Arrastre sus archivos aquí o haga clic para seleccionar</p>
+                            <p class="text-[11px] text-slate-500">Formatos permitidos: PDF, JPG, PNG (Hasta 25 MB por archivo)</p>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 pt-2">
+                            <select id="selectTipoRelacionDoc" class="text-xs rounded-lg border border-slate-300 px-2.5 py-1.5 bg-white text-slate-700 outline-none">
+                                <option value="PRINCIPAL">Documento Principal / FUT</option>
+                                <option value="ANEXO" selected>Anexo o Sustento</option>
+                            </select>
+                            <label for="inputArchivoAdjunto" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 cursor-pointer shadow-sm transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i>
+                                Seleccionar Archivo
+                            </label>
+                            <input type="file" id="inputArchivoAdjunto" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Documentos Adjuntos -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold text-slate-800">Documentos Adjuntos a la Solicitud</h3>
+                    <div id="listaDocumentosAdjuntos">
+                        <div class="py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                            <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                            <p class="text-xs">No ha adjuntado ningún documento aún.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Seleccione los archivos requeridos según el tipo de trámite.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PASO 5: REVISIÓN Y PRESENTACIÓN -->
+            <section class="paso-contenido hidden space-y-6" data-paso="5">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Paso 5: Revisión Final y Declaración Jurada</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Verifique toda la información antes del envío formal. Se asignará un número correlativo único no modificable.
+                    </p>
+                </div>
+
+                <!-- Contenedor del Resumen Inyectado por JS -->
+                <div id="contenedorResumenRevision"></div>
+
+                <!-- Declaración Jurada de Veracidad -->
+                <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200 space-y-2">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="chkDeclaracionVeracidad" class="w-4 h-4 rounded text-blue-600 border-amber-300 focus:ring-blue-500 mt-0.5" checked>
+                        <span class="text-xs text-amber-950 font-medium leading-relaxed">
+                            <strong>DECLARACIÓN JURADA DE VERACIDAD:</strong> Declaro bajo juramento que toda la información consignada y los documentos adjuntos son verdaderos y fidedignos, sujetándome a las sanciones de ley y al principio de presunción de veracidad establecido en el TUO de la Ley N° 27444.
+                        </span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- BARRA INFERIOR DE ACCIONES -->
+            <div class="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                    <button type="button" id="btnPasoAnterior" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" style="display: none;">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1.5"></i>
+                        Paso Anterior
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button type="button" id="btnGuardarBorrador" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-sm transition-colors" style="display: none;">
+                        <i data-lucide="save" class="w-3.5 h-3.5 mr-1.5 text-blue-600"></i>
+                        Guardar Borrador
+                    </button>
+
+                    <button type="button" id="btnPasoSiguiente" class="inline-flex items-center px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-sm transition-colors">
+                        Siguiente Paso
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1.5"></i>
+                    </button>
+
+                    <button type="button" id="btnPresentarFinal" class="inline-flex items-center px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition-all" style="display: none;">
+                        <i data-lucide="send" class="w-4 h-4 mr-1.5"></i>
+                        Presentar Solicitud Formal
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script th:src="@{/js/mesapartes/solicitud-validacion.js}"></script>
+    <script th:src="@{/js/mesapartes/solicitud-documentos.js}"></script>
+    <script th:src="@{/js/mesapartes/solicitud-form.js}"></script>
+</th:block>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Numeración y Correlativos — Configuración Mesa de Partes</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. ENCABEZADO -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-slate-700/60 p-6 shadow-xl">
+        <div class="space-y-1">
+            <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider">MESA DE PARTES VIRTUAL — SEGURIDAD Y CONTROL DE CORRELATIVOS</div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="hash" class="w-6 h-6 text-blue-400"></i>
+                <span>Parámetros de Numeración y Correlativos Oficiales</span>
+            </h1>
+            <p class="text-xs text-slate-300 max-w-2xl">
+                Supervisión controlada de correlativos anuales de expedientes y documentos institucionales con bloqueo concurrente atómico.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. TABS -->
+    <div th:replace="~{admin/mesa-partes/configuracion/tabs :: tabsNav('numeracion')}"></div>
+
+    <!-- 3. ALERTA DE INTEGRIDAD TÉCNICA -->
+    <div class="p-4 rounded-2xl bg-blue-950/30 border border-blue-800/40 text-blue-200 text-xs flex items-start space-x-3 shadow-lg">
+        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0 text-blue-400 mt-0.5"></i>
+        <div class="space-y-1">
+            <h4 class="font-bold text-slate-100">Protección de Correlativos Oficiales y Trazabilidad Municipal</h4>
+            <p class="text-slate-300 leading-relaxed">
+                Por directiva de control interno y auditoría de la Contraloría General de la República, la secuencia correlativa de expedientes
+                se genera mediante <strong>bloqueo pesimista concurrente (PESSIMISTIC_WRITE)</strong> en PostgreSQL. No se permite la manipulación
+                arbitraria o reinicio manual de correlativos sin un informe técnico fundamentado.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4. TARJETAS DE CORRELATIVOS ACTIVOS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div th:each="c : ${correlativos}" class="rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-lg space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40 font-mono"
+                          th:text="${c.prefijo}">MPV</span>
+                    <h3 class="text-xs font-bold text-slate-100" th:text="'Expedientes ' + ${c.anio}">Expedientes 2026</h3>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-semibold">• ACTIVO</span>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                    <span class="text-slate-400">Año de Ejercicio:</span>
+                    <span class="font-mono font-bold text-slate-200" th:text="${c.anio}">2026</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                    <span class="text-slate-400">Último Número Emitido:</span>
+                    <span class="font-mono font-bold text-amber-400 text-sm" th:text="${c.ultimoNumero}">124</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                    <span class="text-slate-400">Próximo en Cola:</span>
+                    <span class="font-mono font-bold text-emerald-400" th:text="${c.formatoSugerido}">MPV-2026-000125</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                    <span class="text-slate-400">Formato Estándar:</span>
+                    <span class="font-mono text-[11px] text-slate-300">{PREFIJO}-{AÑO}-{CORRELATIVO:06d}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-slate-400">Ámbito Institucional:</span>
+                    <span class="text-slate-300 font-medium" th:text="${c.entidad}">Mesa de Partes Virtual</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mesapartes/configuracion.js}"></script>
+</th:block>
+</body>
+</html>

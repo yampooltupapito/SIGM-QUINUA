@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Unidad ' + ${unidad.codigoInterno} + ' | SIGM-QUINUA'">Ficha de Unidad | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumb -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Seguridad Ciudadana</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/serenazgo/unidades}" class="hover:text-indigo-400">Unidades Móviles</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-indigo-400 font-semibold" th:text="${unidad.codigoInterno}">UNI-000001</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                    <i data-lucide="truck" class="w-6 h-6 text-indigo-400"></i>
+                    <span th:text="${unidad.codigoInterno} + ' — ' + ${(unidad.placa != null ? unidad.placa : unidad.tipoUnidadDesc)}">UNI-000001</span>
+                </h1>
+                <!-- Badge de estado -->
+                <span th:if="${unidad.estadoOperativo.name() == 'DISPONIBLE' || unidad.estadoOperativo.name() == 'OPERATIVA'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Disponible
+                </span>
+                <span th:if="${unidad.estadoOperativo.name() == 'ASIGNADA'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    Asignada en Servicio
+                </span>
+                <span th:if="${unidad.estadoOperativo.name() == 'EN_MANTENIMIENTO'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    En Mantenimiento
+                </span>
+                <span th:if="${unidad.estadoOperativo.name() == 'FUERA_DE_SERVICIO' || unidad.estadoOperativo.name() == 'INACTIVA' || unidad.estadoOperativo.name() == 'RETIRADA'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    Fuera de Servicio
+                </span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 mt-1" th:text="${(unidad.marca != null ? unidad.marca : '') + ' ' + (unidad.modelo != null ? unidad.modelo : '') + ' • Base: ' + (unidad.oficinaNombre != null ? unidad.oficinaNombre : 'Central')}">
+                Toyota Hilux 4x4 • Base Central
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón PDF -->
+            <a th:href="@{/dashboard/serenazgo/unidades/{id}/ficha-pdf(id=${unidad.id})}"
+               class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4 mr-1.5 text-rose-400"></i>
+                Descargar Ficha PDF
+            </a>
+
+            <!-- Botón Editar -->
+            <a th:href="@{/dashboard/serenazgo/unidades/{id}/editar(id=${unidad.id})}"
+               sec:authorize="hasAuthority('SERENAZGO_UNIDADES_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                <i data-lucide="edit-3" class="w-4 h-4 mr-1.5 text-indigo-400"></i>
+                Editar
+            </a>
+
+            <!-- Botón Asignar / Devolver según estado -->
+            <button th:if="${unidad.disponibleParaAsignacion}" onclick="document.getElementById('modalAsignar').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('SERENAZGO_UNIDADES_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all">
+                <i data-lucide="user-check" class="w-4 h-4 mr-1.5"></i>
+                Asignar Conductor
+            </button>
+            <button th:if="${unidad.estadoOperativo.name() == 'ASIGNADA'}" onclick="document.getElementById('modalDevolver').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('SERENAZGO_UNIDADES_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all">
+                <i data-lucide="corner-down-left" class="w-4 h-4 mr-1.5"></i>
+                Registrar Devolución
+            </button>
+
+            <!-- Botón Cambiar Estado -->
+            <button onclick="document.getElementById('modalEstado').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('SERENAZGO_UNIDADES_CAMBIAR_ESTADO') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors">
+                <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5 text-amber-400"></i>
+                Cambiar Estado
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-3">
+        <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${mensajeExito}">Operación exitosa</span>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}">Error en la operación</span>
+    </div>
+
+    <!-- Pestañas de Navegación de la Ficha Técnica -->
+    <div class="flex border-b border-theme space-x-6 text-xs font-semibold overflow-x-auto">
+        <button onclick="switchTab('general')" id="tabBtn-general"
+                class="tab-btn pb-3 text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Información General</span>
+        </button>
+        <button onclick="switchTab('asignaciones')" id="tabBtn-asignaciones"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Asignaciones (<span th:text="${unidad.asignaciones.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('mantenimientos')" id="tabBtn-mantenimientos"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="wrench" class="w-4 h-4"></i>
+            <span>Mantenimiento (<span th:text="${unidad.mantenimientos.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('incidencias')" id="tabBtn-incidencias"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>Incidencias Técnicas (<span th:text="${unidad.incidencias.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('historial')" id="tabBtn-historial"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="git-commit" class="w-4 h-4"></i>
+            <span>Transiciones de Estado (<span th:text="${unidad.historialEstados.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('equipamiento')" id="tabBtn-equipamiento"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="radio" class="w-4 h-4"></i>
+            <span>Equipamiento Asignado (<span th:text="${unidad.equipamientosAsignados.size()}">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- PESTAÑA 1: INFORMACIÓN GENERAL -->
+    <div id="tab-general" class="tab-pane space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Datos mecánicos -->
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2.5">
+                    <i data-lucide="car" class="w-4 h-4"></i>
+                    <span>Ficha Técnica Vehicular</span>
+                </h3>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Tipo de Vehículo</span>
+                        <span class="font-bold text-white" th:text="${unidad.tipoUnidadDesc}">Camioneta</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Placa Oficial</span>
+                        <span class="font-bold font-mono text-white" th:text="${unidad.placa != null ? unidad.placa : 'SIN PLACA'}">EGI-450</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Marca</span>
+                        <span class="font-semibold text-slate-200" th:text="${unidad.marca != null ? unidad.marca : 'N/D'}">Toyota</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Modelo</span>
+                        <span class="font-semibold text-slate-200" th:text="${unidad.modelo != null ? unidad.modelo : 'N/D'}">Hilux</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Año Fabricación</span>
+                        <span class="font-semibold text-slate-200" th:text="${unidad.anio != null ? unidad.anio : 'N/D'}">2024</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Color</span>
+                        <span class="font-semibold text-slate-200" th:text="${unidad.color != null ? unidad.color : 'N/D'}">Blanco</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Kilometraje Actual</span>
+                        <span class="font-mono font-bold text-indigo-400" th:text="${unidad.kilometrajeActual != null ? unidad.kilometrajeActual + ' km' : '0 km'}">12,450 km</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha Incorporación</span>
+                        <span class="text-slate-200" th:text="${unidad.fechaIncorporacion}">2026-01-15</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos patrimoniales y legales -->
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2.5">
+                    <i data-lucide="shield" class="w-4 h-4"></i>
+                    <span>Control Patrimonial e Institucional</span>
+                </h3>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Código Patrimonial</span>
+                        <span class="font-mono text-slate-200" th:text="${unidad.codigoPatrimonial != null ? unidad.codigoPatrimonial : 'PENDIENTE SBN'}">7464.05.001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Base / Unidad Orgánica</span>
+                        <span class="font-semibold text-slate-200" th:text="${unidad.oficinaNombre != null ? unidad.oficinaNombre : 'Base Central Serenazgo'}">Base Central</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">N° Motor</span>
+                        <span class="font-mono text-slate-300" th:text="${unidad.numeroMotor != null ? unidad.numeroMotor : 'NO REGISTRADO'}">2KD-FTV</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">N° Chasis / VIN</span>
+                        <span class="font-mono text-slate-300" th:text="${unidad.numeroChasis != null ? unidad.numeroChasis : 'NO REGISTRADO'}">8AJBA3</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-400 block text-[11px]">Conductor / Responsable Actual</span>
+                        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700/60 mt-1 flex items-center justify-between">
+                            <span class="font-bold text-white" th:text="${unidad.responsableActualNombre != null ? unidad.responsableActualNombre : 'UNIDAD DISPONIBLE EN BASE'}">Juan Pérez</span>
+                            <span th:if="${unidad.responsableActualNombre != null}" class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold">En Servicio</span>
+                            <span th:if="${unidad.responsableActualNombre == null}" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold">Libre</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Observaciones Técnicas y Equipamiento Adicional</h3>
+            <p class="text-xs text-slate-400 whitespace-pre-line" th:text="${unidad.observaciones != null && !unidad.observaciones.isEmpty() ? unidad.observaciones : 'Sin observaciones registradas.'}">
+                Equipada con circulina LED institucional y radio móvil VHF base.
+            </p>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 2: ASIGNACIONES -->
+    <div id="tab-asignaciones" class="tab-pane hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Historial de Asignaciones y Conductores</h3>
+            <button th:if="${unidad.disponibleParaAsignacion}" onclick="document.getElementById('modalAsignar').classList.remove('hidden')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                + Nueva Asignación
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Fecha Inicio</th>
+                        <th class="px-4 py-3">Efectivo Conductor</th>
+                        <th class="px-4 py-3">Motivo / Servicio</th>
+                        <th class="px-4 py-3">Km Salida</th>
+                        <th class="px-4 py-3">Km Retorno</th>
+                        <th class="px-4 py-3">Fecha Devolución</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${unidad.asignaciones.empty}">
+                        <td colspan="7" class="text-center py-6 text-slate-400">No hay asignaciones registradas para esta unidad.</td>
+                    </tr>
+                    <tr th:each="asig : ${unidad.asignaciones}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono text-slate-200" th:text="${#temporals.format(asig.fechaInicio, 'dd/MM/yyyy HH:mm')}">2026-10-25 08:00</td>
+                        <td class="px-4 py-3 font-semibold text-white">
+                            <span th:text="${asig.personalNombreCompleto != null ? asig.personalNombreCompleto : asig.personalCodigo}">Juan Pérez</span>
+                        </td>
+                        <td class="px-4 py-3" th:text="${asig.motivoServicio}">Patrullaje Preventivo Sector 1</td>
+                        <td class="px-4 py-3 font-mono" th:text="${asig.kilometrajeSalida != null ? asig.kilometrajeSalida + ' km' : '-'}">12,000 km</td>
+                        <td class="px-4 py-3 font-mono" th:text="${asig.kilometrajeRetorno != null ? asig.kilometrajeRetorno + ' km' : '-'}">-</td>
+                        <td class="px-4 py-3 font-mono text-slate-300" th:text="${asig.fechaDevolucionReal != null ? #temporals.format(asig.fechaDevolucionReal, 'dd/MM/yyyy HH:mm') : 'EN CURSO'}">EN CURSO</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${asig.estadoAsignacion.name() == 'ACTIVA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300">Activa</span>
+                            <span th:if="${asig.estadoAsignacion.name() == 'DEVUELTA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Devuelta</span>
+                            <span th:if="${asig.estadoAsignacion.name() == 'CANCELADA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-400">Cancelada</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 3: MANTENIMIENTOS -->
+    <div id="tab-mantenimientos" class="tab-pane hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Control de Mantenimientos Técnicos y Preventivos</h3>
+            <button onclick="document.getElementById('modalMantenimiento').classList.remove('hidden')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors">
+                + Programar Mantenimiento
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Tipo</th>
+                        <th class="px-4 py-3">Fecha Programada</th>
+                        <th class="px-4 py-3">Descripción / Trabajo</th>
+                        <th class="px-4 py-3">Taller / Proveedor</th>
+                        <th class="px-4 py-3">Costo (S/)</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${unidad.mantenimientos.empty}">
+                        <td colspan="7" class="text-center py-6 text-slate-400">No hay mantenimientos programados ni registrados para esta unidad.</td>
+                    </tr>
+                    <tr th:each="m : ${unidad.mantenimientos}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${m.codigo}">MNT-000001</td>
+                        <td class="px-4 py-3" th:text="${m.tipoMantenimientoDesc}">Preventivo</td>
+                        <td class="px-4 py-3 font-mono" th:text="${m.fechaProgramada}">2026-11-01</td>
+                        <td class="px-4 py-3 text-slate-200" th:text="${m.descripcion}">Cambio de aceite y filtros 15,000 km</td>
+                        <td class="px-4 py-3" th:text="${m.tallerProveedor != null ? m.tallerProveedor : 'Taller Municipal'}">Taller Municipal</td>
+                        <td class="px-4 py-3 font-mono" th:text="${m.costo != null ? 'S/ ' + m.costo : '-'}">S/ 250.00</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${m.estado.name() == 'PROGRAMADO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">Programado</span>
+                            <span th:if="${m.estado.name() == 'FINALIZADO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Conforme</span>
+                            <span th:if="${m.estado.name() == 'CANCELADO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">Cancelado</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 4: INCIDENCIAS TÉCNICAS -->
+    <div id="tab-incidencias" class="tab-pane hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Registro de Averías, Daños e Incidencias Técnicas</h3>
+            <button onclick="document.getElementById('modalIncidencia').classList.remove('hidden')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors">
+                + Reportar Incidencia
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Fecha Reporte</th>
+                        <th class="px-4 py-3">Tipo Incidencia</th>
+                        <th class="px-4 py-3">Gravedad</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3">Reportado Por</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${unidad.incidencias.empty}">
+                        <td colspan="7" class="text-center py-6 text-slate-400">No se registran incidencias técnicas para esta unidad.</td>
+                    </tr>
+                    <tr th:each="i : ${unidad.incidencias}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-rose-400" th:text="${i.codigo}">INC-000001</td>
+                        <td class="px-4 py-3 font-mono text-slate-300" th:text="${#temporals.format(i.fechaReporte, 'dd/MM/yyyy HH:mm')}">2026-10-25 10:15</td>
+                        <td class="px-4 py-3 font-semibold text-white" th:text="${i.tipoIncidenciaDesc}">Avería Mecánica</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${i.nivelGravedad.name() == 'CRITICA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">Crítica</span>
+                            <span th:if="${i.nivelGravedad.name() == 'GRAVE'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">Grave</span>
+                            <span th:if="${i.nivelGravedad.name() == 'MEDIA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-300">Media</span>
+                            <span th:if="${i.nivelGravedad.name() == 'LEVE'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">Leve</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-200" th:text="${i.descripcion}">Falla en sistema de frenos delanteros</td>
+                        <td class="px-4 py-3" th:text="${i.personalReportaNombre != null ? i.personalReportaNombre : 'Operador Base'}">Juan Pérez</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${i.estado.name() == 'REGISTRADA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">Reportada</span>
+                            <span th:if="${i.estado.name() == 'RESUELTA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Resuelta</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 5: HISTORIAL DE TRANSICIONES -->
+    <div id="tab-historial" class="tab-pane hidden space-y-4">
+        <h3 class="text-sm font-bold text-white">Línea de Tiempo y Trazabilidad de Estados Operativos</h3>
+
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+            <div th:if="${unidad.historialEstados.empty}" class="text-center py-6 text-slate-400 text-xs">
+                No hay historial registrado.
+            </div>
+
+            <div class="relative pl-6 border-l-2 border-indigo-500/40 space-y-6">
+                <div th:each="h : ${unidad.historialEstados}" class="relative">
+                    <span class="absolute -left-[31px] top-0 w-3 h-3 rounded-full bg-indigo-500 ring-4 ring-slate-900"></span>
+                    <div class="text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-white" th:text="${h.estadoAnteriorDesc} + ' ➔ ' + ${h.estadoNuevoDesc}">DISPONIBLE ➔ ASIGNADA</span>
+                            <span class="text-[10px] text-slate-400 font-mono" th:text="${#temporals.format(h.fechaEfectiva, 'dd/MM/yyyy HH:mm:ss')}">25/10/2026 14:00</span>
+                        </div>
+                        <p class="text-slate-300 mt-1 text-xs" th:text="${h.motivo}">Motivo de la transición operativa.</p>
+                        <span class="text-[10px] text-slate-400 block mt-0.5" th:if="${h.usuarioRegistro != null}" th:text="'Registrado por: ' + ${h.usuarioRegistro}">admin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 6: EQUIPAMIENTO ASIGNADO A LA UNIDAD -->
+    <div id="tab-equipamiento" class="tab-pane hidden space-y-4">
+        <h3 class="text-sm font-bold text-white">Equipamiento Instalado o Asignado a la Unidad</h3>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Tipo</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3">N° Serie</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Ver</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${unidad.equipamientosAsignados.empty}">
+                        <td colspan="6" class="text-center py-6 text-slate-400">No hay equipos asignados a este patrullero o vehículo.</td>
+                    </tr>
+                    <tr th:each="eq : ${unidad.equipamientosAsignados}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${eq.codigoInterno}">EQP-000001</td>
+                        <td class="px-4 py-3" th:text="${eq.tipoEquipoDesc}">Radio Transceptor</td>
+                        <td class="px-4 py-3 text-white font-medium" th:text="${eq.descripcion}">Radio Base Móvil Motorola</td>
+                        <td class="px-4 py-3 font-mono" th:text="${eq.numeroSerie != null ? eq.numeroSerie : 'N/D'}">SER-12345</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300" th:text="${eq.estadoDesc}">Asignado</span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <a th:href="@{/dashboard/serenazgo/equipamiento/{id}(id=${eq.id})}" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL 1: ASIGNAR UNIDAD -->
+    <div id="modalAsignar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Asignar Conductor / Efectivo de Serenazgo</span>
+                </h3>
+                <button onclick="document.getElementById('modalAsignar').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/unidades/{id}/asignar(id=${unidad.id})}" method="POST" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Efectivo de Serenazgo Responsable *</label>
+                    <select name="personalId" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Seleccionar Sereno Activo --</option>
+                        <option th:each="p : ${personalActivo}" th:value="${p.id}"
+                                th:text="${p.codigoInterno} + ' - ' + ${p.persona.nombreCompleto} + ' (' + ${p.cargoOperativo.nombre} + ')'"></option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Kilometraje Salida (km)</label>
+                        <input type="number" step="0.1" name="kilometrajeSalida" th:value="${unidad.kilometrajeActual}"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Estado Físico Inicial</label>
+                        <input type="text" name="estadoInicialUnidad" value="BUENO Y LIMPIO"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Motivo / Servicio Operativo *</label>
+                    <input type="text" name="motivoServicio" required placeholder="Ej: Patrullaje Integrado Turno Tarde"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Observaciones de Entrega</label>
+                    <textarea name="observacionesEntrega" rows="2" placeholder="Nivel de combustible, herramientas de auxilio mecánico..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalAsignar').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Confirmar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: DEVOLVER UNIDAD -->
+    <div id="modalDevolver" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="corner-down-left" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Recepción y Devolución de Unidad Móvil</span>
+                </h3>
+                <button onclick="document.getElementById('modalDevolver').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/unidades/{id}/devolver(id=${unidad.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="p-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
+                    <span class="text-slate-400 block text-[11px]">Conductor a entregar:</span>
+                    <span class="font-bold text-white text-sm" th:text="${unidad.responsableActualNombre}">Juan Pérez</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Kilometraje Retorno (km) *</label>
+                        <input type="number" step="0.1" name="kilometrajeRetorno" required th:value="${unidad.kilometrajeActual}"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Estado de Recepción</label>
+                        <input type="text" name="estadoRetornoUnidad" value="CONFORME Y OPERATIVA"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Novedades u Observaciones de Retorno</label>
+                    <textarea name="observacionesDevolucion" rows="3" placeholder="Detalles de la guardia, combustible de entrega, novedades de ruta..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalDevolver').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Registrar Devolución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CAMBIAR ESTADO -->
+    <div id="modalEstado" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i>
+                    <span>Modificar Estado Operativo</span>
+                </h3>
+                <button onclick="document.getElementById('modalEstado').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/unidades/{id}/estado(id=${unidad.id})}" method="POST" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Nuevo Estado Operativo *</label>
+                    <select name="nuevoEstado" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option th:each="est : ${estadosOperativos}" th:value="${est}" th:text="${est.descripcion}"
+                                th:selected="${unidad.estadoOperativo == est}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Motivo Fundado de la Transición *</label>
+                    <textarea name="motivo" required rows="3" placeholder="Explique la justificación técnica u operativa del cambio de estado..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalEstado').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Guardar Transición</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: PROGRAMAR MANTENIMIENTO -->
+    <div id="modalMantenimiento" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="wrench" class="w-4 h-4 text-amber-400"></i>
+                    <span>Programar Mantenimiento Técnico</span>
+                </h3>
+                <button onclick="document.getElementById('modalMantenimiento').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/unidades/{id}/mantenimiento(id=${unidad.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Tipo de Mantenimiento *</label>
+                        <select name="tipoMantenimiento" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="tm : ${tiposMantenimiento}" th:value="${tm}" th:text="${tm.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Fecha Programada *</label>
+                        <input type="date" name="fechaProgramada" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción del Trabajo Técnico *</label>
+                    <textarea name="descripcion" required rows="2" placeholder="Detalle de repuestos, afinamiento, cambio de aceite, revisión de frenos..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Taller / Proveedor Encargado</label>
+                        <input type="text" name="tallerProveedor" placeholder="Ej: Mecánica Central Quinua"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Presupuesto Estimado (S/)</label>
+                        <input type="number" step="0.1" name="costo" placeholder="0.00"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalMantenimiento').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold">Guardar Mantenimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: REPORTAR INCIDENCIA TÉCNICA -->
+    <div id="modalIncidencia" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+                    <span>Reportar Avería o Incidencia Técnica</span>
+                </h3>
+                <button onclick="document.getElementById('modalIncidencia').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/unidades/{id}/incidencia(id=${unidad.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Tipo de Incidencia *</label>
+                        <select name="tipoIncidencia" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="ti : ${tiposIncidencia}" th:value="${ti}" th:text="${ti.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Nivel de Gravedad *</label>
+                        <select name="nivelGravedad" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="ng : ${nivelesGravedad}" th:value="${ng}" th:text="${ng.descripcion}"
+                                    th:selected="${ng.name() == 'MEDIA'}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Personal que Reporta</label>
+                    <select name="personalReportaId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Conductor Actual u Operador Base --</option>
+                        <option th:each="p : ${personalActivo}" th:value="${p.id}" th:text="${p.codigoInterno} + ' - ' + ${p.persona.nombreCompleto}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción de la Falla o Daño *</label>
+                    <textarea name="descripcion" required rows="3" placeholder="Describa el problema presentado, ruidos, falla eléctrica, neumático reventado..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalIncidencia').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold">Registrar Incidencia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de pestañas -->
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-400', 'border-indigo-500');
+                btn.classList.add('text-slate-400');
+            });
+            const selectedPane = document.getElementById('tab-' + tabName);
+            const selectedBtn = document.getElementById('tabBtn-' + tabName);
+            if (selectedPane && selectedBtn) {
+                selectedPane.classList.remove('hidden');
+                selectedBtn.classList.remove('text-slate-400');
+                selectedBtn.classList.add('text-indigo-400', 'border-indigo-500');
+            }
+        }
+    </script>
+</div>
+</body>
+</html>

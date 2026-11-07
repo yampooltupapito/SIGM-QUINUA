@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Servicio ' + ${servicio.codigo} + ' — SIGM-QUINUA'">Detalle de Servicio</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Barra de Acciones del Servicio -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/80 pb-5">
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/serenazgo/programacion}" class="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <div class="flex items-center gap-2.5">
+                    <h1 class="text-2xl font-bold font-mono tracking-tight text-white" th:text="${servicio.codigo}">PRG-2026-00001</h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                          th:classappend="${servicio.estado.name() == 'CONFIRMADA' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                                           (servicio.estado.name() == 'EN_CURSO' or servicio.estado.name() == 'PRESENTE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                                           (servicio.estado.name() == 'FINALIZADA' ? 'bg-slate-700 text-slate-300 border-slate-600' :
+                                           (servicio.estado.name() == 'CANCELADA' or servicio.estado.name() == 'CANCELADO' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' :
+                                           'bg-amber-500/10 text-amber-400 border-amber-500/30')))}"
+                          th:text="${servicio.estadoDesc}">Programada</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                    <span th:text="${servicio.tipoServicioDesc}">Patrullaje Preventivo</span> •
+                    <span th:text="${#temporals.format(servicio.fechaServicio, 'dd/MM/yyyy')}">25/10/2026</span> •
+                    <span class="text-slate-300 font-medium" th:text="${servicio.horarioFormateado}">06:00 - 14:00</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Botones de Acción Operativa -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Confirmar -->
+            <form th:if="${servicio.estado.name() == 'PROGRAMADA' or servicio.estado.name() == 'PROGRAMADO' or servicio.estado.name() == 'BORRADOR'}"
+                  th:action="@{/dashboard/serenazgo/programacion/{id}/confirmar(id=${servicio.id})}" method="post" class="inline"
+                  sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_CONFIRMAR') or hasRole('ROLE_ADMIN')">
+                <button type="submit"
+                        class="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>Confirmar y Publicar</span>
+                </button>
+            </form>
+
+            <!-- Iniciar Servicio -->
+            <form th:if="${servicio.estado.name() == 'CONFIRMADA' or servicio.estado.name() == 'PROGRAMADA'}"
+                  th:action="@{/dashboard/serenazgo/programacion/{id}/iniciar(id=${servicio.id})}" method="post" class="inline"
+                  sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_EDITAR') or hasRole('ROLE_ADMIN')">
+                <button type="submit"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="play" class="w-4 h-4"></i>
+                    <span>Iniciar Guardia</span>
+                </button>
+            </form>
+
+            <!-- Finalizar Servicio -->
+            <form th:if="${servicio.estado.name() == 'EN_CURSO' or servicio.estado.name() == 'PRESENTE'}"
+                  th:action="@{/dashboard/serenazgo/programacion/{id}/finalizar(id=${servicio.id})}" method="post" class="inline"
+                  sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_EDITAR') or hasRole('ROLE_ADMIN')">
+                <button type="submit" onclick="return confirm('¿Confirma la finalización de la guardia? Se liberarán las reservas de vehículos y equipos.')"
+                        class="px-3 py-1.5 rounded-lg bg-slate-700 text-white hover:bg-slate-600 text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="square" class="w-4 h-4 text-amber-400"></i>
+                    <span>Finalizar Servicio</span>
+                </button>
+            </form>
+
+            <!-- Reprogramar -->
+            <button th:if="${servicio.estado.name() != 'FINALIZADA' and servicio.estado.name() != 'CANCELADA' and servicio.estado.name() != 'CANCELADO'}"
+                    type="button" onclick="abrirModalReprogramar()"
+                    sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_REPROGRAMAR') or hasRole('ROLE_ADMIN')"
+                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-amber-400 hover:bg-slate-700 hover:text-white border border-slate-700 text-xs font-medium flex items-center gap-1.5">
+                <i data-lucide="calendar-sync" class="w-4 h-4"></i>
+                <span>Reprogramar</span>
+            </button>
+
+            <!-- Cancelar -->
+            <button th:if="${servicio.estado.name() != 'FINALIZADA' and servicio.estado.name() != 'CANCELADA' and servicio.estado.name() != 'CANCELADO'}"
+                    type="button" onclick="abrirModalCancelar()"
+                    sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_CANCELAR') or hasRole('ROLE_ADMIN')"
+                    class="px-3 py-1.5 rounded-lg bg-slate-800 text-rose-400 hover:bg-rose-500/20 border border-slate-700 text-xs font-medium flex items-center gap-1.5">
+                <i data-lucide="ban" class="w-4 h-4"></i>
+                <span>Cancelar</span>
+            </button>
+
+            <!-- Editar -->
+            <a th:if="${servicio.estado.name() != 'FINALIZADA' and servicio.estado.name() != 'CANCELADA' and servicio.estado.name() != 'CANCELADO'}"
+               th:href="@{/dashboard/serenazgo/programacion/{id}/editar(id=${servicio.id})}"
+               sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_EDITAR') or hasRole('ROLE_ADMIN')"
+               class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 text-xs font-medium flex items-center gap-1.5">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+                <span>Editar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${mensajeExito}">Éxito</span>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+        <i data-lucide="alert-octagon" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${mensajeError}">Error</span>
+    </div>
+
+    <!-- Tarjetas Resumen del Servicio -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/80">
+            <span class="text-xs text-slate-400">Turno Operativo</span>
+            <div class="text-sm font-bold text-white mt-1" th:text="${servicio.turnoNombre}">Diurno Mañana</div>
+            <div class="text-[11px] text-slate-400" th:text="${servicio.horarioFormateado}">06:00 - 14:00</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/80">
+            <span class="text-xs text-slate-400">Sector / Cuadrante</span>
+            <div class="text-sm font-bold text-white mt-1" th:text="${servicio.sectorNombre}">Sector Urbano</div>
+            <div class="text-[11px] text-slate-400" th:text="${servicio.zonaNombre != null ? servicio.zonaNombre : 'Sin zona'}">General</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/80">
+            <span class="text-xs text-slate-400">Responsable de Guardia</span>
+            <div class="text-sm font-bold text-white mt-1" th:text="${servicio.responsableServicioNombre}">Juan Pérez</div>
+            <div class="text-[11px] text-slate-400" th:text="${servicio.responsableServicioCodigo != null ? servicio.responsableServicioCodigo : 'Sereno'}">SER-2026-0001</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/80">
+            <span class="text-xs text-slate-400">Efectivos y Recursos</span>
+            <div class="text-sm font-bold text-purple-400 mt-1" th:text="${#lists.size(servicio.personalAsignado) + ' Efectivos'}">2 Efectivos</div>
+            <div class="text-[11px] text-slate-400" th:text="${#lists.size(servicio.unidadesReservadas) + ' Vehículos • ' + #lists.size(servicio.equipamientoReservado) + ' Equipos'}">1 Unidad</div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Detalle -->
+    <div class="border-b border-slate-700">
+        <nav class="flex space-x-2" aria-label="Tabs Detalle">
+            <button type="button" onclick="mostrarPestanaDetalle('general')" id="tabBtnGeneral"
+                    class="py-2.5 px-4 border-b-2 border-blue-500 font-medium text-xs rounded-t-lg text-blue-400 bg-blue-500/10">
+                Información General
+            </button>
+            <button type="button" onclick="mostrarPestanaDetalle('personal')" id="tabBtnPersonal"
+                    class="py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white">
+                Personal Asignado (<span th:text="${#lists.size(servicio.personalAsignado)}">0</span>)
+            </button>
+            <button type="button" onclick="mostrarPestanaDetalle('recursos')" id="tabBtnRecursos"
+                    class="py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white">
+                Recursos Reservados (<span th:text="${#lists.size(servicio.unidadesReservadas) + #lists.size(servicio.equipamientoReservado)}">0</span>)
+            </button>
+            <button type="button" onclick="mostrarPestanaDetalle('historial')" id="tabBtnHistorial"
+                    class="py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white">
+                Trazabilidad e Historial
+            </button>
+        </nav>
+    </div>
+
+    <!-- Contenido Pestaña 1: Información General -->
+    <div id="tabGeneral" class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-3">
+                <div>
+                    <span class="text-slate-400 block mb-0.5">Misión / Descripción Operativa:</span>
+                    <p class="text-slate-200 font-medium bg-slate-800/80 p-3 rounded-lg border border-slate-700/60"
+                       th:text="${servicio.descripcion != null and !servicio.descripcion.isEmpty() ? servicio.descripcion : 'Sin descripción detallada registrada.'}">
+                        Patrullaje preventivo en el centro histórico y plaza principal.
+                    </p>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 block mb-0.5">Observaciones de Guardia:</span>
+                    <p class="text-slate-200 font-medium bg-slate-800/80 p-3 rounded-lg border border-slate-700/60"
+                       th:text="${servicio.observaciones != null and !servicio.observaciones.isEmpty() ? servicio.observaciones : 'Sin observaciones registradas.'}">
+                        Ninguna.
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-2 bg-slate-800/40 p-4 rounded-lg border border-slate-700/60">
+                <div class="flex justify-between py-1 border-b border-slate-700/40">
+                    <span class="text-slate-400">Oficina Competente:</span>
+                    <span class="text-slate-200 font-medium" th:text="${servicio.oficinaResponsableNombre}">Subgerencia de Serenazgo</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/40">
+                    <span class="text-slate-400">Usuario Programador:</span>
+                    <span class="text-slate-200 font-medium" th:text="${servicio.usuarioProgramacionNombre}">admin</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/40">
+                    <span class="text-slate-400">Fecha de Creación:</span>
+                    <span class="text-slate-200 font-medium" th:text="${#temporals.format(servicio.createdAt, 'dd/MM/yyyy HH:mm')}">25/10/2026 08:00</span>
+                </div>
+                <div th:if="${servicio.motivoReprogramacion != null}" class="py-1">
+                    <span class="text-amber-400 font-semibold block mb-0.5">Último Motivo de Reprogramación:</span>
+                    <p class="text-slate-300" th:text="${servicio.motivoReprogramacion}">Reordenamiento</p>
+                </div>
+                <div th:if="${servicio.motivoCancelacion != null}" class="py-1">
+                    <span class="text-rose-400 font-semibold block mb-0.5">Motivo de Cancelación:</span>
+                    <p class="text-slate-300" th:text="${servicio.motivoCancelacion}">Emergencia</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Pestaña 2: Personal Asignado -->
+    <div id="tabPersonal" class="hidden rounded-xl bg-[#202c3d] border border-slate-700/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700 uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Efectivo Sereno</th>
+                        <th class="py-3 px-4">Cargo</th>
+                        <th class="py-3 px-4">Función en Servicio</th>
+                        <th class="py-3 px-4 text-center">Jefe / Responsable</th>
+                        <th class="py-3 px-4 text-center">Estado Asignación</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/60">
+                    <tr th:if="${#lists.isEmpty(servicio.personalAsignado)}">
+                        <td colspan="6" class="py-8 text-center text-slate-500">No hay efectivos asignados a este servicio.</td>
+                    </tr>
+                    <tr th:each="p : ${servicio.personalAsignado}" class="hover:bg-slate-800/40">
+                        <td class="py-3 px-4 font-mono font-semibold text-blue-400" th:text="${p.codigoInterno}">SER-2026-0001</td>
+                        <td class="py-3 px-4 font-medium text-slate-200" th:text="${p.nombreCompleto}">Juan Pérez</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${p.cargo}">Sereno Patrullero</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                                  th:text="${p.funcionOperativaDesc}">Patrullero</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${p.esResponsable}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">Sí</span>
+                            <span th:unless="${p.esResponsable}" class="text-slate-500 text-[11px]">No</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300"
+                                  th:text="${p.estadoAsignacionDesc}">Asignado</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contenido Pestaña 3: Recursos Reservados -->
+    <div id="tabRecursos" class="hidden space-y-4">
+        <!-- Unidades -->
+        <div class="rounded-xl bg-[#202c3d] border border-slate-700/80 shadow-sm overflow-hidden">
+            <div class="p-3.5 bg-slate-800/60 border-b border-slate-700 font-bold text-xs text-white flex items-center gap-2">
+                <i data-lucide="car" class="w-4 h-4 text-cyan-400"></i>
+                <span>Unidades Móviles Reservadas</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800/40 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                            <th class="py-2.5 px-4">Código</th>
+                            <th class="py-2.5 px-4">Tipo</th>
+                            <th class="py-2.5 px-4">Placa</th>
+                            <th class="py-2.5 px-4">Marca / Modelo</th>
+                            <th class="py-2.5 px-4 text-center">Estado Reserva</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/60">
+                        <tr th:if="${#lists.isEmpty(servicio.unidadesReservadas)}">
+                            <td colspan="5" class="py-4 text-center text-slate-500">No hay vehículos asignados a este servicio.</td>
+                        </tr>
+                        <tr th:each="u : ${servicio.unidadesReservadas}">
+                            <td class="py-2.5 px-4 font-mono text-blue-400 font-semibold" th:text="${u.codigo}">UNID-2026-0001</td>
+                            <td class="py-2.5 px-4 text-slate-400" th:text="${u.tipoUnidadDesc}">Camioneta</td>
+                            <td class="py-2.5 px-4 font-mono font-medium text-slate-200" th:text="${u.placa}">EAA-123</td>
+                            <td class="py-2.5 px-4" th:text="${u.marcaModelo}">Toyota Hilux</td>
+                            <td class="py-2.5 px-4 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+                                      th:text="${u.estadoReservaDesc}">Reservada</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Equipamiento -->
+        <div class="rounded-xl bg-[#202c3d] border border-slate-700/80 shadow-sm overflow-hidden">
+            <div class="p-3.5 bg-slate-800/60 border-b border-slate-700 font-bold text-xs text-white flex items-center gap-2">
+                <i data-lucide="radio" class="w-4 h-4 text-amber-400"></i>
+                <span>Equipamiento y Radiocomunicaciones</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800/40 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                            <th class="py-2.5 px-4">Código</th>
+                            <th class="py-2.5 px-4">Tipo de Bien</th>
+                            <th class="py-2.5 px-4">N° Serie / Lote</th>
+                            <th class="py-2.5 px-4 text-center">Cantidad</th>
+                            <th class="py-2.5 px-4 text-center">Estado Reserva</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/60">
+                        <tr th:if="${#lists.isEmpty(servicio.equipamientoReservado)}">
+                            <td colspan="5" class="py-4 text-center text-slate-500">No hay equipamiento reservado formalmente.</td>
+                        </tr>
+                        <tr th:each="eq : ${servicio.equipamientoReservado}">
+                            <td class="py-2.5 px-4 font-mono text-blue-400 font-semibold" th:text="${eq.codigo}">EQP-2026-0001</td>
+                            <td class="py-2.5 px-4" th:text="${eq.tipoEquipamientoDesc}">Radio Portátil VHF</td>
+                            <td class="py-2.5 px-4 font-mono text-slate-400" th:text="${eq.numeroSerie != null ? eq.numeroSerie : 'Control cuantitativo'}">SN-12345</td>
+                            <td class="py-2.5 px-4 text-center font-bold text-slate-200" th:text="${eq.cantidad}">1</td>
+                            <td class="py-2.5 px-4 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                                      th:text="${eq.estadoReservaDesc}">Reservado</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Pestaña 4: Historial y Trazabilidad -->
+    <div id="tabHistorial" class="hidden p-5 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+            Bitácora Inmutable de Eventos
+        </h3>
+
+        <div class="relative border-l-2 border-slate-700 ml-4 space-y-6">
+            <div th:if="${#lists.isEmpty(servicio.historial)}" class="pl-6 text-xs text-slate-500">
+                No hay movimientos registrados.
+            </div>
+
+            <div th:each="h : ${servicio.historial}" class="relative pl-6">
+                <span class="absolute -left-2 top-0.5 w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-slate-900"></span>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-bold text-slate-200" th:text="${h.tipoEventoDesc}">Evento</span>
+                    <span th:text="${#temporals.format(h.createdAt, 'dd/MM/yyyy HH:mm:ss')}">25/10/2026 12:00</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-1 font-medium" th:text="${h.motivo}">Detalle del motivo</p>
+                <div th:if="${h.detallesJson != null}" class="text-[11px] text-slate-400 mt-0.5 font-mono" th:text="${h.detallesJson}"></div>
+                <div class="text-[10px] text-slate-500 mt-1">Registrado por: <span class="text-slate-400" th:text="${h.usuarioNombre}">admin</span></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal de Reprogramación -->
+<div id="modalReprogramar" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="rounded-xl bg-[#202c3d] border border-slate-700 max-w-lg w-full p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="calendar-sync" class="w-4 h-4 text-amber-400"></i>
+                Reprogramar Servicio
+            </h3>
+            <button type="button" onclick="cerrarModalReprogramar()" class="text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <form th:action="@{/dashboard/serenazgo/programacion/{id}/reprogramar(id=${servicio.id})}" method="post" class="space-y-4 text-xs">
+            <div>
+                <label class="block font-medium text-slate-300 mb-1">Nueva Fecha de Servicio *</label>
+                <input type="date" name="nuevaFechaServicio" th:value="${servicio.fechaServicio}" required
+                       class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white"/>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-300 mb-1">Nuevo Turno Horario *</label>
+                <select name="nuevoTurnoId" required
+                        class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white">
+                    <option th:each="t : ${turnos}" th:value="${t.id}"
+                            th:text="${t.nombre + ' (' + t.horaInicio + '-' + t.horaFin + ')'}"
+                            th:selected="${t.id == servicio.turnoId}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-300 mb-1">Motivo Justificado de Reprogramación *</label>
+                <textarea name="motivo" rows="3" required placeholder="Especifique la causa operativa del cambio de fecha/horario..."
+                          class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModalReprogramar()"
+                        class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-500 font-semibold shadow-sm">
+                    Confirmar Reprogramación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Cancelación -->
+<div id="modalCancelar" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="rounded-xl bg-[#202c3d] border border-slate-700 max-w-lg w-full p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="ban" class="w-4 h-4 text-rose-400"></i>
+                Cancelar Servicio Programado
+            </h3>
+            <button type="button" onclick="cerrarModalCancelar()" class="text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <form th:action="@{/dashboard/serenazgo/programacion/{id}/cancelar(id=${servicio.id})}" method="post" class="space-y-4 text-xs">
+            <div class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                ⚠ Advertencia: Al cancelar este servicio se liberarán automáticamente todas las asignaciones de personal, vehículos y equipos asociados.
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-300 mb-1">Motivo Obligatorio de Cancelación *</label>
+                <textarea name="motivo" rows="3" required placeholder="Especifique la causa justificada de la anulación del servicio..."
+                          class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModalCancelar()"
+                        class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+                    Cerrar
+                </button>
+                <button type="submit"
+                        class="px-4 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-500 font-semibold shadow-sm">
+                    Proceder con Cancelación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function mostrarPestanaDetalle(tab) {
+        document.getElementById('tabGeneral').classList.add('hidden');
+        document.getElementById('tabPersonal').classList.add('hidden');
+        document.getElementById('tabRecursos').classList.add('hidden');
+        document.getElementById('tabHistorial').classList.add('hidden');
+
+        document.getElementById('tabBtnGeneral').className = "py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white";
+        document.getElementById('tabBtnPersonal').className = "py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white";
+        document.getElementById('tabBtnRecursos').className = "py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white";
+        document.getElementById('tabBtnHistorial').className = "py-2.5 px-4 border-b-2 border-transparent font-medium text-xs rounded-t-lg text-slate-400 hover:text-white";
+
+        if (tab === 'general') {
+            document.getElementById('tabGeneral').classList.remove('hidden');
+            document.getElementById('tabBtnGeneral').className = "py-2.5 px-4 border-b-2 border-blue-500 font-medium text-xs rounded-t-lg text-blue-400 bg-blue-500/10";
+        } else if (tab === 'personal') {
+            document.getElementById('tabPersonal').classList.remove('hidden');
+            document.getElementById('tabBtnPersonal').className = "py-2.5 px-4 border-b-2 border-blue-500 font-medium text-xs rounded-t-lg text-blue-400 bg-blue-500/10";
+        } else if (tab === 'recursos') {
+            document.getElementById('tabRecursos').classList.remove('hidden');
+            document.getElementById('tabBtnRecursos').className = "py-2.5 px-4 border-b-2 border-blue-500 font-medium text-xs rounded-t-lg text-blue-400 bg-blue-500/10";
+        } else if (tab === 'historial') {
+            document.getElementById('tabHistorial').classList.remove('hidden');
+            document.getElementById('tabBtnHistorial').className = "py-2.5 px-4 border-b-2 border-blue-500 font-medium text-xs rounded-t-lg text-blue-400 bg-blue-500/10";
+        }
+    }
+
+    function abrirModalReprogramar() {
+        document.getElementById('modalReprogramar').classList.remove('hidden');
+    }
+    function cerrarModalReprogramar() {
+        document.getElementById('modalReprogramar').classList.add('hidden');
+    }
+
+    function abrirModalCancelar() {
+        document.getElementById('modalCancelar').classList.remove('hidden');
+    }
+    function cerrarModalCancelar() {
+        document.getElementById('modalCancelar').classList.add('hidden');
+    }
+    /*]]>*/
+</script>
+</th:block>
+</body>
+</html>

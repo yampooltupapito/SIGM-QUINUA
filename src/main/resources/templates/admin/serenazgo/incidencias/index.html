@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Registro de Incidencias — Serenazgo Quinua</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Notificación -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-900/50 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación completada con éxito.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 bg-rose-900/50 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado Principal y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-7 h-7 text-blue-500"></i>
+                Registro de incidencias
+            </h1>
+            <p class="text-sm text-slate-400 mt-1">
+                Administración, clasificación y seguimiento de hechos reportados en seguridad ciudadana.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/serenazgo/incidencias/exportar/excel(desde=${filtro.desde}, hasta=${filtro.hasta})}"
+               class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg border border-slate-700 flex items-center gap-2 transition">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+                Exportar Excel
+            </a>
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               th:href="@{/dashboard/serenazgo/incidencias/nueva}"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition shadow">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                Nueva Incidencia
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores de Gestión Operativa -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</span>
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-100 mt-2" th:text="${kpis != null ? kpis.totalIncidencias : 0}">0</div>
+            <span class="text-[11px] text-slate-400">Histórico general</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-sky-400 uppercase tracking-wider">Registradas</span>
+                <i data-lucide="inbox" class="w-4 h-4 text-sky-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-sky-200 mt-2" th:text="${kpis != null ? kpis.registradas : 0}">0</div>
+            <span class="text-[11px] text-slate-400">Pendientes de revisión</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">En Evaluación</span>
+                <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-amber-200 mt-2" th:text="${kpis != null ? kpis.enEvaluacion : 0}">0</div>
+            <span class="text-[11px] text-slate-400">Verificando hechos</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">En Atención</span>
+                <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-indigo-200 mt-2" th:text="${kpis != null ? kpis.enAtencion : 0}">0</div>
+            <span class="text-[11px] text-slate-400">Seguimiento en curso</span>
+        </div>
+        <div class="bg-[#202c3d] border border-slate-700/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Cerradas</span>
+                <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-emerald-200 mt-2" th:text="${kpis != null ? kpis.cerradas : 0}">0</div>
+            <span class="text-[11px] text-slate-400">Cierre administrativo</span>
+        </div>
+        <div class="bg-[#202c3d] border border-rose-900/60 p-4 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-rose-400 uppercase tracking-wider">Críticas/Altas</span>
+                <i data-lucide="flame" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-rose-300 mt-2"
+                 th:text="${(kpis != null ? kpis.prioridadCritica : 0) + (kpis != null ? kpis.prioridadAlta : 0)}">0</div>
+            <span class="text-[11px] text-slate-400">Prioridad máxima</span>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros Avanzados -->
+    <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-4 shadow-sm">
+        <form method="get" th:action="@{/dashboard/serenazgo/incidencias}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <!-- Búsqueda textual -->
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-medium text-slate-300 mb-1">Buscar término</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" name="termino" th:value="${filtro.termino}"
+                           placeholder="Código, título, referencia..."
+                           class="w-full pl-9 pr-3 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+
+            <!-- Tipo Incidencia -->
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Incidencia</label>
+                <select name="tipoId" class="w-full px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tiposIncidencia}"
+                            th:value="${t.id}"
+                            th:text="${t.nombre}"
+                            th:selected="${filtro.tipoId != null && filtro.tipoId == t.id}">Tipo</option>
+                </select>
+            </div>
+
+            <!-- Sector -->
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Sector</label>
+                <select name="sectorId" class="w-full px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos --</option>
+                    <option th:each="s : ${sectores}"
+                            th:value="${s.id}"
+                            th:text="${s.nombre}"
+                            th:selected="${filtro.sectorId != null && filtro.sectorId == s.id}">Sector</option>
+                </select>
+            </div>
+
+            <!-- Estado -->
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Estado</label>
+                <select name="estado" class="w-full px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos --</option>
+                    <option th:each="est : ${estados}"
+                            th:value="${est}"
+                            th:text="${est.descripcion}"
+                            th:selected="${filtro.estado != null && filtro.estado == est}">Estado</option>
+                </select>
+            </div>
+
+            <!-- Prioridad -->
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Prioridad</label>
+                <select name="prioridad" class="w-full px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todas --</option>
+                    <option th:each="prio : ${prioridades}"
+                            th:value="${prio}"
+                            th:text="${prio.descripcion}"
+                            th:selected="${filtro.prioridad != null && filtro.prioridad == prio}">Prioridad</option>
+                </select>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-1">
+                    <i data-lucide="filter" class="w-4 h-4"></i> Filtrar
+                </button>
+                <a th:href="@{/dashboard/serenazgo/incidencias}" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition" title="Limpiar Filtros">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Incidencias -->
+    <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-900/80 border-b border-slate-700/70 text-slate-400 text-xs uppercase tracking-wider">
+                        <th class="py-3 px-4">Código / Registro</th>
+                        <th class="py-3 px-4">Fecha Ocurrencia</th>
+                        <th class="py-3 px-4">Tipo & Título</th>
+                        <th class="py-3 px-4">Sector / Zona</th>
+                        <th class="py-3 px-4 text-center">Prioridad</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4">Reportante</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50 text-sm">
+                    <tr th:if="${incidencias == null || incidencias.empty}">
+                        <td colspan="8" class="py-12 text-center text-slate-400">
+                            <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                            <p class="font-medium">No se encontraron incidencias con los criterios seleccionados.</p>
+                            <p class="text-xs text-slate-500 mt-1">Modifique los filtros o registre un nuevo hecho u ocurrencia.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="inc : ${incidencias}" class="hover:bg-slate-800/40 transition">
+                        <!-- Código -->
+                        <td class="py-3 px-4 font-mono font-medium">
+                            <a th:href="@{/dashboard/serenazgo/incidencias/{id}(id=${inc.id})}"
+                               class="text-blue-400 hover:text-blue-300 flex items-center gap-1.5 font-semibold">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                                <span th:text="${inc.codigo}">INC-2026-00001</span>
+                            </a>
+                            <span class="text-[11px] text-slate-500 block mt-0.5"
+                                  th:text="${#temporals.format(inc.createdAt, 'dd/MM/yyyy HH:mm')}">25/10/2026 10:00</span>
+                        </td>
+
+                        <!-- Fecha Ocurrencia -->
+                        <td class="py-3 px-4 text-slate-300">
+                            <span th:if="${inc.fechaOcurrencia != null}"
+                                  th:text="${#temporals.format(inc.fechaOcurrencia, 'dd/MM/yyyy HH:mm')}">25/10/2026 09:30</span>
+                            <span th:unless="${inc.fechaOcurrencia != null}" class="text-slate-500 italic text-xs">Sin precisar</span>
+                        </td>
+
+                        <!-- Tipo y Título -->
+                        <td class="py-3 px-4 max-w-xs">
+                            <span class="inline-block px-2 py-0.5 text-[11px] font-semibold bg-blue-900/40 text-blue-300 rounded border border-blue-700/40 mb-1"
+                                  th:text="${inc.tipoNombre}">Alteración de orden</span>
+                            <p class="text-slate-200 font-medium truncate" th:text="${inc.titulo}">Título de la incidencia</p>
+                        </td>
+
+                        <!-- Sector y Zona -->
+                        <td class="py-3 px-4 text-slate-300">
+                            <div class="flex items-center gap-1 text-slate-200 font-medium">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span th:text="${inc.sectorNombre != null ? inc.sectorNombre : 'General'}">Sector Central</span>
+                            </div>
+                            <span th:if="${inc.zonaNombre != null}" class="text-xs text-slate-400 block mt-0.5" th:text="${inc.zonaNombre}">Zona Plaza</span>
+                        </td>
+
+                        <!-- Prioridad -->
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${inc.prioridad.name() == 'BAJA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">BAJA</span>
+                            <span th:if="${inc.prioridad.name() == 'MEDIA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/50">MEDIA</span>
+                            <span th:if="${inc.prioridad.name() == 'ALTA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-950/70 text-orange-300 border border-orange-700/50">ALTA</span>
+                            <span th:if="${inc.prioridad.name() == 'CRITICA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-950/80 text-rose-300 border border-rose-700/50 animate-pulse">CRÍTICA</span>
+                        </td>
+
+                        <!-- Estado -->
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${inc.estado.name() == 'REGISTRADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-sky-950/70 text-sky-300 border border-sky-700/50">REGISTRADA</span>
+                            <span th:if="${inc.estado.name() == 'EN_EVALUACION'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-950/70 text-purple-300 border border-purple-700/50">EN EVALUACIÓN</span>
+                            <span th:if="${inc.estado.name() == 'ASIGNADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-950/70 text-indigo-300 border border-indigo-700/50">ASIGNADA</span>
+                            <span th:if="${inc.estado.name() == 'EN_ATENCION'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/50">EN ATENCIÓN</span>
+                            <span th:if="${inc.estado.name() == 'RESUELTA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950/70 text-emerald-300 border border-emerald-700/50">RESUELTA</span>
+                            <span th:if="${inc.estado.name() == 'CERRADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-400 border border-slate-700">CERRADA</span>
+                            <span th:if="${inc.estado.name() == 'DESCARTADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-950/70 text-rose-400 border border-rose-800/50">DESCARTADA</span>
+                        </td>
+
+                        <!-- Reportante / Origen -->
+                        <td class="py-3 px-4 text-xs">
+                            <div class="text-slate-300 font-medium" th:text="${inc.reportanteNombre}">[ANÓNIMO]</div>
+                            <span class="text-slate-500 text-[11px]" th:text="${inc.canalReporteDesc}">Llamada</span>
+                        </td>
+
+                        <!-- Acciones -->
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a th:href="@{/dashboard/serenazgo/incidencias/{id}(id=${inc.id})}"
+                                   class="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition" title="Ver ficha técnica">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                                <a th:href="@{/dashboard/serenazgo/incidencias/{id}/pdf(id=${inc.id})}"
+                                   class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-lg transition" title="Descargar Ficha PDF">
+                                    <i data-lucide="file-down" class="w-4 h-4"></i>
+                                </a>
+                                <a sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                                   th:if="${inc.estado.name() != 'CERRADA' && inc.estado.name() != 'DESCARTADA'}"
+                                   th:href="@{/dashboard/serenazgo/incidencias/{id}/editar(id=${inc.id})}"
+                                   class="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg transition" title="Editar">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación del Servidor -->
+        <div th:if="${incidencias != null && incidencias.totalPages > 1}"
+             class="p-4 bg-slate-900/60 border-t border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <div>
+                Mostrando <span class="font-semibold text-slate-200" th:text="${incidencias.numberOfElements}">10</span>
+                de <span class="font-semibold text-slate-200" th:text="${incidencias.totalElements}">100</span> incidencias
+            </div>
+            <div class="flex items-center gap-1">
+                <a th:if="${!incidencias.first}"
+                   th:href="@{/dashboard/serenazgo/incidencias(page=${incidencias.number - 1}, termino=${filtro.termino}, tipoId=${filtro.tipoId}, sectorId=${filtro.sectorId}, estado=${filtro.estado}, prioridad=${filtro.prioridad})}"
+                   class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md border border-slate-700 transition">
+                    Anterior
+                </a>
+                <span class="px-3 py-1.5 text-slate-300 font-medium">
+                    Página <span th:text="${incidencias.number + 1}">1</span> de <span th:text="${incidencias.totalPages}">5</span>
+                </span>
+                <a th:if="${!incidencias.last}"
+                   th:href="@{/dashboard/serenazgo/incidencias(page=${incidencias.number + 1}, termino=${filtro.termino}, tipoId=${filtro.tipoId}, sectorId=${filtro.sectorId}, estado=${filtro.estado}, prioridad=${filtro.prioridad})}"
+                   class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md border border-slate-700 transition">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

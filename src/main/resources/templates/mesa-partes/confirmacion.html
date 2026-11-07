@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Solicitud Presentada Exitosamente — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+
+            <!-- Banner de Éxito -->
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-8 text-center space-y-3">
+                <div class="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto text-white shadow-inner">
+                    <i data-lucide="check-circle" class="w-10 h-10"></i>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold">¡Solicitud Presentada Formalmente!</h1>
+                <p class="text-xs sm:text-sm text-emerald-100 max-w-lg mx-auto">
+                    Su trámite ha ingresado a la Mesa de Partes Virtual de la Municipalidad Distrital de Quinua y se ha asignado un número oficial correlativo.
+                </p>
+            </div>
+
+            <!-- Ficha Resumen -->
+            <div class="p-6 sm:p-8 space-y-6">
+
+                <!-- Badge del Número de Expediente -->
+                <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-center space-y-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Número Oficial de Expediente</span>
+                    <div class="text-2xl sm:text-3xl font-black text-blue-700 font-mono tracking-wide"
+                         th:text="${constancia.numeroExpediente}">
+                        MPV-2026-000001
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Fecha y hora de presentación: <span class="font-semibold text-slate-800" th:text="${constancia.fechaPresentacion}">15/10/2026 10:30:00</span>
+                    </p>
+                </div>
+
+                <!-- Detalle de la Solicitud -->
+                <div class="divide-y divide-slate-100 text-xs">
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Tipo de Trámite:</span>
+                        <span class="font-bold text-slate-800 text-right" th:text="${constancia.tipoTramiteNombre}">Solicitud General</span>
+                    </div>
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Asunto:</span>
+                        <span class="font-semibold text-slate-800 text-right max-w-md" th:text="${constancia.asunto}">Asunto del trámite</span>
+                    </div>
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Solicitante:</span>
+                        <span class="font-semibold text-slate-800" th:text="${constancia.solicitanteNombreCompleto}">Nombres y Apellidos</span>
+                    </div>
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Unidad Orgánica Responsable:</span>
+                        <span class="font-semibold text-slate-800" th:text="${constancia.oficinaResponsableNombre}">Secretaría General</span>
+                    </div>
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Documentos Adjuntos:</span>
+                        <span class="font-semibold text-blue-600" th:text="${constancia.totalDocumentos + ' archivo(s) vinculados'}">1 archivo</span>
+                    </div>
+                    <div class="py-3 flex justify-between">
+                        <span class="text-slate-500 font-medium">Estado Inicial:</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                              th:text="${constancia.estado}">
+                            PRESENTADO
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Aviso Legal sobre la Constancia -->
+                <div class="bg-blue-50/60 rounded-xl p-4 border border-blue-200 text-[11px] text-blue-900 leading-relaxed flex items-start gap-2.5">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                    <p>
+                        <strong>Aviso Institucional:</strong> La presentación de esta solicitud acredita su ingreso por canal virtual en la fecha y hora indicadas. La unidad orgánica competente verificará los requisitos y emitirá el pronunciamiento que corresponda conforme al TUO de la Ley N° 27444.
+                    </p>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a th:href="@{'/mesa-partes/expedientes/' + ${expediente.uuid} + '/constancia'}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-2xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-lg shadow-blue-600/20 transition-all">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                        Descargar Constancia Oficial (PDF)
+                    </a>
+
+                    <a th:href="@{/mesa-partes/mis-solicitudes}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 rounded-2xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <i data-lucide="folder" class="w-4 h-4 mr-2 text-slate-500"></i>
+                        Ver Mis Solicitudes
+                    </a>
+
+                    <a th:href="@{/}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+                        Volver al Portal
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+</div>
+</body>
+</html>

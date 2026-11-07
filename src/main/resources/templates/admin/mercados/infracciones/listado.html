@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Presuntas Infracciones en Mercados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Presuntas Infracciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Presuntas Infracciones en Mercados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Evaluación preliminar de presuntos incumplimientos tipificados sin sanciones automáticas (TUO Ley N° 27444).</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/incidencias/dashboard}"
+               class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Dashboard
+            </a>
+            <a th:href="@{/dashboard/mercados/incidencias}"
+               class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                Incidencias
+            </a>
+            <a th:href="@{/dashboard/mercados/infracciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_INFRACCION_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Registrar Presunta Infracción
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form th:action="@{/dashboard/mercados/infracciones}" method="get" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Buscar</label>
+                <input type="text" name="q" th:value="${q}" placeholder="Código o hechos..."
+                       class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${m.id == mercadoId}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipificación</label>
+                <select name="tipificacionId" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+                    <option value="">Todas las Tipificaciones</option>
+                    <option th:each="t : ${tipificaciones}" th:value="${t.id}" th:text="${t.codigo + ' - ' + t.articulo}" th:selected="${t.id == tipificacionId}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Estado Evaluación</label>
+                <select name="estado" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+                    <option value="">Todos los Estados</option>
+                    <option th:each="est : ${estados}" th:value="${est.name()}" th:text="${est.label}" th:selected="${est == estado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Desde</label>
+                <input type="date" name="fechaDesde" th:value="${fechaDesde}"
+                       class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors shadow">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/infracciones}" class="py-2 px-3 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Presuntas Infracciones -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="border-b border-slate-700/60 bg-slate-800/40 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <th class="p-4">Código</th>
+                    <th class="p-4">Mercado / Puesto</th>
+                    <th class="p-4">Tipificación Normativa</th>
+                    <th class="p-4">Detección</th>
+                    <th class="p-4">Estado Evaluación</th>
+                    <th class="p-4">Expediente</th>
+                    <th class="p-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-xs">
+                <tr th:each="inf : ${infraccionesPage.content}" class="hover:bg-slate-800/20 transition-colors">
+                    <td class="p-4 font-bold text-rose-400" th:text="${inf.codigo}">INF-2026-000001</td>
+                    <td class="p-4 text-slate-200">
+                        <div class="font-medium" th:text="${inf.mercadoNombre}">Mercado Central</div>
+                        <div class="text-[11px] text-slate-400" th:text="${inf.puestoNumero != null ? 'Puesto ' + inf.puestoNumero : 'Área Común'}">Puesto 12</div>
+                    </td>
+                    <td class="p-4 text-slate-300">
+                        <div class="font-medium text-white" th:text="${inf.tipificacionCodigo != null ? inf.tipificacionCodigo : 'En tipificación'}">INF-001</div>
+                        <div class="text-[11px] text-slate-400" th:text="${inf.normaReferencia != null ? inf.normaReferencia : '-'}">Norma</div>
+                    </td>
+                    <td class="p-4 text-slate-300" th:text="${#temporals.format(inf.fechaDeteccion, 'dd/MM/yyyy')}">17/10/2026</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
+                              th:classappend="${inf.estadoEvaluacion.badgeClass}"
+                              th:text="${inf.estadoEvaluacion.label}">En Evaluación</span>
+                    </td>
+                    <td class="p-4 text-slate-300">
+                        <span th:if="${inf.expedienteId != null}" class="text-blue-400 font-mono text-[11px]" th:text="${inf.expedienteId}">EXP-2026</span>
+                        <span th:if="${inf.expedienteId == null}" class="text-slate-500 text-[11px]">Sin expediente</span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <a th:href="@{/dashboard/mercados/infracciones/{id}(id=${inf.id})}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Ver / Evaluar
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(infraccionesPage.content)}">
+                    <td colspan="7" class="p-8 text-center text-slate-400">
+                        No se encontraron registros de presuntas infracciones con los criterios seleccionados.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${infraccionesPage.totalPages > 1}" class="p-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <span>Página <strong th:text="${infraccionesPage.number + 1}">1</strong> de <strong th:text="${infraccionesPage.totalPages}">1</strong></span>
+            <div class="flex gap-2">
+                <a th:if="${infraccionesPage.hasPrevious()}"
+                   th:href="@{/dashboard/mercados/infracciones(page=${infraccionesPage.number - 1}, q=${q}, mercadoId=${mercadoId}, estado=${estado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg">Anterior</a>
+                <a th:if="${infraccionesPage.hasNext()}"
+                   th:href="@{/dashboard/mercados/infracciones(page=${infraccionesPage.number + 1}, q=${q}, mercadoId=${mercadoId}, estado=${estado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

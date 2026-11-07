@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Cuenta Corriente: ' + ${cuentaCorriente.comercianteNombre} + ' | SIGM-QUINUA'">Cuenta Corriente | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/finanzas}" class="hover:text-blue-400 transition-colors">Finanzas</a>
+                <span>/</span>
+                <span class="text-slate-200">Cuenta Corriente</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                <span th:text="${cuentaCorriente.comercianteNombre}">Comerciante</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="'DNI/RUC: ' + ${cuentaCorriente.comercianteDocumento} + ' | Código: ' + ${cuentaCorriente.comercianteCodigo}">DNI: 12345678</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/pagos/nuevo(comercianteId=${cuentaCorriente.comercianteId})}"
+               sec:authorize="hasAuthority('MERCADOS_PAGO_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Cobrar Deuda
+            </a>
+            <a th:href="@{/dashboard/mercados/obligaciones/nueva(comercianteId=${cuentaCorriente.comercianteId})}"
+               sec:authorize="hasAuthority('MERCADOS_OBLIGACION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow transition-colors">
+                Emitir Obligación
+            </a>
+        </div>
+    </div>
+
+    <!-- Saldo Deudor Resumido -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <span class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Estado Consolidado de Deuda</span>
+            <div class="text-3xl font-bold font-mono text-amber-400 mt-1" th:text="'S/ ' + ${#numbers.formatDecimal(cuentaCorriente.saldoTotalPendiente, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+            <p class="text-xs text-slate-400 mt-1">Saldo total exigible acumulado al día de hoy.</p>
+        </div>
+
+        <div th:if="${cuentaCorriente.saldoTotalPendiente == 0}" class="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            AL DÍA EN PAGOS
+        </div>
+        <div th:unless="${cuentaCorriente.saldoTotalPendiente == 0}" class="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            REGISTRA DEUDAS PENDIENTES
+        </div>
+    </div>
+
+    <!-- Obligaciones Exigibles Activas -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Obligaciones Exigibles por Cobrar
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-4 py-3">Código Obligación</th>
+                        <th class="px-4 py-3">Concepto</th>
+                        <th class="px-4 py-3">Puesto</th>
+                        <th class="px-4 py-3">Vencimiento</th>
+                        <th class="px-4 py-3 text-right">Monto Original</th>
+                        <th class="px-4 py-3 text-right">Saldo Pendiente</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40 font-medium">
+                    <tr th:each="o : ${cuentaCorriente.obligacionesExigibles}" class="hover:bg-[#202c3d]/50 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-blue-400">
+                            <a th:href="@{/dashboard/mercados/obligaciones/{id}(id=${o.id})}" th:text="${o.codigoObligacion}" class="hover:underline">OBL-2026-000001</a>
+                        </td>
+                        <td class="px-4 py-3" th:text="${o.conceptoNombre}">Merced Conductiva</td>
+                        <td class="px-4 py-3 text-slate-200 font-semibold" th:text="${o.puestoNumero}">C-101</td>
+                        <td class="px-4 py-3" th:text="${#temporals.format(o.fechaVencimiento, 'dd/MM/yyyy')}">30/01/2026</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-300" th:text="'S/ ' + ${#numbers.formatDecimal(o.montoOriginal, 1, 'COMMA', 2, 'POINT')}">S/ 50.00</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold text-amber-400" th:text="'S/ ' + ${#numbers.formatDecimal(o.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">S/ 50.00</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${o.estado.name() == 'VENCIDA' ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-400'}"
+                                  th:text="${o.estado}">PENDIENTE</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(cuentaCorriente.obligacionesExigibles)}">
+                        <td colspan="7" class="px-4 py-6 text-center text-emerald-400 font-medium">
+                            No registra obligaciones pendientes de pago.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Libro Diario de Movimientos de Cuenta Corriente -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Historial de Movimientos (Cargos y Abonos)
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-4 py-3">Fecha</th>
+                        <th class="px-4 py-3">Tipo Movimiento</th>
+                        <th class="px-4 py-3">Concepto y Descripción</th>
+                        <th class="px-4 py-3 text-right">Monto</th>
+                        <th class="px-4 py-3 text-right">Saldo Resultante</th>
+                        <th class="px-4 py-3">Usuario</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40 font-medium">
+                    <tr th:each="m : ${cuentaCorriente.movimientos}" class="hover:bg-[#202c3d]/50 transition-colors">
+                        <td class="px-4 py-3 text-slate-400" th:text="${#temporals.format(m.fechaMovimiento, 'dd/MM/yyyy HH:mm')}">15/01/2026 10:00</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${m.tipoMovimiento.name() == 'CARGO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400">CARGO (+)</span>
+                            <span th:if="${m.tipoMovimiento.name() == 'ABONO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400">ABONO (-)</span>
+                            <span th:if="${m.tipoMovimiento.name() == 'REVERSO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400">REVERSO</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-200" th:text="${m.concepto}">Emisión de obligación</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold"
+                            th:classappend="${m.tipoMovimiento.name() == 'CARGO' ? 'text-amber-400' : 'text-emerald-400'}"
+                            th:text="'S/ ' + ${#numbers.formatDecimal(m.monto, 1, 'COMMA', 2, 'POINT')}">S/ 50.00</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold text-white" th:text="'S/ ' + ${#numbers.formatDecimal(m.saldoResultante, 1, 'COMMA', 2, 'POINT')}">S/ 50.00</td>
+                        <td class="px-4 py-3 text-slate-400 font-mono text-[11px]" th:text="${m.usuario}">caja</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(cuentaCorriente.movimientos)}">
+                        <td colspan="6" class="px-4 py-6 text-center text-slate-500">
+                            No se registran movimientos en la cuenta corriente.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

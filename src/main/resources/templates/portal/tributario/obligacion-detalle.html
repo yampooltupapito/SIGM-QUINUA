@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Detalle de Obligación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <a th:href="@{/portal/tributario/obligaciones}" class="text-xs text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center gap-1 mb-1">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Obligaciones
+                    </a>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight" th:text="${obligacion.conceptoNombre}">Impuesto Predial</h2>
+                    <p class="text-xs text-slate-500 font-mono" th:text="'Código: ' + ${obligacion.codigoObligacion}">OBL-2026-001</p>
+                </div>
+                <div>
+                    <span th:if="${obligacion.saldo <= 0}" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CANCELADO</span>
+                    <span th:if="${obligacion.saldo > 0 and obligacion.vencida}" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">VENCIDO</span>
+                    <span th:if="${obligacion.saldo > 0 and !obligacion.vencida}" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">PENDIENTE</span>
+                </div>
+            </div>
+
+            <!-- Ficha Detallada -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Columna Datos Tributarios -->
+                <div class="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">Información del Tributo</h3>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Concepto Tributario:</span>
+                            <span class="font-bold text-slate-800" th:text="${obligacion.conceptoNombre}">Impuesto Predial</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Tipo Determinación:</span>
+                            <span class="font-semibold text-slate-700" th:text="${obligacion.tipoDeterminacion}">EMISION_MUNICIPAL</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Año Gravable:</span>
+                            <span class="font-bold text-slate-800" th:text="${obligacion.anioPeriodo}">2026</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Cuota:</span>
+                            <span class="font-semibold text-slate-700" th:text="${obligacion.cuotaNumero != null ? obligacion.cuotaNumero + ' de ' + (obligacion.totalCuotas != null ? obligacion.totalCuotas : 4) : 'Pago Único'}">Cuota 1</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Fecha de Vencimiento:</span>
+                            <span class="font-bold" th:classappend="${obligacion.vencida and obligacion.saldo > 0} ? 'text-rose-600' : 'text-slate-800'"
+                                  th:text="${#temporals.format(obligacion.fechaVencimiento, 'dd/MM/yyyy')}">28/02/2026</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Estado de Exigibilidad:</span>
+                            <span class="font-semibold text-slate-700" th:text="${obligacion.estadoExigibilidad != null ? obligacion.estadoExigibilidad : 'ORDINARIO'}">ORDINARIO</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4" th:if="${obligacion.predioCodigo != null}">
+                        <span class="text-slate-400 block text-[11px]">Inmueble Imponible:</span>
+                        <span class="font-bold text-slate-800 text-xs block" th:text="${obligacion.predioDireccion}">Jr. Sucre N° 120, Quinua</span>
+                        <span class="text-[11px] font-mono text-slate-500" th:text="'Código Predial: ' + ${obligacion.predioCodigo}">PRED-001</span>
+                    </div>
+                </div>
+
+                <!-- Columna Desglose Financiero -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">Estado Financiero</h3>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Monto Determinado:</span>
+                            <span class="font-semibold text-slate-800" th:text="'S/ ' + ${#numbers.formatDecimal(obligacion.importeOriginal, 1, 'POINT', 2, 'POINT')}">S/ 150.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Monto Vigente:</span>
+                            <span class="font-semibold text-slate-800" th:text="'S/ ' + ${#numbers.formatDecimal(obligacion.importeVigente, 1, 'POINT', 2, 'POINT')}">S/ 150.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-emerald-700">
+                            <span>Importe Amortizado:</span>
+                            <span class="font-bold" th:text="'S/ ' + ${#numbers.formatDecimal(obligacion.importePagado, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                        </div>
+                        <div class="border-t border-slate-200 pt-3 flex justify-between items-center text-sm">
+                            <span class="font-bold text-slate-900">Saldo Pendiente:</span>
+                            <span class="font-black"
+                                  th:classappend="${obligacion.saldo > 0} ? 'text-amber-600' : 'text-emerald-600'"
+                                  th:text="'S/ ' + ${#numbers.formatDecimal(obligacion.saldo, 1, 'POINT', 2, 'POINT')}">S/ 150.00</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
+                        <div class="font-bold flex items-center gap-1">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i> Medios de Cancelación
+                        </div>
+                        <p class="text-[10px] text-blue-800 leading-relaxed">
+                            Puede abonar esta obligación presentando su código o DNI en la Caja Central del Palacio Municipal de Quinua o mediante transferencias autorizadas del Banco de la Nación.
+                        </p>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

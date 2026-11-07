@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Centro de Reportes e Inteligencia Tributaria | SIGM-QUINUA</title>
+    <!-- Chart.js local para gráficos ejecutivos -->
+    <script th:src="@{/js/chart.min.js}"></script>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Recaudación Tributaria</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-blue-400 font-semibold">Inteligencia y Estadísticas</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Dashboard Ejecutivo</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-400"></i>
+                <span>Centro de Reportes Tributarios</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Indicadores de recaudación, cartera tributaria y desempeño operativo municipal.
+            </p>
+        </div>
+
+        <!-- Botones de Acción de Exportación Rápida -->
+        <div class="flex items-center gap-2">
+            <a th:href="@{/dashboard/tributaria/reportes/exportar/pdf(ejercicio=${ejercicioActual})}"
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold shadow-sm transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Exportar PDF</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/reportes/exportar/excel(ejercicio=${ejercicioActual})}"
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-semibold shadow-sm transition-colors">
+                <i data-lucide="sheet" class="w-4 h-4"></i>
+                <span>Exportar Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas del Centro de Reportes -->
+    <div class="flex overflow-x-auto border-b border-theme gap-2 text-xs font-medium pb-2 scrollbar-thin">
+        <a th:href="@{/dashboard/tributaria/reportes}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 bg-blue-600 text-white font-bold shadow-sm">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Resumen
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/recaudacion}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="receipt" class="w-4 h-4"></i> Recaudación
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/cartera}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i> Cartera y Deudas
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/contribuyentes}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="users" class="w-4 h-4"></i> Contribuyentes
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/predios}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="building-2" class="w-4 h-4"></i> Predios
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/fraccionamientos}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="split" class="w-4 h-4"></i> Fraccionamientos
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/notificaciones}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="mail-check" class="w-4 h-4"></i> Notificaciones
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/metas}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="target" class="w-4 h-4"></i> Metas
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/exportaciones}"
+           class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="history" class="w-4 h-4"></i> Historial
+        </a>
+    </div>
+
+    <!-- Barra de Metadatos y Fecha de Corte Oficial -->
+    <div class="bg-card border border-theme rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Fecha y Hora de Corte: <strong class="text-white font-mono" th:text="${#temporals.format(kpis.fechaCorte, 'dd/MM/yyyy HH:mm:ss')}">28/10/2026</strong></span>
+            <span>|</span>
+            <span>Moneda: <strong class="text-slate-200">PEN (S/)</strong></span>
+        </div>
+        <div>
+            <span>Municipalidad Distrital de Quinua — Huamanga, Ayacucho</span>
+        </div>
+    </div>
+
+    <!-- 1. Tarjetas KPI Principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Recaudación Anual -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Recaudación Confirmada</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-white font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(kpis.recaudacionAnioActual, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</span>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                <span>Meta Anual:</span>
+                <span class="font-semibold text-emerald-400" th:text="${kpis.metaDescripcion}">Meta no configurada</span>
+            </div>
+        </div>
+
+        <!-- KPI 2: Recaudación Mes Actual -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Recaudación del Mes</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-white font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(kpis.recaudacionMesActual, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</span>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span th:text="${kpis.totalPagosConfirmados} + ' pagos confirmados'">0 pagos</span>
+            </div>
+        </div>
+
+        <!-- KPI 3: Saldo Vencido y Morosidad -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Saldo Vencido (Cartera)</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-rose-400 font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(kpis.saldoVencido, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</span>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                <span>Tasa Morosidad:</span>
+                <span class="font-bold text-rose-400" th:text="${kpis.tasaMorosidadFinanciera} + '%'">0.00%</span>
+            </div>
+        </div>
+
+        <!-- KPI 4: Saldo Exigible Verificado -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Saldo Exigible</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="scale" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-white font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(kpis.saldoExigible, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</span>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span th:text="${kpis.totalContribuyentesConDeuda} + ' con deuda exigible'">0 contribuyentes</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Gráficos Ejecutivos Principales -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 1: Evolución de Recaudación Mensual -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i>
+                        <span>Recaudación Mensual del Ejercicio</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400">Comparativa cronológica de pagos confirmados</p>
+                </div>
+                <span class="text-xs font-mono font-bold text-blue-400" th:text="'Año ' + ${ejercicioActual}">Año 2026</span>
+            </div>
+            <div class="h-64 relative">
+                <canvas id="chartRecaudacionMensual"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Cartera por Tramos de Antigüedad -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                        <span>Cartera Vencida por Tramos</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400">Distribución de saldos vencidos según días de antigüedad</p>
+                </div>
+            </div>
+            <div class="h-64 relative">
+                <canvas id="chartCarteraTramos"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tablas Detalladas: Recaudación por Concepto y Medios de Pago -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Conceptos Tributarios (2 columnas) -->
+        <div class="lg:col-span-2 bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Recaudación por Concepto Tributario</span>
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="text-slate-400 bg-slate-800/60 uppercase text-[10px] tracking-wider border-b border-theme">
+                        <tr>
+                            <th class="py-2.5 px-3">Código</th>
+                            <th class="py-2.5 px-3">Concepto Tributario</th>
+                            <th class="py-2.5 px-3 text-right">Recaudado (PEN)</th>
+                            <th class="py-2.5 px-3 text-right">Part. (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme/60 text-slate-300">
+                        <tr th:each="c : ${recaudacionConceptos}" class="hover:bg-slate-800/40">
+                            <td class="py-2.5 px-3 font-mono text-slate-400" th:text="${c.conceptoCodigo}">01.01</td>
+                            <td class="py-2.5 px-3 font-medium text-slate-200" th:text="${c.conceptoNombre}">Impuesto Predial</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(c.montoRecaudado, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</td>
+                            <td class="py-2.5 px-3 text-right font-mono" th:text="${c.porcentaje} + '%'">0.00%</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recaudacionConceptos)}">
+                            <td colspan="4" class="py-6 text-center text-slate-500 italic">No existen aplicaciones registradas para el período.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Medios de Pago (1 columna) -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="credit-card" class="w-4 h-4 text-purple-400"></i>
+                    <span>Canales de Recaudación</span>
+                </h3>
+            </div>
+            <div class="space-y-3">
+                <div th:each="m : ${recaudacionMedios}" class="bg-slate-800/40 border border-theme rounded-lg p-3">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-semibold text-slate-200" th:text="${m.nombreMedio}">Efectivo Caja</span>
+                        <span class="font-mono text-blue-400 font-bold" th:text="${m.porcentaje} + '%'">0.00%</span>
+                    </div>
+                    <div class="mt-1 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                        <span th:text="${m.cantidadPagos} + ' pagos'">0 pagos</span>
+                        <span class="text-white font-bold" th:text="'S/ ' + ${#numbers.formatDecimal(m.montoRecaudado, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</span>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(recaudacionMedios)}" class="py-6 text-center text-slate-500 text-xs italic">
+                    Sin operaciones confirmadas.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Catálogo de Reportes Institucionales Disponibles -->
+    <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+        <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-blue-400"></i>
+                <span>Catálogo de Reportes e Informes Disponibles</span>
+            </h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="rep : ${catalogoReportes}" class="bg-slate-800/40 border border-theme rounded-xl p-4 flex flex-col justify-between hover:border-blue-500/50 transition-colors">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold" th:text="${rep.codigo}">REP-001</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-400" th:text="${rep.categoria}">RECAUDACION</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-white" th:text="${rep.nombre}">Nombre de Reporte</h4>
+                    <p class="text-[11px] text-slate-400 mt-1 line-clamp-2" th:text="${rep.descripcion}">Descripción del reporte.</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-theme/60 flex items-center justify-between text-xs">
+                    <span class="text-[10px] text-slate-500 font-mono" th:text="${rep.formatoPermitido}">PDF, EXCEL</span>
+                    <a th:href="@{/dashboard/tributaria/reportes/exportar/pdf(codigo=${rep.codigo})}"
+                       class="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-semibold">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Generar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Gráficos con Chart.js -->
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Datos para Recaudación Mensual
+            const rawMensual = /*[[${recaudacionMensual}]]*/ [];
+            const labelsMensual = rawMensual.map(i => i.etiqueta);
+            const dataMensual = rawMensual.map(i => i.monto);
+
+            const ctxMensual = document.getElementById('chartRecaudacionMensual');
+            if (ctxMensual) {
+                new Chart(ctxMensual, {
+                    type: 'line',
+                    data: {
+                        labels: labelsMensual,
+                        datasets: [{
+                            label: 'Recaudación Mensual (PEN)',
+                            data: dataMensual,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#60a5fa'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: '#334155' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { color: '#1e293b' },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Datos para Cartera por Tramos
+            const rawTramos = /*[[${carteraTramos}]]*/ [];
+            const labelsTramos = rawTramos.map(i => i.tramo);
+            const dataTramos = rawTramos.map(i => i.saldo);
+
+            const ctxTramos = document.getElementById('chartCarteraTramos');
+            if (ctxTramos) {
+                new Chart(ctxTramos, {
+                    type: 'bar',
+                    data: {
+                        labels: labelsTramos,
+                        datasets: [{
+                            label: 'Saldo Vencido (PEN)',
+                            data: dataTramos,
+                            backgroundColor: [
+                                '#3b82f6', '#0ea5e9', '#f59e0b', '#f97316', '#ef4444'
+                            ],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: '#334155' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>
+

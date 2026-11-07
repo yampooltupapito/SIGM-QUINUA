@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Caja Municipal y Turnos — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Notificaciones -->
+    <div th:if="${success}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center space-x-3">
+        <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${success}" class="text-sm font-medium">Operación realizada con éxito</span>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}" class="text-sm font-medium">Ocurrió un error</span>
+    </div>
+
+    <!-- Cabecera -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Caja Municipal</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="store" class="w-6 h-6 text-blue-400"></i>
+                Administración de Cajas y Turnos de Ventanilla
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+                Puntos de recaudación municipal, asignación de cajeros, aperturas con fondo de sencillo y control de arqueos.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="document.getElementById('modalAbrirSesion').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_CAJA_ABRIR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Abrir Turno / Sesión</span>
+            </button>
+            <a th:href="@{/dashboard/tributaria/cajas/nueva}"
+               sec:authorize="hasAuthority('TRIBUTARIA_CAJA_ADMINISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nueva Caja</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Cajas Municipales Registradas -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm overflow-hidden">
+        <div class="p-4 bg-[#1e293b] border-b border-[#334155] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="monitor" class="w-4 h-4 text-blue-400"></i>
+                Ventanillas y Cajas Físicas
+            </h3>
+            <span class="text-xs text-slate-400" th:text="${#lists.size(cajas.content)} + ' cajas registradas'"></span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Nombre de la Ventanilla</th>
+                        <th class="py-3 px-4">Ubicación</th>
+                        <th class="py-3 px-4">Cajero Asignado</th>
+                        <th class="py-3 px-4 text-center">Estado Caja</th>
+                        <th class="py-3 px-4 text-center">Sesión Activa</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]">
+                    <tr th:each="c : ${cajas.content}" class="hover:bg-slate-800/40">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${c.codigo}">CAJA-01</td>
+                        <td class="py-3 px-4 font-medium text-white" th:text="${c.nombre}">Ventanilla Principal</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${c.ubicacion}">Palacio Municipal</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${c.cajeroAsignadoNombre}">Juan Cajero</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${c.estadoBadgeClass}"
+                                  th:text="${c.estadoDescripcion}">ACTIVA</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${c.tieneSesionAbierta}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                Abierta (<span th:text="${c.sesionActivaCodigo}">SES-001</span>)
+                            </span>
+                            <span th:if="${!c.tieneSesionAbierta}" class="text-slate-500">Cerrada</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sesiones de Turno y Arqueo -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm overflow-hidden">
+        <div class="p-4 bg-[#1e293b] border-b border-[#334155] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i>
+                Sesiones Recientes de Recaudación y Arqueos
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]">
+                    <tr>
+                        <th class="py-3 px-4">Código Sesión</th>
+                        <th class="py-3 px-4">Caja</th>
+                        <th class="py-3 px-4">Cajero</th>
+                        <th class="py-3 px-4">Fecha Apertura</th>
+                        <th class="py-3 px-4 text-right">Fondo Apertura</th>
+                        <th class="py-3 px-4 text-right">Recaudado Efectivo</th>
+                        <th class="py-3 px-4 text-right">Efectivo Cierre</th>
+                        <th class="py-3 px-4 text-center">Diferencia</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]">
+                    <tr th:if="${#lists.isEmpty(sesionesRecientes.content)}" class="text-center text-slate-500 py-6">
+                        <td colspan="10" class="py-6">No hay sesiones de turno registradas.</td>
+                    </tr>
+                    <tr th:each="s : ${sesionesRecientes.content}" class="hover:bg-slate-800/40">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${s.codigoSesion}">SES-2026-00001</td>
+                        <td class="py-3 px-4 text-white" th:text="${s.cajaNombre}">Ventanilla 1</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${s.cajeroNombre}">Juan Cajero</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(s.fechaApertura, 'dd/MM/yyyy HH:mm')}">26/10/2026 08:00</td>
+                        <td class="py-3 px-4 text-right font-mono" th:text="'S/ ' + ${#numbers.formatDecimal(s.montoApertura, 1, 'POINT', 2, 'COMMA')}">S/ 50.00</td>
+                        <td class="py-3 px-4 text-right font-mono text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(s.totalRecaudadoEfectivo, 1, 'POINT', 2, 'COMMA')}">S/ 300.00</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-white" th:text="${s.montoCierreDeclarado != null ? 'S/ ' + #numbers.formatDecimal(s.montoCierreDeclarado, 1, 'POINT', 2, 'COMMA') : 'En curso'}">S/ 350.00</td>
+                        <td class="py-3 px-4 text-center font-mono font-bold"
+                            th:classappend="${s.diferencia.compareTo(T(java.math.BigDecimal).ZERO) == 0 ? 'text-emerald-400' : 'text-rose-400'}"
+                            th:text="'S/ ' + ${#numbers.formatDecimal(s.diferencia, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                  th:classappend="${s.estadoBadgeClass}"
+                                  th:text="${s.estadoDescripcion}">ABIERTA</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <button th:if="${s.estado.name() == 'ABIERTA'}"
+                                        th:onclick="'abrirModalCierre(\'' + ${s.id} + '\', \'' + ${s.codigoSesion} + '\')'"
+                                        class="px-2.5 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded text-[11px] font-bold transition-colors">
+                                    Cerrar Turno
+                                </button>
+                                <a th:if="${s.estado.name() == 'CERRADA' or s.estado.name() == 'OBSERVADA'}"
+                                   th:href="@{'/dashboard/tributaria/cajas/sesion/' + ${s.id} + '/cierre-pdf'}" target="_blank"
+                                   class="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors"
+                                   title="Descargar Acta de Cierre y Arqueo (PDF)">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Abrir Sesión -->
+    <div id="modalAbrirSesion" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-[#334155] rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-[#334155] pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="play-circle" class="w-5 h-5 text-emerald-400"></i>
+                    Apertura de Turno de Recaudación
+                </h3>
+                <button type="button" onclick="document.getElementById('modalAbrirSesion').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form th:action="@{/dashboard/tributaria/cajas/sesion/abrir}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Caja Municipal *</label>
+                    <select name="cajaId" required class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                        <option value="">-- Seleccionar Ventanilla --</option>
+                        <option th:each="c : ${cajas.content}" th:if="${!c.tieneSesionAbierta}" th:value="${c.id}" th:text="${c.codigo} + ' — ' + ${c.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fondo Inicial de Apertura (Sencillo S/) *</label>
+                    <input type="number" name="montoApertura" step="0.01" min="0" value="50.00" required
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:ring-1 focus:ring-blue-500">
+                    <span class="text-[10px] text-slate-500 mt-0.5 block">Fondo rotativo entregado para dar vuelto. No constituye ingreso tributario.</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones</label>
+                    <textarea name="observaciones" rows="2" class="w-full bg-[#101827] border border-[#334155] rounded-lg p-2.5 text-xs text-white placeholder-slate-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-[#334155]">
+                    <button type="button" onclick="document.getElementById('modalAbrirSesion').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg hover:bg-slate-700">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors">
+                        Aperturar Turno
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Cerrar Sesión y Arqueo -->
+    <div id="modalCerrarSesion" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-[#334155] rounded-xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-[#334155] pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="square" class="w-5 h-5 text-amber-400"></i>
+                    Cierre de Turno y Arqueo Físico de Caja
+                </h3>
+                <button type="button" onclick="document.getElementById('modalCerrarSesion').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="formCierreSesion" method="post" class="space-y-4">
+                <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300">
+                    Sesión: <strong id="lblSesionCodigo" class="text-white"></strong>. Realice el conteo físico de los billetes y monedas presentes en la caja.
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Total de Efectivo Físico Contado (S/) *</label>
+                    <input type="number" id="inpMontoDeclarado" name="montoCierreDeclarado" step="0.01" min="0" required
+                           placeholder="0.00"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm font-mono font-bold text-emerald-400 focus:ring-1 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Justificación si existe diferencia (Faltante / Sobrante)</label>
+                    <textarea name="justificacionDiferencia" rows="2" placeholder="Explique cualquier diferencia detectada en el cuadre..."
+                              class="w-full bg-[#101827] border border-[#334155] rounded-lg p-2.5 text-xs text-white placeholder-slate-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones Generales de Cierre</label>
+                    <textarea name="observaciones" rows="2" class="w-full bg-[#101827] border border-[#334155] rounded-lg p-2.5 text-xs text-white placeholder-slate-500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-[#334155]">
+                    <button type="button" onclick="document.getElementById('modalCerrarSesion').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg hover:bg-slate-700">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-colors">
+                        Confirmar Cierre y Arqueo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    function abrirModalCierre(sesionId, codigoSesion) {
+        document.getElementById('lblSesionCodigo').textContent = codigoSesion;
+        document.getElementById('formCierreSesion').action = `/dashboard/tributaria/cajas/sesion/${sesionId}/cerrar`;
+        document.getElementById('modalCerrarSesion').classList.remove('hidden');
+    }
+</script>
+</th:block>
+</body>
+</html>

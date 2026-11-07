@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Panel de Gestiones de Ocupación, Renovaciones y Transferencias | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <span class="text-slate-200">Módulo de Mercados</span>
+                <span>/</span>
+                <span class="text-blue-400 font-semibold">Gestiones de Ocupación</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Gestión de Ocupación, Renovaciones y Transferencias
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Administración reglamentaria de renovaciones de asignación, contratos, autorizaciones, cambios de titular y transferencias autorizadas.
+            </p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <a th:href="@{/dashboard/mercados/renovaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_RENOVACION_CREAR')"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Nueva Renovación</span>
+            </a>
+            <a th:href="@{/dashboard/mercados/cambios-titular/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_CAMBIO_TITULAR_CREAR')"
+               class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span>Cambio de Titular</span>
+            </a>
+            <a th:href="@{/dashboard/mercados/gestiones-ocupacion/reportes/excel}"
+               sec:authorize="hasAuthority('MERCADOS_GESTION_OCUPACION_EXPORTAR')"
+               class="px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Principales (KPIs) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Renovaciones Presentadas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Renovaciones Solicitadas</p>
+                <h3 class="text-2xl font-bold text-white mt-1" th:text="${stats.renovacionesPresentadas}">0</h3>
+                <p class="text-[10px] text-blue-400 mt-0.5">En proceso de revisión</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </div>
+        </div>
+
+        <!-- Renovaciones Aprobadas -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Renovaciones Aprobadas</p>
+                <h3 class="text-2xl font-bold text-emerald-400 mt-1" th:text="${stats.renovacionesAprobadas}">0</h3>
+                <p class="text-[10px] text-emerald-400/80 mt-0.5">Listas para formalizar</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+
+        <!-- Cambios de Titular Formalizados -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cambios Formalizados</p>
+                <h3 class="text-2xl font-bold text-purple-400 mt-1" th:text="${stats.cambiosTitularFormalizados}">0</h3>
+                <p class="text-[10px] text-purple-400/80 mt-0.5">Asignaciones actualizadas</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+        </div>
+
+        <!-- Solicitudes Observadas / En Subsanación -->
+        <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Observadas / Requerimiento</p>
+                <h3 class="text-2xl font-bold text-amber-400 mt-1" th:text="${stats.solicitudesObservadas}">0</h3>
+                <p class="text-[10px] text-amber-400/80 mt-0.5">Plazo de subsanación</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secciones de Acceso Rápido y Bandejas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Bandeja de Renovaciones -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Renovaciones</h2>
+                        <p class="text-xs text-slate-400">Asignaciones, Contratos y Autorizaciones</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                    Continuidad de vigencias para comerciantes titulares al día en pagos, verificaciones higiénicas y contratos vigentes.
+                </p>
+            </div>
+            <a th:href="@{/dashboard/mercados/renovaciones}"
+               class="w-full py-2.5 px-4 bg-[#202c3d] hover:bg-slate-700 text-blue-400 rounded-xl text-xs font-semibold text-center border border-slate-700/60 transition-colors block">
+                Ingresar a Bandeja de Renovaciones &rarr;
+            </a>
+        </div>
+
+        <!-- Bandeja de Cambios de Titular -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Cambios de Titular</h2>
+                        <p class="text-xs text-slate-400">Sucesión, Incapacidad o Causal Legítima</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                    Sustitución formal del comerciante titular ante contingencias debidamente acreditadas, preservando la inmutabilidad histórica.
+                </p>
+            </div>
+            <a th:href="@{/dashboard/mercados/cambios-titular}"
+               class="w-full py-2.5 px-4 bg-[#202c3d] hover:bg-slate-700 text-purple-400 rounded-xl text-xs font-semibold text-center border border-slate-700/60 transition-colors block">
+                Ingresar a Cambios de Titular &rarr;
+            </a>
+        </div>
+
+        <!-- Bandeja de Transferencias Autorizadas -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Transferencias Autorizadas</h2>
+                        <p class="text-xs text-slate-400">Procedimiento Extraordinario de Concejo</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                    Gestión excepcional regulada por el Concejo Municipal. No activada por defecto; requiere sustento expreso de procedencia legal.
+                </p>
+            </div>
+            <a th:href="@{/dashboard/mercados/transferencias}"
+               class="w-full py-2.5 px-4 bg-[#202c3d] hover:bg-slate-700 text-teal-400 rounded-xl text-xs font-semibold text-center border border-slate-700/60 transition-colors block">
+                Ingresar a Transferencias &rarr;
+            </a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

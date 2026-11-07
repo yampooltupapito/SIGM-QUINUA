@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Historial de Exportaciones — Mercados Municipales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados/reportes}" class="hover:text-white transition-colors">Centro de Reportes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-blue-400 font-semibold">Historial</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="history" class="w-6 h-6 text-blue-500"></i>
+                <span>Historial de Exportaciones y Auditoría de Descargas</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Trazabilidad completa de reportes generados en PDF y Excel, usuario emisor, registros procesados y descargas seguras.
+            </p>
+        </div>
+
+        <a th:href="@{/dashboard/mercados/reportes}" class="inline-flex items-center px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-theme transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Volver al Centro de Reportes
+        </a>
+    </div>
+
+    <!-- Tabla de Historial -->
+    <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/60 border-b border-theme">
+                    <tr>
+                        <th class="px-3 py-2.5">Tipo de Reporte</th>
+                        <th class="px-3 py-2.5">Formato</th>
+                        <th class="px-3 py-2.5">Usuario Emisor</th>
+                        <th class="px-3 py-2.5">Mercado</th>
+                        <th class="px-3 py-2.5 text-center">Fecha y Hora</th>
+                        <th class="px-3 py-2.5 text-center">Registros</th>
+                        <th class="px-3 py-2.5 text-center">Estado</th>
+                        <th class="px-3 py-2.5 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/60">
+                    <tr th:if="${pagina.empty}" class="text-center py-4 text-slate-400">
+                        <td colspan="8" class="py-6 text-center text-slate-400">No se registran exportaciones en el historial.</td>
+                    </tr>
+                    <tr th:each="exp : ${pagina.content}" class="hover:bg-slate-800/40">
+                        <td class="px-3 py-2.5 font-bold text-white" th:text="${exp.tipoReporteTitulo}">Reporte</td>
+                        <td class="px-3 py-2.5">
+                            <span th:class="${exp.formato.name() == 'EXCEL' ? 'px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20'}"
+                                  th:text="${exp.formato}">XLSX</span>
+                        </td>
+                        <td class="px-3 py-2.5 text-slate-300 font-mono" th:text="${exp.username}">admin</td>
+                        <td class="px-3 py-2.5 text-slate-300" th:text="${exp.mercadoNombre}">Todos</td>
+                        <td class="px-3 py-2.5 text-center text-slate-400" th:text="${#temporals.format(exp.fechaGeneracion, 'dd/MM/yyyy HH:mm:ss')}">-</td>
+                        <td class="px-3 py-2.5 text-center text-slate-300" th:text="${exp.cantidadRegistros}">0</td>
+                        <td class="px-3 py-2.5 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" th:text="${exp.estado}">COMPLETADO</span>
+                        </td>
+                        <td class="px-3 py-2.5 text-right">
+                            <a th:href="@{${exp.urlDescarga}}" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold transition-colors shadow-sm">
+                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> Descargar
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${pagina.totalPages > 1}" class="flex items-center justify-between mt-4 pt-3 border-t border-theme/60 text-xs">
+            <span class="text-slate-400" th:text="'Página ' + (${pagina.number} + 1) + ' de ' + ${pagina.totalPages} + ' (' + ${pagina.totalElements} + ' exportaciones)'">Pág 1 de 1</span>
+            <div class="flex space-x-1">
+                <a th:if="${pagina.hasPrevious()}" th:href="@{/dashboard/mercados/reportes/exportaciones(page=${pagina.number - 1})}" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white">Anterior</a>
+                <a th:if="${pagina.hasNext()}" th:href="@{/dashboard/mercados/reportes/exportaciones(page=${pagina.number + 1})}" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Roles Dinámicos</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de Sección -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-blue-500"></i>
+                <span>Gestión de Roles Dinámicos</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Definición y control de perfiles de autorización institucional para SIGM-QUINUA.</p>
+        </div>
+        <div>
+            <button onclick="abrirModal('modalNuevoRol')" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Rol</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+        <form th:action="@{/admin/roles}" method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar Rol por código o nombre</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" name="busqueda" th:value="${busqueda}" placeholder="Ej. ADMIN, CAJERO, SERENO..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors">
+                    Buscar
+                </button>
+                <a th:href="@{/admin/roles}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Roles -->
+    <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700/60 uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-4 py-3">Código del Rol</th>
+                        <th class="px-4 py-3">Nombre</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3 text-center">Usuarios Asignados</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                    <tr th:if="${rolesPage.content.empty}">
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                            <i data-lucide="shield-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            <p>No se encontraron roles registrados.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="r : ${rolesPage.content}" class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-4 py-3">
+                            <span class="font-mono font-bold text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-900/60" th:text="${r.codigo}">ROLE_ADMIN</span>
+                        </td>
+                        <td class="px-4 py-3 font-semibold text-slate-100" th:text="${r.nombre}">Administrador General</td>
+                        <td class="px-4 py-3 text-slate-400" th:text="${r.descripcion != null ? r.descripcion : 'Sin descripción'}">Acceso de administración general</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700" th:text="${r.cantidadUsuarios}">3</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span th:if="${r.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-emerald-400 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Activo</span>
+                            </span>
+                            <span th:unless="${r.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-slate-500 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                <span>Inactivo</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button type="button" th:data-id="${r.id}" onclick="abrirPermisosRol(this.dataset.id)" title="Configurar Matriz de Permisos"
+                                        class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="grid" class="w-4 h-4"></i>
+                                </button>
+                                <button type="button" th:data-id="${r.id}" onclick="abrirEditarRol(this.dataset.id)" title="Editar Rol"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button type="button" th:if="${r.estado == 'ACTIVO' && r.codigo != 'ROLE_SUPERADMIN' && r.codigo != 'ROLE_ADMIN'}"
+                                        th:data-id="${r.id}" onclick="cambiarEstadoRol(this.dataset.id, 'desactivar')" title="Desactivar Rol"
+                                        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-right" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                                <button type="button" th:if="${r.estado == 'ACTIVO' && (r.codigo == 'ROLE_SUPERADMIN' || r.codigo == 'ROLE_ADMIN')}"
+                                        onclick="mostrarToast('Rol crítico del sistema protegido: siempre permanece activo.', 'info')" title="Rol Crítico Protegido (Siempre Activo)"
+                                        class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-right" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                                <button type="button" th:if="${r.estado != 'ACTIVO'}"
+                                        th:data-id="${r.id}" onclick="cambiarEstadoRol(this.dataset.id, 'activar')" title="Activar Rol"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-left" class="w-4 h-4 text-slate-500"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO ROL -->
+    <div id="modalNuevoRol" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="shield-plus" class="w-4 h-4 text-blue-500"></i>
+                    <span>Crear Nuevo Rol Institucional</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevoRol')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formNuevoRol" data-no-loading="true" onsubmit="guardarNuevoRol(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Código del Rol *</label>
+                    <div class="flex items-center">
+                        <span class="px-3 py-2 bg-slate-800 border border-r-0 border-slate-700 rounded-l-lg text-xs font-mono text-slate-400">ROLE_</span>
+                        <input type="text" id="nr_codigo" required placeholder="CAJERO"
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-r-lg text-xs text-slate-200 font-mono uppercase focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre Descriptivo *</label>
+                    <input type="text" id="nr_nombre" required placeholder="Cajero de Rentas"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción Funcional</label>
+                    <textarea id="nr_descripcion" rows="3" placeholder="Encargado de recaudación en ventanilla municipal..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalNuevoRol')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarNuevoRol" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Rol</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR ROL -->
+    <div id="modalEditarRol" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Editar Rol</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEditarRol')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formEditarRol" data-no-loading="true" onsubmit="guardarEdicionRol(event)" class="p-6 space-y-4">
+                <input type="hidden" id="er_id">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Código (No modificable)</label>
+                    <input type="text" id="er_codigo" disabled class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre Descriptivo *</label>
+                    <input type="text" id="er_nombre" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="er_descripcion" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalEditarRol')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarEdicionRol" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURAR PERMISOS DEL ROL -->
+    <div id="modalPermisosRol" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-3xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                        <i data-lucide="grid" class="w-4 h-4 text-blue-400"></i>
+                        <span>Permisos del Rol: <span id="mpr_rolNombre" class="text-blue-400"></span></span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5 font-mono" id="mpr_rolCodigo"></p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a id="mpr_linkMatriz" href="/admin/permisos" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-700 text-blue-300 border border-slate-700 rounded text-[11px] font-medium flex items-center space-x-1">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Vista Matricial Completa</span>
+                    </a>
+                    <button type="button" onclick="cerrarModal('modalPermisosRol')" class="text-slate-400 hover:text-slate-200 p-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" id="mpr_rolId">
+            <div class="px-6 py-2.5 bg-slate-900/70 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400">Marque o desmarque las autorizaciones por módulo institucional:</span>
+                <div class="space-x-2">
+                    <button type="button" onclick="marcarPermisosModal(true)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-300 rounded text-[11px] font-semibold">Marcar Todo</button>
+                    <button type="button" onclick="marcarPermisosModal(false)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-semibold">Desmarcar Todo</button>
+                </div>
+            </div>
+            <div id="mpr_contenedorModulos" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+                <!-- Se llena dinámicamente desde /api/admin/permisos/matriz?rolId=... -->
+            </div>
+            <div class="px-6 py-4 bg-slate-800/80 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                <button type="button" onclick="cerrarModal('modalPermisosRol')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                <button type="button" id="btnGuardarPermisosModal" onclick="guardarPermisosModal()" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Permisos</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    async function guardarNuevoRol(e) {
+        e.preventDefault();
+        const codigoInput = document.getElementById("nr_codigo").value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+        document.getElementById("nr_codigo").value = codigoInput;
+        const codigoFinal = codigoInput.startsWith("ROLE_") ? codigoInput : ("ROLE_" + codigoInput);
+        const body = {
+            codigo: codigoFinal,
+            nombre: document.getElementById("nr_nombre").value.trim(),
+            descripcion: document.getElementById("nr_descripcion").value.trim()
+        };
+
+        const btn = document.getElementById("btnGuardarNuevoRol");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/roles", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Rol creado exitosamente.", "success");
+            cerrarModal("modalNuevoRol");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Rol";
+            }
+        }
+    }
+
+    async function abrirEditarRol(id) {
+        try {
+            const res = await fetchApi("/api/admin/roles/" + id);
+            const r = res.data;
+            document.getElementById("er_id").value = r.id;
+            document.getElementById("er_codigo").value = r.codigo || "";
+            document.getElementById("er_nombre").value = r.nombre || "";
+            document.getElementById("er_descripcion").value = r.descripcion || "";
+            abrirModal("modalEditarRol");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarEdicionRol(e) {
+        e.preventDefault();
+        const id = document.getElementById("er_id").value;
+        const body = {
+            nombre: document.getElementById("er_nombre").value.trim(),
+            descripcion: document.getElementById("er_descripcion").value.trim()
+        };
+
+        const btn = document.getElementById("btnGuardarEdicionRol");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/roles/" + id, {
+                method: "PUT",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Rol actualizado exitosamente.", "success");
+            cerrarModal("modalEditarRol");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Cambios";
+            }
+        }
+    }
+
+    async function cambiarEstadoRol(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} este rol?`)) return;
+        try {
+            await fetchApi(`/api/admin/roles/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Rol ${accion === "activar" ? "activado" : "desactivado"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function abrirPermisosRol(rolId) {
+        try {
+            const res = await fetchApi("/api/admin/permisos/matriz?rolId=" + rolId);
+            const m = res.data;
+            document.getElementById("mpr_rolId").value = m.rolId;
+            document.getElementById("mpr_rolNombre").innerText = m.rolNombre || "";
+            document.getElementById("mpr_rolCodigo").innerText = m.rolCodigo || "";
+            document.getElementById("mpr_linkMatriz").href = "/admin/permisos#rol-" + m.rolId;
+
+            const asignados = new Set(m.permisosAsignadosIds || []);
+            const contenedor = document.getElementById("mpr_contenedorModulos");
+
+            if (!m.modulos || m.modulos.length === 0) {
+                contenedor.innerHTML = `<p class="text-slate-400 italic">No hay módulos de permisos registrados.</p>`;
+            } else {
+                contenedor.innerHTML = m.modulos.map(mod => {
+                    const permsHtml = (mod.permisos || []).map(p => `
+                        <label class="flex items-start space-x-2 p-2 rounded-lg bg-slate-950/70 border border-slate-800 hover:border-slate-700 cursor-pointer">
+                            <input type="checkbox" name="mpr_permisoCheck" value="${p.id}" ${asignados.has(p.id) ? 'checked' : ''}
+                                   class="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-0">
+                            <div>
+                                <span class="font-semibold text-slate-200 block text-[11px]">${p.nombre}</span>
+                                <span class="font-mono text-[10px] text-blue-400">${p.accion}</span>
+                                <span class="text-[10px] text-slate-500 ml-1">(${p.codigo})</span>
+                            </div>
+                        </label>
+                    `).join("");
+
+                    return `
+                        <div class="p-3.5 bg-slate-900/70 rounded-xl border border-slate-800 space-y-2.5">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <span class="font-bold text-slate-100 text-xs flex items-center space-x-2">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    <span>${mod.moduloNombre}</span>
+                                </span>
+                                <span class="text-[10px] font-mono text-slate-400">${mod.moduloCodigo || ''}</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                ${permsHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            abrirModal("modalPermisosRol");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    function marcarPermisosModal(estado) {
+        document.querySelectorAll('input[name="mpr_permisoCheck"]').forEach(chk => {
+            chk.checked = estado;
+        });
+    }
+
+    async function guardarPermisosModal() {
+        const rolId = parseInt(document.getElementById("mpr_rolId").value, 10);
+        const checks = document.querySelectorAll('input[name="mpr_permisoCheck"]:checked');
+        const permisoIds = Array.from(checks).map(c => parseInt(c.value, 10));
+
+        const btn = document.getElementById("btnGuardarPermisosModal");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/roles/" + rolId + "/permisos", {
+                method: "PUT",
+                body: JSON.stringify({ rolId: rolId, permisoIds: permisoIds })
+            });
+            mostrarToast("Permisos del rol actualizados exitosamente.", "success");
+            cerrarModal("modalPermisosRol");
+        } catch (err) {
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Permisos";
+            }
+        }
+    }
+
+    window.guardarNuevoRol = guardarNuevoRol;
+    window.abrirEditarRol = abrirEditarRol;
+    window.guardarEdicionRol = guardarEdicionRol;
+    window.cambiarEstadoRol = cambiarEstadoRol;
+    window.abrirPermisosRol = abrirPermisosRol;
+    window.marcarPermisosModal = marcarPermisosModal;
+    window.guardarPermisosModal = guardarPermisosModal;
+</script>
+</th:block>
+</body>
+</html>

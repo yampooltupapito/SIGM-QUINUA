@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Estadísticas de Predios y Catastro | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Recaudación Tributaria</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/reportes}" class="text-blue-400 font-semibold hover:underline">Centro de Reportes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Predios</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="building-2" class="w-6 h-6 text-emerald-400"></i>
+                <span>Estadísticas de Predios Urbanos y Rústicos</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Distribución catastral, valores arancelarios y autovalúos declarados en el distrito de Quinua.
+            </p>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="flex overflow-x-auto border-b border-theme gap-2 text-xs font-medium pb-2 scrollbar-thin">
+        <a th:href="@{/dashboard/tributaria/reportes}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Resumen
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/recaudacion}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="receipt" class="w-4 h-4"></i> Recaudación
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/cartera}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i> Cartera y Deudas
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/contribuyentes}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="users" class="w-4 h-4"></i> Contribuyentes
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/predios}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 bg-blue-600 text-white font-bold shadow-sm">
+            <i data-lucide="building-2" class="w-4 h-4"></i> Predios
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/fraccionamientos}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="split" class="w-4 h-4"></i> Fraccionamientos
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/notificaciones}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="mail-check" class="w-4 h-4"></i> Notificaciones
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/metas}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="target" class="w-4 h-4"></i> Metas
+        </a>
+        <a th:href="@{/dashboard/tributaria/reportes/exportaciones}" class="px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <i data-lucide="history" class="w-4 h-4"></i> Historial
+        </a>
+    </div>
+
+    <!-- Tabla: Distribución de Predios -->
+    <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+        <h3 class="text-sm font-bold text-white mb-3">Distribución Predial y Base Imponible Total</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="text-slate-400 bg-slate-800/60 uppercase text-[10px] tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="py-2.5 px-3">Tipo de Predio</th>
+                        <th class="py-2.5 px-3 text-center">Cantidad Registrada</th>
+                        <th class="py-2.5 px-3 text-right">Autovalúo Total (PEN)</th>
+                        <th class="py-2.5 px-3 text-right">Participación Catastral (%)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/60 text-slate-300">
+                    <tr th:each="p : ${estadisticas}" class="hover:bg-slate-800/40">
+                        <td class="py-2.5 px-3 font-semibold text-white" th:text="${p.tipoPredio}">Urbano</td>
+                        <td class="py-2.5 px-3 text-center font-mono text-slate-200" th:text="${p.totalPredios}">0</td>
+                        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(p.totalAutovaluoReferencial, 1, 'POINT', 2, 'COMMA')}">S/ 0.00</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-300" th:text="${p.porcentaje} + '%'">0.00%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
+

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${(esEdicion != null and esEdicion) ? 'Editar Asignación | SIGM-QUINUA' : 'Nueva Solicitud de Asignación | SIGM-QUINUA'}">Asignación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Navegación -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/asignaciones}" class="hover:text-blue-400 transition-colors">Asignaciones</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${(esEdicion != null and esEdicion) ? 'Editar Solicitud' : 'Nueva Solicitud'}"></span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span th:text="${(esEdicion != null and esEdicion) ? 'Modificación de Solicitud de Asignación' : 'Registro de Nueva Solicitud de Asignación de Puesto'}"></span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Complete la información requerida para el trámite de ocupación y adjudicación de puesto en mercados municipales.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a th:href="@{/dashboard/mercados/asignaciones}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-[#334155] text-xs font-semibold transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Volver al Padrón
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenedor del Formulario -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formAsignacion" class="space-y-6">
+            <input type="hidden" id="asignacionId" th:value="${asignacion?.id}">
+            <input type="hidden" id="esEdicion" th:value="${esEdicion}">
+
+            <!-- Paso 1: Selección del Espacio Comercial -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                    Selección del Puesto Comercial
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" th:if="${!(esEdicion != null and esEdicion)}">
+                    <!-- Selector de Mercado -->
+                    <div>
+                        <label for="mercadoSelect" class="block text-xs font-medium text-slate-300 mb-1">Mercado Municipal *</label>
+                        <select id="mercadoSelect" required
+                                class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="">-- Seleccione Mercado --</option>
+                            <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre} + ' (' + ${m.codigo} + ')'"></option>
+                        </select>
+                    </div>
+
+                    <!-- Selector de Sector -->
+                    <div>
+                        <label for="sectorSelect" class="block text-xs font-medium text-slate-300 mb-1">Sector (Opcional)</label>
+                        <select id="sectorSelect" disabled
+                                class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                            <option value="">-- Todos los Sectores --</option>
+                        </select>
+                    </div>
+
+                    <!-- Selector de Puesto Disponible -->
+                    <div>
+                        <label for="puestoId" class="block text-xs font-medium text-slate-300 mb-1">Puesto Comercial *</label>
+                        <select id="puestoId" name="puestoId" required disabled
+                                class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                            <option value="">-- Seleccione Puesto Disponible --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de puesto seleccionado en modo edición -->
+                <div th:if="${(esEdicion != null and esEdicion)}" class="p-4 bg-[#101827] rounded-xl border border-[#334155] flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-white" th:text="${asignacion.mercadoNombre + ' — ' + asignacion.puestoCodigo}"></p>
+                        <p class="text-[11px] text-slate-400" th:text="${'Sector: ' + asignacion.sectorNombre + ' | Pabellón: ' + asignacion.pabellonNombre}"></p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-300 border border-blue-700">Puesto Fijo</span>
+                </div>
+
+                <!-- Panel informativo de disponibilidad del puesto -->
+                <div id="panelDisponibilidadPuesto" class="hidden p-4 rounded-xl border text-xs">
+                    <div class="flex items-center gap-2 font-bold mb-1" id="dispTitulo"></div>
+                    <p class="text-slate-300" id="dispDetalle"></p>
+                </div>
+            </div>
+
+            <!-- Paso 2: Selección del Comerciante Titular -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
+                    Comerciante Solicitante
+                </h3>
+
+                <div th:if="${!(esEdicion != null and esEdicion)}" class="space-y-3">
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" id="buscarComercianteInput"
+                                   placeholder="Buscar comerciante por código, DNI, RUC o nombres..."
+                                   class="w-full bg-[#101827] border border-[#334155] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                            <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <button type="button" id="btnBuscarComerciante"
+                                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                            Buscar
+                        </button>
+                    </div>
+
+                    <!-- Resultados de búsqueda de comerciantes -->
+                    <div id="resultadosComerciantes" class="hidden max-h-48 overflow-y-auto bg-[#101827] rounded-xl border border-[#334155] divide-y divide-[#334155]"></div>
+
+                    <!-- Comerciante Seleccionado -->
+                    <input type="hidden" id="comercianteId" name="comercianteId" required>
+                    <div id="tarjetaComercianteSeleccionado" class="hidden p-4 bg-[#101827] rounded-xl border border-blue-600/50 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-white" id="comercianteNombreDisplay">-</p>
+                            <p class="text-[11px] text-slate-400" id="comercianteDocDisplay">-</p>
+                        </div>
+                        <button type="button" id="btnCambiarComerciante" class="text-xs text-red-400 hover:text-red-300 font-semibold">Cambiar</button>
+                    </div>
+                </div>
+
+                <!-- Comerciante en modo edición -->
+                <div th:if="${(esEdicion != null and esEdicion)}" class="p-4 bg-[#101827] rounded-xl border border-[#334155]">
+                    <p class="text-xs font-bold text-white" th:text="${asignacion.titularNombre}">-</p>
+                    <p class="text-[11px] text-slate-400" th:text="${asignacion.comercianteCodigo + ' — ' + asignacion.titularDocumento}"></p>
+                </div>
+            </div>
+
+            <!-- Paso 3: Términos de la Asignación y Fechas -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">3</span>
+                    Modalidad y Vigencia
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="tipoAsignacion" class="block text-xs font-medium text-slate-300 mb-1">Modalidad de Asignación *</label>
+                        <select id="tipoAsignacion" name="tipoAsignacion" required
+                                class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="t : ${tiposAsignacion}" th:value="${t.name()}" th:text="${t.name()}" th:selected="${asignacion?.tipoAsignacion == t}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="fechaInicio" class="block text-xs font-medium text-slate-300 mb-1">Fecha de Inicio Solicitada *</label>
+                        <input type="date" id="fechaInicio" name="fechaInicio" required
+                               th:value="${asignacion?.fechaInicio}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="fechaFin" class="block text-xs font-medium text-slate-300 mb-1">Fecha de Culminación (Opcional)</label>
+                        <input type="date" id="fechaFin" name="fechaFin"
+                               th:value="${asignacion?.fechaFin}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="motivo" class="block text-xs font-medium text-slate-300 mb-1">Motivo o Justificación de la Solicitud</label>
+                        <textarea id="motivo" name="motivo" rows="2"
+                                  th:text="${asignacion?.motivo}"
+                                  placeholder="Detalle la motivación o fundamento de la solicitud de asignación..."
+                                  class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="observaciones" class="block text-xs font-medium text-slate-300 mb-1">Observaciones Administrativas</label>
+                        <textarea id="observaciones" name="observaciones" rows="2"
+                                  th:text="${asignacion?.observaciones}"
+                                  placeholder="Anotaciones internas o antecedentes documentales..."
+                                  class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <div th:if="${!(esEdicion != null and esEdicion)}" class="flex items-center gap-2 pt-2">
+                    <input type="checkbox" id="presentarInmediatamente" name="presentarInmediatamente" value="true"
+                           class="w-4 h-4 rounded bg-[#101827] border-[#334155] text-blue-600 focus:ring-0">
+                    <label for="presentarInmediatamente" class="text-xs text-slate-300">
+                        Presentar inmediatamente para evaluación técnica (Estado SOLICITADA). Si no se marca, se guardará como BORRADOR.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#334155]">
+                <a th:href="@{/dashboard/mercados/asignaciones}"
+                   class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-[#334155] transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" id="btnGuardarAsignacion"
+                        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span th:text="${(esEdicion != null and esEdicion) ? 'Guardar Cambios' : 'Registrar Solicitud'}"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/asignaciones-formulario.js}"></script>
+</th:block>
+</body>
+</html>

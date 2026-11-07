@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Zona ' + ${zona.codigo} + ' — SIGM-QUINUA'">Ficha de Zona</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .leaflet-container { background-color: #0f172a !important; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-900/50 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Header Ficha -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow bg-emerald-700">
+                <i data-lucide="map-pin" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold text-slate-100" th:text="${zona.nombre}">Zona Centro</h1>
+                    <span th:if="${zona.estado.name() == 'ACTIVO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/70 text-emerald-300 border border-emerald-800/60">Activa</span>
+                    <span th:if="${zona.estado.name() == 'INACTIVO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Inactiva</span>
+                    <span th:if="${zona.estado.name() == 'BORRADOR'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-950/70 text-amber-300 border border-amber-800/60">Borrador</span>
+                    <span th:if="${zona.estado.name() == 'ARCHIVADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-950/70 text-rose-300 border border-rose-800/60">Archivada</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2 font-mono">
+                    <span>CÓDIGO: <strong class="text-emerald-400" th:text="${zona.codigo}">ZON-2026-0001</strong></span>
+                    <span>&bull;</span>
+                    <span>SECTOR PADRE:
+                        <a th:href="@{/dashboard/serenazgo/sectores/{id}(id=${zona.sectorId})}" class="text-blue-400 hover:underline font-bold" th:text="${zona.sectorCodigo} + ' - ' + ${zona.sectorNombre}">SEC-001</a>
+                    </span>
+                    <span>&bull;</span>
+                    <span>PRIORIDAD: <strong class="text-amber-400" th:text="${zona.prioridadOperativaDesc}">Media</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="abrirModalReasignarSector()"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_ZONAS_REASIGNAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium border border-slate-700 flex items-center gap-2 transition">
+                <i data-lucide="git-pull-request" class="w-4 h-4 text-blue-400"></i>
+                Reasignar Sector
+            </button>
+            <button onclick="abrirModalCambioEstadoZona()"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_ZONAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium border border-slate-700 flex items-center gap-2 transition">
+                <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i>
+                Cambiar Estado
+            </button>
+            <button onclick="abrirModalDelimitacionZona()"
+                    sec:authorize="hasAnyAuthority('SERENAZGO_GEOGRAFIA_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-indigo-700 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition shadow">
+                <i data-lucide="map" class="w-4 h-4"></i>
+                Delimitar / GeoJSON
+            </button>
+            <a th:href="@{/dashboard/serenazgo/zonas/{id}/editar(id=${zona.id})}"
+               sec:authorize="hasAnyAuthority('SERENAZGO_ZONAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition shadow">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- Pestañas Detalle -->
+    <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 overflow-hidden shadow-lg">
+        <div class="border-b border-slate-700 px-6">
+            <nav class="flex space-x-6 text-sm font-medium">
+                <button onclick="cambiarPestanaZona('info')" id="tabz-info" class="py-4 border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4"></i> Información Operativa
+                </button>
+                <button onclick="cambiarPestanaZona('mapa')" id="tabz-mapa" class="py-4 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                    <i data-lucide="map" class="w-4 h-4"></i> Delimitación Cartográfica
+                </button>
+                <button onclick="cambiarPestanaZona('reasignaciones')" id="tabz-reasignaciones" class="py-4 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                    <i data-lucide="git-pull-request" class="w-4 h-4"></i> Reasignaciones de Sector (<span th:text="${zona.historialReasignaciones.size()}">0</span>)
+                </button>
+                <button onclick="cambiarPestanaZona('historial')" id="tabz-historial" class="py-4 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4"></i> Auditoría y Versiones
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-6">
+            <!-- PESTAÑA INFO -->
+            <div id="panelz-info" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Sector Asociado</span>
+                        <a th:href="@{/dashboard/serenazgo/sectores/{id}(id=${zona.sectorId})}" class="text-sm text-blue-400 font-semibold mt-1 block hover:underline"
+                           th:text="${zona.sectorCodigo} + ' - ' + ${zona.sectorNombre}">SEC-001</a>
+                        <span class="text-xs text-slate-500 mt-1 block">Sector territorial de mando</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Nivel de Prioridad Operativa</span>
+                        <span class="text-sm font-semibold mt-1 block"
+                              th:classappend="${zona.prioridadOperativa.name() == 'CRITICA' ? 'text-rose-400' : (zona.prioridadOperativa.name() == 'ALTA' ? 'text-amber-400' : 'text-slate-200')}"
+                              th:text="${zona.prioridadOperativaDesc}">Media</span>
+                        <span class="text-xs text-slate-500 mt-1 block">Frecuencia y patrullaje preferente</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Vigencia</span>
+                        <span class="text-xs text-slate-200 mt-1 block">Desde: <strong th:text="${zona.fechaInicioVigencia != null ? zona.fechaInicioVigencia : 'Indefinida'}">2026-01-01</strong></span>
+                        <span class="text-xs text-slate-400 block">Hasta: <strong th:text="${zona.fechaFinVigencia != null ? zona.fechaFinVigencia : 'Indefinida'}">Indefinida</strong></span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Descripción de la Zona</h4>
+                        <p class="text-sm text-slate-300 bg-slate-900/40 p-4 rounded-lg border border-slate-800" th:text="${zona.descripcion != null ? zona.descripcion : 'Sin descripción registrada.'}"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Observaciones Operativas</h4>
+                        <p class="text-sm text-slate-300 bg-slate-900/40 p-4 rounded-lg border border-slate-800" th:text="${zona.observaciones != null ? zona.observaciones : 'Ninguna observación.'}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA MAPA -->
+            <div id="panelz-mapa" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-200">Polígono de Cobertura de la Zona</h3>
+                        <p class="text-xs text-slate-400">Coordenadas geográficas autorizadas para la zona operativa.</p>
+                    </div>
+                    <div th:if="${zona.tieneDelimitacion}">
+                        <a th:href="@{/api/serenazgo/territorio/exportar-geojson(tipo='ZONA', id=${zona.id})}"
+                           class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs border border-slate-700 flex items-center gap-1.5 transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Exportar GeoJSON
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative bg-slate-950 rounded-xl border border-slate-700/80 overflow-hidden shadow-lg h-[500px]">
+                    <div id="mapaZonaDetalle" class="w-full h-full z-0"></div>
+
+                    <div th:unless="${zona.tieneDelimitacion}" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+                        <div class="w-14 h-14 bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center text-slate-500 mb-3">
+                            <i data-lucide="map-off" class="w-7 h-7"></i>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-200">Esta zona aún no cuenta con delimitación registrada</h4>
+                        <p class="text-xs text-slate-400 max-w-sm mt-1 mb-4">
+                            Puede ingresar o importar un archivo GeoJSON con el polígono autorizado para visualizarlo en el mapa.
+                        </p>
+                        <button onclick="abrirModalDelimitacionZona()"
+                                sec:authorize="hasAnyAuthority('SERENAZGO_GEOGRAFIA_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Ingresar Delimitación
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA REASIGNACIONES DE SECTOR -->
+            <div id="panelz-reasignaciones" class="hidden space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <i data-lucide="git-pull-request" class="w-4 h-4 text-blue-400"></i>
+                    Historial de Reasignaciones de Sector Territorial
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                        <tr>
+                            <th class="py-2.5 px-3">Sector Anterior</th>
+                            <th class="py-2.5 px-3">Nuevo Sector</th>
+                            <th class="py-2.5 px-3">Motivo de Transferencia</th>
+                            <th class="py-2.5 px-3">Doc. Referencia</th>
+                            <th class="py-2.5 px-3">Usuario Responsable</th>
+                            <th class="py-2.5 px-3">Fecha</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                        <tr th:each="r : ${zona.historialReasignaciones}">
+                            <td class="py-2 px-3 text-slate-400" th:text="${r.sectorAnteriorNombre}">Sector A</td>
+                            <td class="py-2 px-3 text-blue-400 font-bold" th:text="${r.sectorNuevoNombre}">Sector B</td>
+                            <td class="py-2 px-3 text-slate-200" th:text="${r.motivo}">Reorganización zonal</td>
+                            <td class="py-2 px-3 text-slate-400" th:text="${r.documentoReferencia != null ? r.documentoReferencia : '-'}">-</td>
+                            <td class="py-2 px-3 text-slate-300" th:text="${r.usuarioRegistro}">admin</td>
+                            <td class="py-2 px-3 text-slate-400" th:text="${#temporals.format(r.createdAt, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                        </tr>
+                        <tr th:if="${zona.historialReasignaciones.empty}">
+                            <td colspan="6" class="py-4 text-center text-slate-500">La zona no ha tenido transferencias ni reasignaciones de sector.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA HISTORIAL Y AUDITORÍA -->
+            <div id="panelz-historial" class="hidden space-y-6">
+                <!-- Delimitaciones -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                        <i data-lucide="git-branch" class="w-4 h-4 text-indigo-400"></i>
+                        Versiones Cartográficas de la Zona
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="py-2.5 px-3">Versión</th>
+                                <th class="py-2.5 px-3">Motivo</th>
+                                <th class="py-2.5 px-3">Doc. Referencia</th>
+                                <th class="py-2.5 px-3">Usuario</th>
+                                <th class="py-2.5 px-3">Fecha</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                            <tr th:each="h : ${zona.historialDelimitaciones}">
+                                <td class="py-2 px-3 font-mono text-indigo-400 font-bold" th:text="'v' + ${h.numeroVersion}">v1</td>
+                                <td class="py-2 px-3 text-slate-200" th:text="${h.motivoCambio}">Motivo</td>
+                                <td class="py-2 px-3 text-slate-400" th:text="${h.documentoReferencia != null ? h.documentoReferencia : '-'}">-</td>
+                                <td class="py-2 px-3 text-slate-300" th:text="${h.usuarioRegistro}">admin</td>
+                                <td class="py-2 px-3 text-slate-400" th:text="${#temporals.format(h.createdAt, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                            </tr>
+                            <tr th:if="${zona.historialDelimitaciones.empty}">
+                                <td colspan="5" class="py-4 text-center text-slate-500">No se registran versiones cartográficas.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Estados -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i>
+                        Transiciones de Estado
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="py-2.5 px-3">Estado Anterior</th>
+                                <th class="py-2.5 px-3">Nuevo Estado</th>
+                                <th class="py-2.5 px-3">Motivo</th>
+                                <th class="py-2.5 px-3">Usuario</th>
+                                <th class="py-2.5 px-3">Fecha</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                            <tr th:each="he : ${zona.historialEstados}">
+                                <td class="py-2 px-3 font-mono text-slate-400" th:text="${he.estadoAnterior}">ACTIVO</td>
+                                <td class="py-2 px-3 font-mono text-emerald-400 font-bold" th:text="${he.estadoNuevo}">INACTIVO</td>
+                                <td class="py-2 px-3 text-slate-200" th:text="${he.motivo}">Motivo</td>
+                                <td class="py-2 px-3 text-slate-300" th:text="${he.usuarioRegistro}">admin</td>
+                                <td class="py-2 px-3 text-slate-400" th:text="${#temporals.format(he.createdAt, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                            </tr>
+                            <tr th:if="${zona.historialEstados.empty}">
+                                <td colspan="5" class="py-4 text-center text-slate-500">No se registran cambios de estado.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REASIGNAR SECTOR -->
+    <div id="modalReasignarSector" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="git-pull-request" class="w-5 h-5 text-blue-400"></i>
+                Reasignar Zona a Otro Sector
+            </h3>
+            <p class="text-xs text-slate-400">
+                Transfiere formalmente la zona operativa a un sector territorial diferente con trazabilidad histórica.
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo Sector de Destino <span class="text-rose-400">*</span></label>
+                    <select id="selectNuevoSector" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="">Seleccione sector destino...</option>
+                        <option th:each="s : ${sectoresDisponibles}" th:if="${s.id != zona.sectorId}"
+                                th:value="${s.id}" th:text="${s.codigo} + ' - ' + ${s.nombre}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de la Transferencia <span class="text-rose-400">*</span></label>
+                    <textarea id="txtMotivoReasig" rows="2" placeholder="Reestructuración de cuadrantes, redistribución de carga..." required
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Documento de Respaldo</label>
+                    <input type="text" id="txtDocRefReasig" placeholder="Memorando N°..."
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-700">
+                <button onclick="cerrarModalReasignarSector()" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm hover:bg-slate-700 transition">Cancelar</button>
+                <button onclick="guardarReasignacionSector()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition">Confirmar Transferencia</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CAMBIO DE ESTADO ZONA -->
+    <div id="modalCambioEstadoZona" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-amber-400"></i>
+                Cambiar Estado de la Zona
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo Estado</label>
+                    <select id="selectNuevoEstadoZona" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.descripcion}" th:selected="${zona.estado == e}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo del Cambio <span class="text-rose-400">*</span></label>
+                    <textarea id="txtMotivoEstadoZona" rows="3" placeholder="Sustento de la suspensión o reactivación..." required
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-700">
+                <button onclick="cerrarModalCambioEstadoZona()" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm hover:bg-slate-700 transition">Cancelar</button>
+                <button onclick="guardarCambioEstadoZona()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-semibold transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DELIMITACIÓN GEOJSON ZONA -->
+    <div id="modalDelimitacionZona" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl p-6 max-w-2xl w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-indigo-400"></i>
+                Registrar Delimitación de la Zona
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Contenido GeoJSON (Polygon/MultiPolygon) <span class="text-rose-400">*</span></label>
+                    <textarea id="txtGeoJsonZona" rows="6" placeholder='{"type":"Polygon","coordinates":[[[-74.138,-13.045],...]]}'
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-blue-500" required></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Motivo <span class="text-rose-400">*</span></label>
+                        <input type="text" id="txtMotivoDelimZona" placeholder="Ajuste de límites de cuadrante..." required
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-blue-500"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Doc. Referencia</label>
+                        <input type="text" id="txtDocRefDelimZona" placeholder="Informe Técnico N°..."
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-blue-500"/>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-700">
+                <button onclick="cerrarModalDelimitacionZona()" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm hover:bg-slate-700 transition">Cancelar</button>
+                <button onclick="guardarDelimitacionZona()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const zonaId = /*[[${zona.id}]]*/ '';
+        const zonaGeoJsonStr = /*[[${zona.geometriaGeojson}]]*/ null;
+        const sectorColor = /*[[${zona.sectorColorHex}]]*/ '#10b981';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
+        function cambiarPestanaZona(tabName) {
+            ['info', 'mapa', 'reasignaciones', 'historial'].forEach(t => {
+                document.getElementById('panelz-' + t).classList.add('hidden');
+                document.getElementById('tabz-' + t).classList.remove('border-emerald-500', 'text-emerald-400');
+                document.getElementById('tabz-' + t).classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById('panelz-' + tabName).classList.remove('hidden');
+            document.getElementById('tabz-' + tabName).classList.add('border-emerald-500', 'text-emerald-400');
+            document.getElementById('tabz-' + tabName).classList.remove('border-transparent', 'text-slate-400');
+
+            if (tabName === 'mapa') {
+                setTimeout(inicializarMapaZona, 100);
+            }
+        }
+
+        let mapaZona = null;
+
+        function inicializarMapaZona() {
+            const container = document.getElementById('mapaZonaDetalle');
+            if (!container) return;
+
+            if (!mapaZona) {
+                mapaZona = L.map('mapaZonaDetalle', {
+                    zoomControl: true,
+                    attributionControl: true
+                }).setView([-13.0456, -74.1378], 14);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap | Municipalidad Distrital de Quinua'
+                }).addTo(mapaZona);
+            }
+
+            if (zonaGeoJsonStr) {
+                try {
+                    const geojsonObj = JSON.parse(zonaGeoJsonStr);
+                    const layer = L.geoJSON(geojsonObj, {
+                        style: {
+                            color: '#10b981',
+                            weight: 3,
+                            fillColor: '#10b981',
+                            fillOpacity: 0.45
+                        }
+                    }).addTo(mapaZona);
+
+                    mapaZona.fitBounds(layer.getBounds(), { padding: [30, 30] });
+                } catch (e) {
+                    console.error('Error al renderizar GeoJSON en mapa:', e);
+                }
+            }
+        }
+
+        // Modales Zona
+        function abrirModalReasignarSector() {
+            document.getElementById('modalReasignarSector').classList.remove('hidden');
+        }
+        function cerrarModalReasignarSector() {
+            document.getElementById('modalReasignarSector').classList.add('hidden');
+        }
+
+        function guardarReasignacionSector() {
+            const nuevoSectorId = document.getElementById('selectNuevoSector').value;
+            const motivo = document.getElementById('txtMotivoReasig').value;
+            const docRef = document.getElementById('txtDocRefReasig').value;
+
+            if (!nuevoSectorId || !motivo || !motivo.trim()) {
+                alert('El nuevo sector y el motivo son obligatorios.');
+                return;
+            }
+
+            fetch('/api/serenazgo/territorio/zonas/' + zonaId + '/reasignar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nuevoSectorId: nuevoSectorId,
+                    motivo: motivo.trim(),
+                    documentoReferencia: docRef ? docRef.trim() : null
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al reasignar sector');
+                return res.json();
+            })
+            .then(() => location.reload())
+            .catch(err => alert(err.message));
+        }
+
+        function abrirModalCambioEstadoZona() {
+            document.getElementById('modalCambioEstadoZona').classList.remove('hidden');
+        }
+        function cerrarModalCambioEstadoZona() {
+            document.getElementById('modalCambioEstadoZona').classList.add('hidden');
+        }
+
+        function guardarCambioEstadoZona() {
+            const nuevoEstado = document.getElementById('selectNuevoEstadoZona').value;
+            const motivo = document.getElementById('txtMotivoEstadoZona').value;
+
+            if (!motivo || !motivo.trim()) {
+                alert('El motivo del cambio de estado es obligatorio.');
+                return;
+            }
+
+            fetch('/api/serenazgo/territorio/zonas/' + zonaId + '/estado', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nuevoEstado, motivo: motivo.trim() })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al cambiar de estado');
+                return res.json();
+            })
+            .then(() => location.reload())
+            .catch(err => alert(err.message));
+        }
+
+        function abrirModalDelimitacionZona() {
+            document.getElementById('modalDelimitacionZona').classList.remove('hidden');
+        }
+        function cerrarModalDelimitacionZona() {
+            document.getElementById('modalDelimitacionZona').classList.add('hidden');
+        }
+
+        function guardarDelimitacionZona() {
+            const geojson = document.getElementById('txtGeoJsonZona').value;
+            const motivo = document.getElementById('txtMotivoDelimZona').value;
+            const docRef = document.getElementById('txtDocRefDelimZona').value;
+
+            if (!geojson || !geojson.trim() || !motivo || !motivo.trim()) {
+                alert('El GeoJSON y el motivo son obligatorios.');
+                return;
+            }
+
+            fetch('/api/serenazgo/territorio/zonas/' + zonaId + '/delimitacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    geometriaGeojson: geojson.trim(),
+                    motivo: motivo.trim(),
+                    documentoReferencia: docRef ? docRef.trim() : null
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al guardar delimitación');
+                return res.json();
+            })
+            .then(() => location.reload())
+            .catch(err => alert(err.message));
+        }
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

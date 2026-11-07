@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Reportes de Supervisión | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Encabezado con breadcrumbs -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/inspecciones}" class="hover:text-blue-400 transition-colors">Inspecciones</a>
+                <span>/</span>
+                <span class="text-slate-200">Reportes</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Consola de Reportes de Fiscalización y Supervisión
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Exportación de expedientes de fiscalización, medidas correctivas e indicadores técnicos a Excel y PDF.</p>
+        </div>
+
+        <a th:href="@{/dashboard/mercados/inspecciones}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+            Volver a la Bandeja
+        </a>
+    </div>
+
+    <!-- Opciones de Exportación -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Tarjeta Excel -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Exportar a Microsoft Excel (.xlsx)</h3>
+                    <p class="text-xs text-slate-400">Padrón detallado con filtros avanzados y análisis tabulado.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha Desde</label>
+                        <input type="date" id="excelDesde" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha Hasta</label>
+                        <input type="date" id="excelHasta" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                </div>
+
+                <button onclick="descargarReporte('EXCEL')"
+                        class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Descargar Padrón Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Tarjeta PDF -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Exportar a Formato PDF Oficial</h3>
+                    <p class="text-xs text-slate-400">Documento ejecutivo con membrete institucional para archivo.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha Desde</label>
+                        <input type="date" id="pdfDesde" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha Hasta</label>
+                        <input type="date" id="pdfHasta" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2"/>
+                    </div>
+                </div>
+
+                <button onclick="descargarReporte('PDF')"
+                        class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Descargar Informe PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+function descargarReporte(formato) {
+    let desde = "";
+    let hasta = "";
+    if (formato === 'EXCEL') {
+        desde = document.getElementById("excelDesde").value;
+        hasta = document.getElementById("excelHasta").value;
+    } else {
+        desde = document.getElementById("pdfDesde").value;
+        hasta = document.getElementById("pdfHasta").value;
+    }
+
+    let url = `/api/mercados/inspecciones/reportes/exportar?formato=${formato}`;
+    if (desde) url += `&desde=${desde}`;
+    if (hasta) url += `&hasta=${hasta}`;
+
+    window.open(url, "_blank");
+}
+</script>
+</th:block>
+</body>
+</html>

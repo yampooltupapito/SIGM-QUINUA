@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Plazos Administrativos — Configuración Mesa de Partes</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. ENCABEZADO -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-slate-700/60 p-6 shadow-xl">
+        <div class="space-y-1">
+            <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider">MESA DE PARTES VIRTUAL — TUO LEY N° 27444</div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="clock" class="w-6 h-6 text-blue-400"></i>
+                <span>Configuración de Plazos y Unidades de Cómputo</span>
+            </h1>
+            <p class="text-xs text-slate-300 max-w-2xl">
+                Parámetros de vencimiento, reglas de cómputo por días hábiles o calendario y base normativa por procedimiento municipal.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. TABS -->
+    <div th:replace="~{admin/mesa-partes/configuracion/tabs :: tabsNav('plazos')}"></div>
+
+    <!-- 3. TABLA DE PLAZOS -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 border-b border-slate-700/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <tr>
+                    <th class="px-4 py-3.5">Código</th>
+                    <th class="px-4 py-3.5">Procedimiento / Trámite</th>
+                    <th class="px-4 py-3.5">Oficina Competente</th>
+                    <th class="px-4 py-3.5">Plazo en Días</th>
+                    <th class="px-4 py-3.5">Unidad de Cómputo</th>
+                    <th class="px-4 py-3.5">Base Normativa</th>
+                    <th class="px-4 py-3.5 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40">
+                <tr th:each="p : ${plazos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="px-4 py-3 font-mono font-bold text-blue-400" th:text="${p.codigo}">EXP-001</td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-slate-100" th:text="${p.nombre}">Nombre</div>
+                        <div class="text-[11px] text-slate-400" th:text="${p.denominacionOficial}">Denominación TUPA</div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-300" th:text="${p.oficinaResponsableNombre}">Oficina</td>
+                    <td class="px-4 py-3 font-mono font-bold text-emerald-400 text-sm" th:text="${p.plazoDias} + ' días'">30 días</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span th:if="${p.unidadPlazo.name() == 'DIAS_HABILES'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">DÍAS HÁBILES</span>
+                        <span th:unless="${p.unidadPlazo.name() == 'DIAS_HABILES'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30">DÍAS CALENDARIO</span>
+                    </td>
+                    <td class="px-4 py-3 text-[11px] text-slate-400 max-w-xs truncate" th:text="${p.baseNormativa != null ? p.baseNormativa : 'TUO Ley N° 27444'}">TUO Ley 27444</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        <button type="button" class="btnEditarPlazo px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium"
+                                th:data-id="${p.id}" th:data-codigo="${p.codigo}" th:data-nombre="${p.nombre}"
+                                th:data-plazo="${p.plazoDias}" th:data-unidad="${p.unidadPlazo.name()}" th:data-norma="${p.baseNormativa}">
+                            Ajustar Plazo
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. MODAL AJUSTAR PLAZO -->
+    <div id="modalAjustarPlazo" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-2xl space-y-4 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+                    <span>Ajustar Plazo Legal de Trámite</span>
+                </h3>
+                <button type="button" id="btnCerrarModalPlazo" class="p-1 rounded text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formAjustarPlazo" class="space-y-3">
+                <input type="hidden" id="plazoTramiteId">
+
+                <div>
+                    <label class="block text-slate-400 mb-1">Procedimiento:</label>
+                    <div id="plazoTramiteNombre" class="font-bold text-slate-200 p-2 bg-slate-900 rounded-lg border border-slate-800">EXP-001</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Cantidad de Días (*)</label>
+                        <input type="number" id="inputPlazoDias" required min="1" max="365"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Unidad de Cómputo (*)</label>
+                        <select id="selectPlazoUnidad" required
+                                class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="u : ${unidadesPlazo}" th:value="${u}" th:text="${u}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Base Normativa / Referencia</label>
+                    <input type="text" id="inputPlazoNorma" placeholder="Ej: TUO Ley N° 27444, Art. 38"
+                           class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Motivo del Ajuste (*)</label>
+                    <textarea id="inputPlazoMotivo" rows="2" required placeholder="Sustento técnico del cambio de plazo..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-700/60">
+                    <button type="button" id="btnCancelarPlazo" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold">Guardar Plazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mesapartes/configuracion.js}"></script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${(esNuevoCalculo == true ? 'Nuevo Cálculo Preliminar de Impuesto Predial' : 'Simulación de Impuesto Predial')} + ' — SIGM-QUINUA'">Simulación de Impuesto Predial — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensaje de Error si lo hay -->
+    <div th:if="${error}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${error}">Error al calcular</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/impuesto-predial}" class="hover:text-blue-400 transition-colors">Impuesto Predial</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium" th:text="${esNuevoCalculo == true ? 'Nuevo Preliminar' : 'Simulación'}">Simulación</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="play-circle" class="w-6 h-6 text-amber-500" th:if="${esNuevoCalculo != true}"></i>
+                <i data-lucide="calculator" class="w-6 h-6 text-blue-500" th:if="${esNuevoCalculo == true}"></i>
+                <span th:text="${esNuevoCalculo == true ? 'Generar Cálculo Preliminar del Impuesto Predial' : 'Simulador del Impuesto Predial Municipal'}">Simulador del Impuesto Predial Municipal</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                <span th:if="${esNuevoCalculo != true}">Cálculo hipotético y explicable en tiempo real. <strong>No genera deuda tributaria ni liquidaciones exigibles.</strong></span>
+                <span th:if="${esNuevoCalculo == true}">Registro técnico preliminar para posterior revisión y aprobación administrativa.</span>
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a th:href="@{/dashboard/tributaria/impuesto-predial}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver al listado</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de Parámetros -->
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+        <h2 class="text-sm font-bold text-white mb-4 flex items-center space-x-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-blue-400"></i>
+            <span>Parámetros de Entrada para la Determinación</span>
+        </h2>
+
+        <form th:action="${esNuevoCalculo == true ? '/dashboard/tributaria/impuesto-predial/nuevo' : '/dashboard/tributaria/impuesto-predial/simular'}"
+              method="post" class="space-y-4">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Contribuyente -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Contribuyente Titular / Responsable <span class="text-rose-400">*</span>
+                    </label>
+                    <select name="contribuyenteId" required class="w-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- Seleccione un contribuyente registrado --</option>
+                        <option th:each="c : ${contribuyentes}"
+                                th:value="${c.id}"
+                                th:text="${c.codigoContribuyente} + ' - ' + ${c.nombreRazonSocial} + ' (' + ${c.tipoDocumento} + ' ' + ${c.numeroDocumento} + ')'"
+                                th:selected="${request.contribuyenteId == c.id}"></option>
+                    </select>
+                </div>
+
+                <!-- Ejercicio Fiscal / Período -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Ejercicio Fiscal / Período <span class="text-rose-400">*</span>
+                    </label>
+                    <select name="periodoId" required class="w-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold">
+                        <option value="">-- Seleccione período --</option>
+                        <option th:each="p : ${periodos}"
+                                th:value="${p.id}"
+                                th:text="${p.anio} + ' (UIT: S/ ' + ${#numbers.formatDecimal(p.uitVigente, 1, 'COMMA', 2, 'POINT')} + ')'"
+                                th:selected="${request.periodoId == p.id}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Fecha de Referencia -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Fecha de Referencia (Corte Normativo) <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="date" name="fechaReferencia" required
+                           th:value="${request.fechaReferencia}"
+                           class="w-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Beneficio Normativo -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">
+                        Beneficio o Deducción Legal
+                    </label>
+                    <select name="beneficio" class="w-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        <option th:each="b : ${beneficios}"
+                                th:value="${b}"
+                                th:text="${b.descripcion}"
+                                th:selected="${request.beneficio == b}"></option>
+                    </select>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-end space-x-2">
+                    <button type="submit"
+                            th:classappend="${esNuevoCalculo == true ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'}"
+                            class="flex-1 px-4 py-2.5 text-white rounded-lg text-xs font-semibold transition-all shadow-md flex items-center justify-center space-x-2">
+                        <i data-lucide="play" class="w-4 h-4" th:if="${esNuevoCalculo != true}"></i>
+                        <i data-lucide="save" class="w-4 h-4" th:if="${esNuevoCalculo == true}"></i>
+                        <span th:text="${esNuevoCalculo == true ? 'Registrar Cálculo Preliminar' : 'Ejecutar Simulación'}">Ejecutar Simulación</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    Observaciones Técnicas / Fundamento del Beneficio
+                </label>
+                <textarea name="observaciones" rows="2"
+                          placeholder="Indique resoluciones, expedientes de solicitud de beneficio o consideraciones particulares del cálculo..."
+                          class="w-full bg-slate-900/90 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                          th:text="${request.observaciones}"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultados de la Simulación -->
+    <div th:if="${resultado}" class="space-y-6">
+
+        <!-- Disclaimer Banner for Simulation -->
+        <div th:if="${resultado.estado.name() == 'SIMULACION'}"
+             class="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-xl flex items-center justify-between text-amber-300">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="info" class="w-6 h-6 flex-shrink-0 text-amber-400"></i>
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wide">Documento Informativo de Simulación</h3>
+                    <p class="text-xs text-amber-300/90">Este cálculo no constituye liquidación tributaria oficial ni deuda exigible ante la administración municipal.</p>
+                </div>
+            </div>
+
+            <!-- Botón Convertir a Preliminar -->
+            <form th:action="@{/dashboard/tributaria/impuesto-predial/nuevo}" method="post">
+                <input type="hidden" name="contribuyenteId" th:value="${request.contribuyenteId}">
+                <input type="hidden" name="periodoId" th:value="${request.periodoId}">
+                <input type="hidden" name="fechaReferencia" th:value="${request.fechaReferencia}">
+                <input type="hidden" name="beneficio" th:value="${request.beneficio}">
+                <input type="hidden" name="observaciones" th:value="${request.observaciones}">
+                <button type="submit" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md flex items-center space-x-1.5">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Guardar como preliminar oficial</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Tarjetas de Resumen Financiero -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5">
+                <span class="text-[11px] text-slate-400 block mb-1">Base Imponible Total</span>
+                <span class="text-base font-bold text-white font-mono"
+                      th:text="'S/ ' + ${#numbers.formatDecimal(resultado.totalAutovaluoBruto, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                <span class="text-[10px] text-slate-400 block mt-1" th:text="${resultado.predios.size()} + ' predio(s) agregados'">1 predio(s)</span>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5">
+                <span class="text-[11px] text-slate-400 block mb-1">Deducción de Ley</span>
+                <span class="text-base font-bold text-amber-400 font-mono"
+                      th:text="'- S/ ' + ${#numbers.formatDecimal(resultado.totalDeduccionesBeneficios, 1, 'COMMA', 2, 'POINT')}">- S/ 0.00</span>
+                <span class="text-[10px] text-amber-500/80 block mt-1" th:text="${resultado.beneficioAplicado}">NINGUNO</span>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5">
+                <span class="text-[11px] text-slate-400 block mb-1">Base Neta Afecta</span>
+                <span class="text-base font-bold text-blue-400 font-mono"
+                      th:text="'S/ ' + ${#numbers.formatDecimal(resultado.baseImponibleNeta, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Sujeto a escala</span>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5">
+                <span class="text-[11px] text-slate-400 block mb-1">Impuesto por Escala</span>
+                <span class="text-base font-bold text-indigo-300 font-mono"
+                      th:text="'S/ ' + ${#numbers.formatDecimal(resultado.impuestoCalculadoTramos, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                <span class="text-[10px] text-slate-400 block mt-1">Art. 13 LTM</span>
+            </div>
+
+            <div class="bg-slate-800/80 border border-emerald-500/40 rounded-xl p-3.5 bg-emerald-950/20">
+                <span class="text-[11px] text-emerald-400 block mb-1 font-semibold">IMPUESTO ANUAL</span>
+                <span class="text-lg font-bold text-emerald-300 font-mono"
+                      th:text="'S/ ' + ${#numbers.formatDecimal(resultado.impuestoAnualDeterminado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                <span class="text-[10px] text-emerald-400/80 block mt-1" th:if="${resultado.aplicaImpuestoMinimo}">Aplica tope mín. 0.6% UIT</span>
+                <span class="text-[10px] text-emerald-400/80 block mt-1" th:if="${!resultado.aplicaImpuestoMinimo}">Alícuota calculada</span>
+            </div>
+        </div>
+
+        <!-- Tabla de Predios Valorizados -->
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 bg-slate-900/80 border-b border-slate-700/80 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="building" class="w-4 h-4 text-blue-400"></i>
+                    <span>1. Desglose de Predios Comprendidos en la Determinación</span>
+                </h3>
+                <span class="text-[11px] text-slate-400 font-mono" th:text="'Total: S/ ' + ${#numbers.formatDecimal(resultado.totalAutovaluoBruto, 1, 'COMMA', 2, 'POINT')}"></span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase border-b border-slate-700/80">
+                        <tr>
+                            <th class="py-2.5 px-3">Código</th>
+                            <th class="py-2.5 px-3">Ubicación / Dirección</th>
+                            <th class="py-2.5 px-3 text-right">% Participación</th>
+                            <th class="py-2.5 px-3 text-right">Valor Terreno</th>
+                            <th class="py-2.5 px-3 text-right">Construcción</th>
+                            <th class="py-2.5 px-3 text-right">Instalaciones</th>
+                            <th class="py-2.5 px-3 text-right">Autovalúo Total</th>
+                            <th class="py-2.5 px-3 text-right">Autovalúo Imputable</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50 font-mono">
+                        <tr th:each="p : ${resultado.predios}" class="hover:bg-slate-700/20">
+                            <td class="py-2.5 px-3 text-blue-400 font-medium" th:text="${p.codigoPredio}">PRED-001</td>
+                            <td class="py-2.5 px-3 font-sans text-slate-300" th:text="${p.direccionPredio}">Jr. Bolívar 123</td>
+                            <td class="py-2.5 px-3 text-right" th:text="${#numbers.formatDecimal(p.porcentajeParticipacion, 1, 2)} + ' %'">100.00 %</td>
+                            <td class="py-2.5 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(p.valorTerreno, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                            <td class="py-2.5 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(p.valorConstrucciones, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                            <td class="py-2.5 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(p.valorInstalaciones, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                            <td class="py-2.5 px-3 text-right" th:text="'S/ ' + ${#numbers.formatDecimal(p.valorAutovaluoTotal, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                            <td class="py-2.5 px-3 text-right font-bold text-white" th:text="'S/ ' + ${#numbers.formatDecimal(p.valorAutovaluoImputable, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabla de Escala Progresiva -->
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 bg-slate-900/80 border-b border-slate-700/80 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+                    <span>2. Liquidación Progresiva por Tramos (TUO Ley de Tributación Municipal Art. 13)</span>
+                </h3>
+                <span class="text-[11px] text-slate-400" th:text="'Valor UIT ' + ${resultado.periodoAnio} + ': S/ ' + ${#numbers.formatDecimal(resultado.uitAplicada, 1, 'COMMA', 2, 'POINT')}">UIT S/ 5,150.00</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/60 text-[11px] text-slate-400 uppercase border-b border-slate-700/80">
+                        <tr>
+                            <th class="py-2.5 px-4 text-center">Tramo</th>
+                            <th class="py-2.5 px-4">Descripción del Rango</th>
+                            <th class="py-2.5 px-4 text-right">Límite Inf. (S/)</th>
+                            <th class="py-2.5 px-4 text-right">Límite Sup. (S/)</th>
+                            <th class="py-2.5 px-4 text-right">Base en Tramo (S/)</th>
+                            <th class="py-2.5 px-4 text-right">Alícuota</th>
+                            <th class="py-2.5 px-4 text-right">Impuesto Tramo (S/)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50 font-mono">
+                        <tr th:each="tr : ${resultado.tramos}" class="hover:bg-slate-700/20">
+                            <td class="py-2.5 px-4 text-center font-bold text-blue-400" th:text="'Tramo ' + ${tr.numeroTramo}">Tramo 1</td>
+                            <td class="py-2.5 px-4 font-sans text-slate-300" th:text="${tr.descripcionTramo}">Hasta 15 UIT</td>
+                            <td class="py-2.5 px-4 text-right" th:text="${#numbers.formatDecimal(tr.limiteInferiorMonto, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                            <td class="py-2.5 px-4 text-right" th:text="${tr.limiteSuperiorMonto != null ? #numbers.formatDecimal(tr.limiteSuperiorMonto, 1, 'COMMA', 2, 'POINT') : 'Más de 60 UIT'}">77,250.00</td>
+                            <td class="py-2.5 px-4 text-right text-indigo-300" th:text="${#numbers.formatDecimal(tr.baseImponibleTramo, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                            <td class="py-2.5 px-4 text-right font-bold text-emerald-400" th:text="${#numbers.formatDecimal(tr.alicuotaPorcentaje, 1, 2)} + ' %'">0.20 %</td>
+                            <td class="py-2.5 px-4 text-right font-bold text-white" th:text="${#numbers.formatDecimal(tr.impuestoTramo, 1, 'COMMA', 2, 'POINT')}">0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Explicabilidad Paso a Paso -->
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center space-x-2">
+                <i data-lucide="help-circle" class="w-4 h-4 text-emerald-400"></i>
+                <span>3. Explicabilidad Normativa y Justificación del Resultado</span>
+            </h3>
+            <div class="bg-slate-900/90 rounded-lg p-4 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed border border-slate-700/80">
+                <div th:each="paso : ${resultado.explicacionPasoAPaso}" class="py-0.5" th:text="${paso}"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

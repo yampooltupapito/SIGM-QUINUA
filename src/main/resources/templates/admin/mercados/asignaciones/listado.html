@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Asignación de Puestos | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Asignaciones de Puestos</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Asignación de Puestos y Control de Ocupación
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control integral de solicitudes, evaluaciones técnicas, ocupación efectiva y trazabilidad histórica.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/asignaciones/nueva}"
+               sec:authorize="hasAuthority('MERCADOS_ASIGNACION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Solicitud
+            </a>
+
+            <!-- Exportar Excel -->
+            <a th:href="@{/api/mercados/asignaciones/exportar/excel(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoAsignacion=${tipoSeleccionado},fechaInicioDesde=${fechaDesde},fechaInicioHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+
+            <!-- Exportar PDF -->
+            <a th:href="@{/api/mercados/asignaciones/exportar/pdf(termino=${termino},mercadoId=${mercadoIdSeleccionado},estado=${estadoSeleccionado},tipoAsignacion=${tipoSeleccionado},fechaInicioDesde=${fechaDesde},fechaInicioHasta=${fechaHasta})}"
+               target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Estadísticos Reales (PostgreSQL) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-slate-400">Total Solicitudes</p>
+            <p class="text-xl font-bold text-white mt-1" th:text="${stats.totalAsignaciones}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-amber-400">En Evaluación</p>
+            <p class="text-xl font-bold text-amber-400 mt-1" th:text="${stats.solicitadas + stats.enEvaluacion + stats.observadas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-teal-400">Aprobadas</p>
+            <p class="text-xl font-bold text-teal-400 mt-1" th:text="${stats.aprobadas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-emerald-400">Vigentes (Ocupados)</p>
+            <p class="text-xl font-bold text-emerald-400 mt-1" th:text="${stats.vigentes}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-purple-400">Suspendidas</p>
+            <p class="text-xl font-bold text-purple-400 mt-1" th:text="${stats.suspendidas}">0</p>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+            <p class="text-[11px] font-medium text-slate-400">Puestos Libres</p>
+            <p class="text-xl font-bold text-blue-400 mt-1" th:text="${stats.puestosDisponibles}">0</p>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros y Búsqueda -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-sm">
+        <form method="get" th:action="@{/dashboard/mercados/asignaciones}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="lg:col-span-2 relative">
+                <input type="text" name="termino" th:value="${termino}"
+                       placeholder="Buscar por código asignación, puesto, comerciante o documento..."
+                       class="w-full bg-[#101827] border border-[#334155] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+                <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <div>
+                <select name="mercadoId" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los Mercados --</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${m.id == mercadoIdSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los Estados --</option>
+                    <option th:each="est : ${estados}" th:value="${est.name()}" th:text="${est.descripcion}" th:selected="${est == estadoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/asignaciones}" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl border border-[#334155] transition-colors" title="Limpiar Filtros">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Asignaciones y Padrón -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-[#334155]">
+                <tr>
+                    <th class="px-4 py-3">Código Asignación</th>
+                    <th class="px-4 py-3">Mercado / Puesto</th>
+                    <th class="px-4 py-3">Comerciante Titular</th>
+                    <th class="px-4 py-3">Modalidad</th>
+                    <th class="px-4 py-3">Vigencia</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60">
+                <tr th:if="${asignaciones.empty}">
+                    <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                            <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            <p class="font-medium">No se encontraron asignaciones con los criterios de búsqueda seleccionados.</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:each="a : ${asignaciones.content}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="px-4 py-3">
+                        <div class="font-mono font-bold text-blue-400" th:text="${a.codigoAsignacion != null ? a.codigoAsignacion : 'BORRADOR'}"></div>
+                        <div class="text-[10px] text-slate-400" th:text="${'Solicitud: ' + (a.fechaSolicitud != null ? a.fechaSolicitud : '-')}"></div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-white" th:text="${a.mercadoNombre}">-</div>
+                        <div class="text-[10px] text-slate-400" th:text="${'Puesto ' + a.puestoCodigo + ' (N° ' + a.puestoNumero + ')'}"></div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-200" th:text="${a.titularNombre}">-</div>
+                        <div class="text-[10px] text-slate-400" th:text="${a.comercianteCodigo + ' — ' + a.documentoEnmascarado}"></div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700" th:text="${a.tipoAsignacion}">REGULAR</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-slate-200" th:text="${'Desde: ' + (a.fechaInicio != null ? a.fechaInicio : '-')}"></div>
+                        <div class="text-[10px] text-slate-400" th:text="${'Hasta: ' + (a.fechaFin != null ? a.fechaFin : 'Indefinida')}"></div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${a.badgeClase}"
+                              th:text="${a.estadoDescripcion}">Estado</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <a th:href="@{/dashboard/mercados/asignaciones/{id}(id=${a.id})}"
+                               class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-[#334155] transition-colors"
+                               title="Ver Detalle Integral">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a>
+
+                            <!-- Constancia PDF si está Aprobada o Vigente -->
+                            <a th:if="${a.estado.name() == 'VIGENTE' or a.estado.name() == 'APROBADA'}"
+                               th:href="@{/api/mercados/asignaciones/{id}/constancia(id=${a.id})}"
+                               target="_blank"
+                               class="p-1.5 bg-slate-800 hover:bg-blue-600/30 text-blue-400 rounded-lg border border-[#334155] transition-colors"
+                               title="Descargar Constancia Oficial PDF con QR">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Real -->
+        <div th:if="${asignaciones.totalPages > 1}" class="px-6 py-4 bg-[#101827] border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <span class="text-slate-400" th:text="${'Mostrando página ' + (asignaciones.number + 1) + ' de ' + asignaciones.totalPages + ' (' + asignaciones.totalElements + ' asignaciones)'}"></span>
+            <div class="flex items-center gap-1">
+                <a th:if="${!asignaciones.first}"
+                   th:href="@{/dashboard/mercados/asignaciones(page=${asignaciones.number - 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Anterior</a>
+                <span class="px-3 py-1 bg-blue-600 text-white font-semibold rounded-lg" th:text="${asignaciones.number + 1}"></span>
+                <a th:if="${!asignaciones.last}"
+                   th:href="@{/dashboard/mercados/asignaciones(page=${asignaciones.number + 1}, termino=${termino}, mercadoId=${mercadoIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-[#334155] transition-colors">Siguiente</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/asignaciones-listado.js}"></script>
+</th:block>
+</body>
+</html>

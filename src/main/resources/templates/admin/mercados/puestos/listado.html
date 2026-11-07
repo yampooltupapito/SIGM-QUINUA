@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Puestos Comerciales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/{id}(id=${mercado.id})}" th:text="${mercado.nombre}" class="hover:text-blue-400 transition-colors"></a>
+                <span>/</span>
+                <span class="text-slate-200">Puestos Comerciales</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Padrón de Puestos Comerciales
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="${'Mercado: ' + mercado.nombre + ' (' + mercado.codigo + ') — ' + mercado.distrito + ', ' + mercado.provincia}"></p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Selector de Vista: Tabla / Tarjetas -->
+            <div class="bg-[#101827] p-1 rounded-xl border border-[#334155] flex items-center">
+                <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id}, vista='tabla', termino=${termino}, sectorId=${sectorIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   th:classappend="${vista == 'tabla'} ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'"
+                   class="p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors" title="Vista Tabular">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Tabla</span>
+                </a>
+                <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id}, vista='tarjetas', termino=${termino}, sectorId=${sectorIdSeleccionado}, estado=${estadoSeleccionado})}"
+                   th:classappend="${vista == 'tarjetas'} ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'"
+                   class="p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors" title="Vista de Tarjetas">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    <span>Tarjetas</span>
+                </a>
+            </div>
+
+            <!-- Botones de Exportación -->
+            <a th:href="@{/api/mercados/{id}/puestos/exportar/excel(id=${mercado.id}, termino=${termino}, sectorId=${sectorIdSeleccionado})}"
+               class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+            <a th:href="@{/api/mercados/{id}/puestos/exportar/pdf(id=${mercado.id}, termino=${termino}, sectorId=${sectorIdSeleccionado})}"
+               target="_blank"
+               class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+
+            <!-- Botón Nuevo Puesto -->
+            <a th:href="@{/dashboard/mercados/{id}/puestos/nuevo(id=${mercado.id})}"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nuevo Puesto
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas en Tiempo Real -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-[#202c3d] shadow-sm">
+            <span class="text-xs text-slate-400 font-medium">Total Puestos</span>
+            <div class="text-2xl font-black text-white mt-1" th:text="${estadisticas.totalPuestos}">0</div>
+            <span class="text-[10px] text-slate-500">Capacidad total</span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 shadow-sm">
+            <span class="text-xs text-emerald-400 font-medium">Disponibles</span>
+            <div class="text-2xl font-black text-emerald-400 mt-1" th:text="${estadisticas.puestosDisponibles}">0</div>
+            <span class="text-[10px] text-emerald-500/80">Listos para asignación</span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 shadow-sm">
+            <span class="text-xs text-blue-400 font-medium">Ocupados</span>
+            <div class="text-2xl font-black text-blue-400 mt-1" th:text="${estadisticas.puestosOcupados}">0</div>
+            <span class="text-[10px] text-blue-500/80">Con comerciante</span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-purple-500/20 bg-purple-500/5 shadow-sm">
+            <span class="text-xs text-purple-400 font-medium">Reservados</span>
+            <div class="text-2xl font-black text-purple-400 mt-1" th:text="${estadisticas.puestosReservados}">0</div>
+            <span class="text-[10px] text-purple-500/80">En adjudicación</span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-sm">
+            <span class="text-xs text-amber-400 font-medium">Mantenimiento</span>
+            <div class="text-2xl font-black text-amber-400 mt-1" th:text="${estadisticas.puestosMantenimiento}">0</div>
+            <span class="text-[10px] text-amber-500/80">Refacción técnica</span>
+        </div>
+        <div class="bg-[#1e293b] p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 shadow-sm">
+            <span class="text-xs text-rose-400 font-medium">Inhabilitados</span>
+            <div class="text-2xl font-black text-rose-400 mt-1" th:text="${estadisticas.puestosInhabilitados}">0</div>
+            <span class="text-[10px] text-rose-500/80">Condición física</span>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div th:replace="~{admin/mercados/puestos/componentes/filtros :: filtrosPuestos}"></div>
+
+    <!-- Vista 1: Tabla Institucional -->
+    <div th:if="${vista == 'tabla'}" class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 font-bold border-b border-[#202c3d]">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Número</th>
+                        <th class="py-3 px-4">Tipo</th>
+                        <th class="py-3 px-4">Sector / Pabellón</th>
+                        <th class="py-3 px-4 text-right">Área (m²)</th>
+                        <th class="py-3 px-4 text-center">Nivel</th>
+                        <th class="py-3 px-4 text-center">Estado Físico</th>
+                        <th class="py-3 px-4 text-center">Disponibilidad</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#202c3d]">
+                    <tr th:if="${puestos.empty}">
+                        <td colspan="9" class="py-12 text-center text-slate-500">
+                            No se encontraron puestos comerciales registrados o coincidentes con los filtros seleccionados.
+                        </td>
+                    </tr>
+                    <tr th:each="p : ${puestos}" class="hover:bg-[#101827]/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-white" th:text="${p.codigo}"></td>
+                        <td class="py-3 px-4 font-medium text-slate-200" th:text="${p.numero}"></td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${p.tipoPuestoNombre != null ? p.tipoPuestoNombre : '-'}"></td>
+                        <td class="py-3 px-4">
+                            <div class="font-medium text-slate-200" th:text="${p.sectorNombre != null ? p.sectorNombre : 'Sin sector'}"></div>
+                            <div class="text-[11px] text-slate-400" th:if="${p.pabellonNombre != null}" th:text="${'Pab: ' + p.pabellonNombre}"></div>
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono" th:text="${p.areaMetrosCuadrados != null ? p.areaMetrosCuadrados + ' m²' : '-'}"></td>
+                        <td class="py-3 px-4 text-center" th:text="${p.nivel}"></td>
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${p.estadoFisico.name() == 'OPERATIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Operativo</span>
+                            <span th:if="${p.estadoFisico.name() == 'EN_MANTENIMIENTO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Mantenimiento</span>
+                            <span th:if="${p.estadoFisico.name() == 'INHABILITADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">Inhabilitado</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${p.estado.name() == 'DISPONIBLE'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Disponible</span>
+                            <span th:if="${p.estado.name() == 'OCUPADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Ocupado</span>
+                            <span th:if="${p.estado.name() == 'RESERVADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">Reservado</span>
+                            <span th:if="${p.estado.name() == 'NO_ASIGNABLE' or p.estado.name() == 'INHABILITADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">No asignable</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a th:href="@{/dashboard/mercados/{mId}/puestos/{pId}(mId=${mercado.id}, pId=${p.id})}"
+                                   class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors" title="Ver Detalle">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </a>
+                                <a th:href="@{/dashboard/mercados/{mId}/puestos/{pId}/editar(mId=${mercado.id}, pId=${p.id})}"
+                                   class="p-1.5 bg-blue-900/40 hover:bg-blue-800 text-blue-400 rounded-lg transition-colors" title="Editar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </a>
+                                <button type="button" th:attr="onclick='abrirModalEstado(\'' + ${p.id} + '\', \'' + ${p.codigo} + '\', \'' + ${p.estadoFisico} + '\', \'' + ${p.estado} + '\')'"
+                                        class="p-1.5 bg-amber-900/40 hover:bg-amber-800 text-amber-400 rounded-lg transition-colors" title="Cambiar Estado">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Vista 2: Cuadrícula de Tarjetas -->
+    <div th:if="${vista == 'tarjetas'}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div th:if="${puestos.empty}" class="col-span-full bg-[#1e293b] p-12 text-center text-slate-500 rounded-2xl border border-[#202c3d]">
+            No se encontraron puestos comerciales registrados o coincidentes con los filtros seleccionados.
+        </div>
+        <div th:each="p : ${puestos}" class="bg-[#1e293b] rounded-2xl border border-[#202c3d] p-5 shadow-lg flex flex-col justify-between hover:border-blue-500/40 transition-all">
+            <div>
+                <div class="flex items-start justify-between gap-2 mb-3">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider" th:text="${p.tipoPuestoNombre != null ? p.tipoPuestoNombre : 'PUESTO'}"></span>
+                        <h3 class="text-base font-black text-white font-mono mt-0.5" th:text="${p.codigo}"></h3>
+                    </div>
+                    <span th:if="${p.estado.name() == 'DISPONIBLE'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Disponible</span>
+                    <span th:if="${p.estado.name() == 'OCUPADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Ocupado</span>
+                    <span th:if="${p.estado.name() == 'RESERVADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Reservado</span>
+                    <span th:if="${p.estado.name() == 'NO_ASIGNABLE' or p.estado.name() == 'INHABILITADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">No Asignable</span>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-300 mb-4">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Número:</span>
+                        <span class="font-medium text-slate-200" th:text="${p.numero}"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Sector:</span>
+                        <span class="font-medium text-slate-200" th:text="${p.sectorNombre != null ? p.sectorNombre : 'Sin sector'}"></span>
+                    </div>
+                    <div class="flex justify-between" th:if="${p.pabellonNombre != null}">
+                        <span class="text-slate-500">Pabellón:</span>
+                        <span class="font-medium text-slate-200" th:text="${p.pabellonNombre}"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Área:</span>
+                        <span class="font-mono text-slate-200" th:text="${p.areaMetrosCuadrados != null ? p.areaMetrosCuadrados + ' m²' : '-'}"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Estado Físico:</span>
+                        <span th:text="${p.estadoFisicoDescripcion}" class="text-[11px] font-semibold text-slate-300"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-[#202c3d] flex items-center justify-between">
+                <a th:href="@{/dashboard/mercados/{mId}/puestos/{pId}(mId=${mercado.id}, pId=${p.id})}"
+                   class="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1">
+                    Ver ficha
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+                <div class="flex items-center gap-1">
+                    <a th:href="@{/dashboard/mercados/{mId}/puestos/{pId}/editar(mId=${mercado.id}, pId=${p.id})}"
+                       class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </a>
+                    <button type="button" th:attr="onclick='abrirModalEstado(\'' + ${p.id} + '\', \'' + ${p.codigo} + '\', \'' + ${p.estadoFisico} + '\', \'' + ${p.estado} + '\')'"
+                            class="p-1.5 bg-amber-900/30 hover:bg-amber-800 text-amber-400 rounded-lg transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    <div th:if="${pagina.totalPages > 1}" class="flex items-center justify-between text-xs text-slate-400 bg-[#1e293b] p-4 rounded-xl border border-[#202c3d]">
+        <div th:text="${'Página ' + (pagina.number + 1) + ' de ' + pagina.totalPages + ' (' + pagina.totalElements + ' puestos)'}"></div>
+        <div class="flex items-center space-x-1">
+            <a th:if="${!pagina.first}"
+               th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id}, page=${pagina.number - 1}, vista=${vista}, termino=${termino}, sectorId=${sectorIdSeleccionado})}"
+               class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg">Anterior</a>
+            <a th:if="${!pagina.last}"
+               th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id}, page=${pagina.number + 1}, vista=${vista}, termino=${termino}, sectorId=${sectorIdSeleccionado})}"
+               class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg">Siguiente</a>
+        </div>
+    </div>
+
+    <!-- Modal de Cambio de Estado -->
+    <div th:replace="~{admin/mercados/puestos/componentes/modal-estado :: modalEstadoPuesto}"></div>
+
+</div>
+
+<!-- Scripts -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/puestos-listado.js}"></script>
+</th:block>
+</body>
+</html>

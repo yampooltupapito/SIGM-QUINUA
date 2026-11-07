@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Mis Deudas Tributarias | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Estado de Deudas Tributarias</h2>
+                    <p class="text-xs text-slate-500">Obligaciones pendientes con desglose de vigencia y exigibilidad procesal</p>
+                </div>
+                <div th:if="${resumenDeudas.deudaVencida != null && resumenDeudas.deudaVencida > 0}">
+                    <a th:href="@{/portal/tributario/fraccionamientos}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-colors">
+                        <i data-lucide="split" class="w-3.5 h-3.5"></i> Ver Opciones de Fraccionamiento
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen de Deudas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Deuda Total Consolidada</span>
+                    <span class="text-2xl font-black text-slate-900 mt-1 block"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(resumenDeudas.deudaTotal != null ? resumenDeudas.deudaTotal : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 block" th:text="${resumenDeudas.totalObligacionesDeuda} + ' obligación(es) pendiente(s)'">0 obligaciones</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Deuda Corriente / Vigente</span>
+                    <span class="text-2xl font-bold text-amber-600 mt-1 block"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(resumenDeudas.deudaVigente != null ? resumenDeudas.deudaVigente : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Dentro del plazo de vencimiento</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Deuda Vencida (Ordinaria)</span>
+                    <span class="text-2xl font-bold text-rose-600 mt-1 block"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(resumenDeudas.deudaVencida != null ? resumenDeudas.deudaVencida : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                    <span class="text-[10px] text-rose-500 mt-0.5 block">Genera intereses moratorios (TIM)</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">En Cobranza Coactiva</span>
+                    <span class="text-2xl font-black text-purple-700 mt-1 block"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(resumenDeudas.deudaExigibleCoactiva != null ? resumenDeudas.deudaExigibleCoactiva : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                    <span class="text-[10px] text-purple-600 mt-0.5 block">Con Resolución de Ejecución Coactiva</span>
+                </div>
+            </div>
+
+            <!-- Listado Detallado de Obligaciones en Deuda -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Detalle de Obligaciones Pendientes</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Tributo / Código</th>
+                                <th class="py-3 px-4">Periodo / Cuota</th>
+                                <th class="py-3 px-4">Predio</th>
+                                <th class="py-3 px-4">Vencimiento</th>
+                                <th class="py-3 px-4 text-right">Saldo Deudor (S/)</th>
+                                <th class="py-3 px-4 text-center">Condición</th>
+                                <th class="py-3 px-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${resumenDeudas.detalleObligaciones == null || resumenDeudas.detalleObligaciones.empty}">
+                                <td colspan="7" class="text-center py-10 text-emerald-600">
+                                    <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto text-emerald-500 mb-2"></i>
+                                    ¡Excelente! No registra deudas tributarias pendientes para este contribuyente.
+                                </td>
+                            </tr>
+                            <tr th:each="d : ${resumenDeudas.detalleObligaciones}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-900 block" th:text="${d.conceptoNombre}">Impuesto Predial</span>
+                                    <span class="text-[11px] font-mono text-slate-400" th:text="${d.codigoObligacion}">OBL-001</span>
+                                </td>
+                                <td class="py-3.5 px-4 font-semibold text-slate-800" th:text="${d.anioPeriodo} + (${d.cuotaNumero != null ? ' - C' + d.cuotaNumero : ''})">2026 - C1</td>
+                                <td class="py-3.5 px-4 text-slate-600 max-w-[200px] truncate" th:title="${d.predioDireccion}" th:text="${d.predioDireccion != null ? d.predioDireccion : '—'}">Jr. Sucre 120</td>
+                                <td class="py-3.5 px-4" th:text="${#temporals.format(d.fechaVencimiento, 'dd/MM/yyyy')}">28/02/2026</td>
+                                <td class="py-3.5 px-4 text-right font-black text-rose-600" th:text="'S/ ' + ${#numbers.formatDecimal(d.saldo, 1, 'POINT', 2, 'POINT')}">S/ 150.00</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <span th:if="${d.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">VENCIDO</span>
+                                    <span th:if="${!d.vencida}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">POR VENCER</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <a th:href="@{'/portal/tributario/obligaciones/' + ${d.id}}" class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+</div>
+</body>
+</html>

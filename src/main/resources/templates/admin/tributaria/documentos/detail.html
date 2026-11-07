@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${doc.codigoDocumento} + ' | Documento Tributario'"></title>
+</head>
+<body>
+<div layout:fragment="contenido" class="space-y-6">
+
+    <!-- Mensajes de feedback -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+    </div>
+
+    <!-- Header Principal -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria/documentos}" class="hover:text-blue-400 transition-colors">Recibos y Constancias</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${doc.codigoDocumento}">REC01-00000001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="file-check-2" class="w-6 h-6 text-blue-500"></i>
+                    <span th:text="${doc.tipoDocumentoNombre} + ' ' + ${doc.codigoDocumento}">Recibo REC01-00000001</span>
+                </h1>
+                <span th:if="${doc.estado.name() == 'EMITIDO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">VÁLIDO / EMITIDO</span>
+                <span th:if="${doc.estado.name() == 'ANULADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">ANULADO</span>
+                <span th:if="${doc.estado.name() == 'SUSTITUIDO'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">SUSTITUIDO</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+                Emitido el <span th:text="${#temporals.format(doc.fechaEmision, 'dd/MM/yyyy HH:mm')}">26/10/2026 17:00</span>
+                por <span class="text-slate-200 font-medium" th:text="${doc.usuarioEmisorNombre}">Cajero Oficial</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Descargar PDF -->
+            <a th:href="@{'/dashboard/tributaria/documentos/' + ${doc.id} + '/pdf'}" target="_blank"
+               class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Descargar PDF</span>
+            </a>
+
+            <!-- Reimprimir -->
+            <form th:if="${doc.estado.name() == 'EMITIDO'}"
+                  th:action="@{'/dashboard/tributaria/documentos/' + ${doc.id} + '/reimprimir'}" method="post">
+                <button type="submit"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5"
+                        title="Reimprimir copia autorizada con marca en pie de página">
+                    <i data-lucide="printer" class="w-4 h-4 text-slate-400"></i>
+                    <span>Reimprimir (<span th:text="${doc.numeroReimpresiones}">0</span>)</span>
+                </button>
+            </form>
+
+            <!-- Sustituir Modal Trigger -->
+            <button th:if="${doc.estado.name() == 'EMITIDO'}"
+                    onclick="document.getElementById('modalSustituir').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_DOCUMENTOS_SUSTITUIR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'TRIBUTACION')"
+                    class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                <i data-lucide="repeat" class="w-4 h-4"></i>
+                <span>Sustituir</span>
+            </button>
+
+            <!-- Anular Modal Trigger -->
+            <button th:if="${doc.estado.name() == 'EMITIDO'}"
+                    onclick="document.getElementById('modalAnular').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_DOCUMENTOS_ANULAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'TRIBUTACION')"
+                    class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                <i data-lucide="ban" class="w-4 h-4"></i>
+                <span>Anular</span>
+            </button>
+
+            <a th:href="@{/dashboard/tributaria/documentos}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerta de Anulado o Sustituido -->
+    <div th:if="${doc.estado.name() == 'ANULADO'}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+        <div class="flex items-start gap-3">
+            <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-400 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-semibold text-rose-300">Documento Anulado Formalmente</h3>
+                <p class="text-xs text-rose-400 mt-1">
+                    <strong>Motivo:</strong> <span th:text="${doc.motivoAnulacion}">Error de emisión</span><br>
+                    <strong>Anulado por:</strong> <span th:text="${doc.usuarioAnulacionNombre}">Supervisor</span> el
+                    <span th:text="${#temporals.format(doc.fechaAnulacion, 'dd/MM/yyyy HH:mm')}">26/10/2026</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${doc.estado.name() == 'SUSTITUIDO'}" class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+        <div class="flex items-start gap-3">
+            <i data-lucide="repeat" class="w-5 h-5 text-amber-400 mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-semibold text-amber-300">Documento Sustituido por otra Emisión</h3>
+                <p class="text-xs text-amber-400 mt-1">
+                    Este documento perdió vigencia probatoria y fue reemplazado por:
+                    <a th:if="${doc.documentoSustitutorioId != null}"
+                       th:href="@{'/dashboard/tributaria/documentos/' + ${doc.documentoSustitutorioId}}"
+                       th:text="${doc.documentoSustitutorioCodigo}"
+                       class="font-bold underline hover:text-white">REC01-00000002</a>
+                    <br>
+                    <strong>Sustento:</strong> <span th:text="${doc.motivoAnulacion}">Corrección de datos</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grilla de Información Principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Columna Izquierda (2 spans): Metadatos y Detalle Financiero -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Ficha de Datos del Documento -->
+            <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
+                    <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+                    Información General del Documento
+                </h2>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Tipo de Documento</span>
+                        <span class="font-medium text-slate-200" th:text="${doc.tipoDocumentoNombre}">Recibo de Caja</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Serie y Correlativo</span>
+                        <span class="font-mono font-bold text-white" th:text="${doc.serieCodigo} + ' - ' + ${doc.numeroCorrelativo}">REC01 - 1</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Oficina Emisora</span>
+                        <span class="font-medium text-slate-200" th:text="${doc.oficinaEmisoraNombre}">Subgerencia de Rentas</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha y Hora de Emisión</span>
+                        <span class="font-medium text-slate-200" th:text="${#temporals.format(doc.fechaEmision, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 17:00</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Moneda</span>
+                        <span class="font-medium text-slate-200" th:text="${doc.moneda}">PEN (Soles)</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Importe Total</span>
+                        <span class="text-base font-bold text-emerald-400">S/ <span th:text="${#numbers.formatDecimal(doc.importeTotal, 1, 'COMMA', 2, 'POINT')}">150.00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ficha del Contribuyente y Pago de Origen -->
+            <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
+                    <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
+                    Contribuyente y Operación de Caja
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Contribuyente</span>
+                        <a th:href="@{'/dashboard/tributaria/contribuyentes/' + ${doc.contribuyenteId}}"
+                           class="font-semibold text-blue-400 hover:underline" th:text="${doc.nombreContribuyente}">Juan Pérez</a>
+                        <div class="text-[11px] text-slate-400 mt-0.5">
+                            <span th:text="${doc.codigoContribuyente}">CT-001</span> •
+                            <span th:text="${doc.tipoDocumentoContribuyente} + ': ' + ${doc.numeroDocumentoContribuyente}">DNI: 44556677</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Operación de Recaudación</span>
+                        <a th:href="@{'/dashboard/tributaria/pagos/' + ${doc.pagoId}}"
+                           class="font-mono font-bold text-blue-400 hover:underline" th:text="${doc.codigoPago}">PAG-2026-00001</a>
+                        <div class="text-[11px] text-slate-400 mt-0.5">
+                            Medio: <span class="text-slate-200 font-medium" th:text="${doc.medioPago}">EFECTIVO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Eventos del Documento -->
+            <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
+                <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
+                    <i data-lucide="history" class="w-4 h-4 text-purple-400"></i>
+                    Trazabilidad y Auditoría de Eventos
+                </h2>
+
+                <div class="space-y-3">
+                    <div th:each="h : ${historial}" class="flex items-start gap-3 p-3 bg-[#101827]/60 rounded-lg border border-[#334155]/40 text-xs">
+                        <div class="p-1.5 rounded bg-blue-600/20 text-blue-400 flex-shrink-0 mt-0.5">
+                            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-200" th:text="${h.tipoEvento}">EMISIÓN</span>
+                                <span class="text-[10px] text-slate-500" th:text="${#temporals.format(h.fechaEvento, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 17:00</span>
+                            </div>
+                            <p class="text-slate-400 mt-0.5" th:text="${h.descripcion}">Descripción del evento</p>
+                            <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-3">
+                                <span>Usuario: <span class="text-slate-400" th:text="${h.usuarioNombre}">Cajero</span></span>
+                                <span>IP: <span class="text-slate-400 font-mono" th:text="${h.ipOrigen}">127.0.0.1</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha (1 span): Código QR, Hash e Integridad -->
+        <div class="space-y-6">
+
+            <!-- Ficha de Verificación y Código QR -->
+            <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 text-center space-y-4">
+                <h2 class="text-sm font-semibold text-white flex items-center justify-center gap-2 border-b border-[#334155]/60 pb-2">
+                    <i data-lucide="qr-code" class="w-4 h-4 text-indigo-400"></i>
+                    Código QR de Autenticidad
+                </h2>
+
+                <div class="p-3 bg-white rounded-xl inline-block shadow-md">
+                    <img th:src="@{'/dashboard/tributaria/documentos/' + ${doc.id} + '/qr'}"
+                         alt="Código QR de Verificación" class="w-40 h-40 mx-auto">
+                </div>
+
+                <div class="text-left space-y-2 pt-2 border-t border-[#334155]/40 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Código de Verificación</span>
+                        <span class="font-mono font-bold text-white select-all text-xs" th:text="${doc.codigoVerificacion}">VER-XXXXXXXXXXXX</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Hash SHA-256</span>
+                        <div class="font-mono text-[9px] text-slate-400 bg-[#101827] p-1.5 rounded border border-[#334155] break-all select-all"
+                             th:text="${doc.hashDocumento}">a1b2c3d4...</div>
+                    </div>
+
+                    <div class="pt-2">
+                        <a th:href="@{'/verificar/documento-tributario/' + ${doc.codigoVerificacion}}" target="_blank"
+                           class="w-full py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-lg border border-blue-500/30 transition-colors flex items-center justify-center gap-1.5">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                            <span>Ver Página Pública de Validación</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ficha Legal y Seguridad -->
+            <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-700/40 text-xs text-slate-400 space-y-2">
+                <span class="font-semibold text-slate-300 block flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                    Marco Documental Municipal
+                </span>
+                <p>Este documento constituye el recibo oficial de caja emitido por la Municipalidad Distrital de Quinua.</p>
+                <p>No constituye comprobante de pago electrónico regulado por SUNAT ni sustituye declaraciones juradas tributarias.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MODAL DE ANULACIÓN DOCUMENTAL -->
+    <div id="modalAnular" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3 text-rose-400">
+                <div class="p-2 bg-rose-500/10 rounded-lg">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Anular Documento Tributario</h3>
+                    <p class="text-xs text-slate-400">Operación administrativa auditada e irreversible</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-300">
+                Está a punto de anular el documento <strong class="text-white" th:text="${doc.codigoDocumento}">REC01-00000001</strong>.
+                Esta acción NO revierte el pago financiero en cuenta corriente; únicamente invalida este comprobante físico.
+            </p>
+
+            <form th:action="@{'/dashboard/tributaria/documentos/' + ${doc.id} + '/anular'}" th:object="${anularForm}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Motivo Justificado de Anulación <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea th:field="*{motivo}" rows="3" required placeholder="Describa el motivo formal (mínimo 10 caracteres)..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-700/60">
+                    <button type="button" onclick="document.getElementById('modalAnular').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                        <i data-lucide="ban" class="w-4 h-4"></i>
+                        <span>Confirmar Anulación</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE SUSTITUCIÓN DOCUMENTAL -->
+    <div id="modalSustituir" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3 text-amber-400">
+                <div class="p-2 bg-amber-500/10 rounded-lg">
+                    <i data-lucide="repeat" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Sustituir Documento</h3>
+                    <p class="text-xs text-slate-400">Emisión de nuevo documento vinculante</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-300">
+                El documento original <strong class="text-white" th:text="${doc.codigoDocumento}">REC01-00000001</strong> pasará al estado
+                <span class="text-amber-400 font-bold">SUSTITUIDO</span> y se emitirá de inmediato un nuevo documento oficial para el mismo pago.
+            </p>
+
+            <form th:action="@{'/dashboard/tributaria/documentos/' + ${doc.id} + '/sustituir'}" th:object="${sustituirForm}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Motivo Justificado de Sustitución <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea th:field="*{motivo}" rows="3" required placeholder="Indique la justificación formal (ej. error en serie o impresión defectuosa)..."
+                              class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-700/60">
+                    <button type="button" onclick="document.getElementById('modalSustituir').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Emitir Sustitutorio</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

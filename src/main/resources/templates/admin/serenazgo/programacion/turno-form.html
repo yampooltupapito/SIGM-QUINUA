@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${turnoId != null ? 'Editar Turno Operativo — SIGM-QUINUA' : 'Nuevo Turno Operativo — SIGM-QUINUA'}">Turno Operativo</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-2xl mx-auto">
+
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/serenazgo/programacion(tab='turnos')}" class="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span th:text="${turnoId != null ? 'Editar Turno: ' + codigoTurno : 'Nuevo Turno Operativo'}">Registrar Turno</span>
+                </h1>
+                <p class="text-xs text-slate-400">Definición de franjas horarias y períodos de guardia para el personal.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+        <i data-lucide="alert-octagon" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${mensajeError}">Error</span>
+    </div>
+
+    <!-- Formulario de Turno -->
+    <form th:action="${turnoId != null} ? @{/dashboard/serenazgo/turnos/{id}/editar(id=${turnoId})} : @{/dashboard/serenazgo/turnos}"
+          th:object="${turno}" method="post" class="p-6 rounded-xl bg-[#202c3d] border border-slate-700/80 space-y-4">
+
+        <div th:if="${turnoId == null}">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Código del Turno (Opcional)</label>
+            <input type="text" th:field="*{codigo}" placeholder="Dejar en blanco para auto-generar (TUR-2026-XXXX)"
+                   class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono uppercase"/>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Nombre del Turno *</label>
+            <input type="text" th:field="*{nombre}" required placeholder="Ej. Turno Mañana, Guardia Nocturna..."
+                   class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+            <p th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}" class="text-rose-400 text-[11px] mt-1"></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Turno *</label>
+                <select th:field="*{tipoTurno}" required
+                        class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option th:each="tt : ${tiposTurno}" th:value="${tt}" th:text="${tt.descripcion}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Oficina Competente</label>
+                <select th:field="*{oficinaResponsableId}"
+                        class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option value="">Predeterminada (Seguridad Ciudadana)</option>
+                    <option th:each="o : ${oficinas}" th:value="${o.id}" th:text="${o.nombre}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-slate-800/40 border border-slate-700/60">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Hora de Inicio *</label>
+                <input type="time" th:field="*{horaInicio}" required id="horaInicio" onchange="calcularPreviaDuracion()"
+                       class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+                <p th:if="${#fields.hasErrors('horaInicio')}" th:errors="*{horaInicio}" class="text-rose-400 text-[11px] mt-1"></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Hora de Fin *</label>
+                <input type="time" th:field="*{horaFin}" required id="horaFin" onchange="calcularPreviaDuracion()"
+                       class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+                <p th:if="${#fields.hasErrors('horaFin')}" th:errors="*{horaFin}" class="text-rose-400 text-[11px] mt-1"></p>
+            </div>
+
+            <div class="sm:col-span-2 flex items-center justify-between pt-2 border-t border-slate-700/40">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" th:field="*{cruzaMedianoche}" id="chkCruza" onchange="calcularPreviaDuracion()"
+                           class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0"/>
+                    <label for="chkCruza" class="text-xs text-slate-300 font-medium">
+                        El turno cruza medianoche (inicia un día y termina al día siguiente)
+                    </label>
+                </div>
+                <span id="duracionEstimada" class="text-xs font-bold text-blue-400">Duración: --</span>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Descripción</label>
+            <textarea th:field="*{descripcion}" rows="2" placeholder="Detalle de asignaciones habituales..."
+                      class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones</label>
+            <textarea th:field="*{observaciones}" rows="2" placeholder="Observaciones administrativas..."
+                      class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/80">
+            <a th:href="@{/dashboard/serenazgo/programacion(tab='turnos')}"
+               class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-xs font-semibold shadow-md shadow-blue-900/30 transition-all flex items-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span th:text="${turnoId != null ? 'Guardar Cambios' : 'Registrar Turno'}">Guardar</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    function calcularPreviaDuracion() {
+        const hIni = document.getElementById('horaInicio').value;
+        const hFin = document.getElementById('horaFin').value;
+        const chk = document.getElementById('chkCruza');
+        const out = document.getElementById('duracionEstimada');
+
+        if (!hIni || !hFin) return;
+
+        const [h1, m1] = hIni.split(':').map(Number);
+        const [h2, m2] = hFin.split(':').map(Number);
+
+        let t1 = h1 * 60 + m1;
+        let t2 = h2 * 60 + m2;
+
+        let cruza = chk.checked || t2 < t1;
+        if (t2 < t1 && !chk.checked) {
+            chk.checked = true;
+            cruza = true;
+        }
+
+        let mins;
+        if (cruza) {
+            mins = (1440 - t1) + t2;
+        } else {
+            mins = t2 - t1;
+        }
+
+        const hrs = Math.floor(mins / 60);
+        const rm = mins % 60;
+        out.innerText = `Duración: ${hrs} h ${String(rm).padStart(2, '0')} m`;
+    }
+
+    document.addEventListener('DOMContentLoaded', calcularPreviaDuracion);
+</script>
+</th:block>
+</body>
+</html>

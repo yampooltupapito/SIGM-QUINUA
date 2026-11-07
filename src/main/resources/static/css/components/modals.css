@@ -1,0 +1,64 @@
+/* ==========================================================================
+   SIGM-QUINUA — MODALES RESPONSIVOS Y ACCESIBLES
+   ========================================================================== */
+
+#toastContainer {
+    z-index: 99999 !important;
+}
+
+.modal-container,
+.sigm-modal-backdrop {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-container:not(.hidden),
+.sigm-modal-backdrop:not(.hidden),
+div.fixed.inset-0[id^="modal"]:not(.hidden) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.modal-container > div,
+.sigm-modal-backdrop > div,
+div.fixed.inset-0[id^="modal"] > div {
+    margin: auto;
+}
+
+.sigm-modal-dialog {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-theme);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-modal);
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sigm-modal-header {
+    padding: 1rem 1.25rem;
+    background-color: rgba(15, 23, 42, 0.65);
+    border-bottom: 1px solid var(--border-theme);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.sigm-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
+.sigm-modal-footer {
+    padding: 0.875rem 1.25rem;
+    background-color: rgba(15, 23, 42, 0.65);
+    border-top: 1px solid var(--border-theme);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+

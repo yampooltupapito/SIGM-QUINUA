@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+    <title layout:title-pattern="$LAYOUT_TITLE — $CONTENT_TITLE">Municipalidad Distrital de Quinua — Portal Ciudadano</title>
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <th:block layout:fragment="page-css"></th:block>
+</head>
+<body class="public-body min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Navbar Público Institucional -->
+    <div th:replace="~{components/navigation/navbar :: navbar(${paginaActiva})}"></div>
+
+    <!-- Área Principal de Contenido -->
+    <main class="flex-1" id="publicMainContent">
+        <div layout:fragment="content">
+            <th:block th:if="${contenido != null}">
+                <th:block th:replace="${contenido}"></th:block>
+            </th:block>
+        </div>
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <div th:replace="~{components/navigation/footer :: footer}"></div>
+
+    <script th:src="@{/js/core/validators.js}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.lucide && typeof window.lucide.createIcons === "function") {
+                window.lucide.createIcons();
+            }
+        });
+    </script>
+    <th:block layout:fragment="page-scripts"></th:block>
+</body>
+</html>
+

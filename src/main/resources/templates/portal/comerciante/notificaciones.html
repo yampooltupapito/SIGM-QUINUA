@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Centro de Notificaciones</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Centro de Notificaciones y Avisos</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Comunicaciones formales sobre vencimiento de contratos, obligaciones y resoluciones de trámites.
+        </p>
+    </div>
+
+    <!-- Lista de Notificaciones -->
+    <div class="space-y-3">
+        <!-- Notificación 1: Bienvenida al Portal -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full">SEGURIDAD Y ACCESO</span>
+                    <span class="text-xs text-slate-400 font-mono">17/10/2026</span>
+                </div>
+                <h2 class="text-sm font-bold text-slate-900 mt-1">Bienvenido al Portal de Autogestión del Comerciante</h2>
+                <p class="text-xs text-slate-600 mt-1">
+                    Su cuenta ciudadana ha sido vinculada formalmente a su registro en el padrón de mercados. Desde este portal podrá consultar sus puestos, realizar solicitudes y descargar sus documentos oficiales.
+                </p>
+            </div>
+        </div>
+
+        <!-- Notificación 2: Recordatorio de Obligaciones -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="receipt" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full">FINANZAS Y TARIFAS</span>
+                    <span class="text-xs text-slate-400 font-mono">15/10/2026</span>
+                </div>
+                <h2 class="text-sm font-bold text-slate-900 mt-1">Emisión de Tarifas de Mercado</h2>
+                <p class="text-xs text-slate-600 mt-1">
+                    Se han generado las obligaciones económicas del período en curso. Puede consultar sus importes y saldos en la sección de <a th:href="@{/portal/comerciante/obligaciones}" class="text-blue-600 font-semibold underline">Obligaciones Económicas</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title='Nueva Solicitud de Fraccionamiento | SIGM-QUINUA',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Nueva Solicitud</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/fraccionamientos}" class="hover:underline">Fraccionamientos</a>
+                <span>&bull;</span>
+                <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes}" class="hover:underline">Solicitudes</a>
+                <span>&bull;</span>
+                <span>Registro</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-100 tracking-tight">Nueva Solicitud de Fraccionamiento</h1>
+            <p class="text-xs text-slate-400 mt-1">Evaluación de deudas elegibles y generación de propuesta de facilidades de pago.</p>
+        </div>
+        <div>
+            <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes}"
+               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
+                Volver al Listado
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <form method="post" th:action="@{/dashboard/tributaria/fraccionamientos/solicitudes}" th:object="${formSolicitud}" class="space-y-6">
+
+        <!-- 1. SELECCIÓN DE CONTRIBUYENTE -->
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</span>
+                    <h2 class="text-sm font-bold text-slate-100">Contribuyente Solicitante</h2>
+                </div>
+                <div th:if="${contribuyente == null}" class="text-xs text-amber-400">
+                    Seleccione un contribuyente para cargar obligaciones pendientes
+                </div>
+            </div>
+
+            <div th:if="${contribuyente != null}" class="p-4 bg-slate-800/60 rounded-lg border border-slate-700/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div>
+                    <input type="hidden" name="contribuyenteId" th:value="${contribuyente.id}">
+                    <div class="text-sm font-bold text-slate-100" th:text="${contribuyente.nombreRazonSocial}"></div>
+                    <div class="text-xs text-slate-400 mt-0.5">
+                        <span th:text="${contribuyente.tipoDocumento} + ': ' + ${contribuyente.numeroDocumento}"></span> |
+                        <span>Código: </span><span class="font-mono text-blue-400" th:text="${contribuyente.codigoContribuyente}"></span> |
+                        <span>Domicilio: </span><span th:text="${contribuyente.domicilioFiscal}"></span>
+                    </div>
+                </div>
+                <a th:href="@{/dashboard/tributaria/contribuyentes}" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded transition-colors">
+                    Cambiar
+                </a>
+            </div>
+
+            <div th:if="${contribuyente == null}" class="p-8 text-center bg-slate-900/40 rounded-lg border border-dashed border-slate-700">
+                <i data-lucide="user-search" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-xs text-slate-400 mb-3">Busque al contribuyente en el padrón tributario para iniciar la solicitud:</p>
+                <a th:href="@{/dashboard/tributaria/contribuyentes}" class="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span>Buscar Contribuyente en Padrón</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. PROGRAMA Y CONDICIONES NORMATIVAS -->
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-700/50 pb-3">
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+                <h2 class="text-sm font-bold text-slate-100">Programa de Fraccionamiento y Condiciones</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Programa Normativo *</label>
+                    <select name="programaId" id="selectPrograma" class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" required>
+                        <option th:each="prog : ${programas}" th:value="${prog.id}" th:text="${prog.codigo + ' - ' + prog.nombre}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">N° Cuotas Propuestas *</label>
+                    <input type="number" name="numeroCuotasPropuestas" id="inputCuotas" min="1" max="24" th:field="*{numeroCuotasPropuestas}"
+                           class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" required>
+                    <span class="text-[10px] text-slate-500">Mínimo 2, máximo 24 según programa vigente</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Cuota Inicial Propuesta (S/)</label>
+                    <input type="number" step="0.01" name="montoCuotaInicialPropuesta" id="inputInicial" th:field="*{montoCuotaInicialPropuesta}"
+                           class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <span class="text-[10px] text-slate-500">Opcional. Si aplica, amortiza la base antes de financiar.</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Fundamento / Motivo de la Solicitud *</label>
+                <textarea name="motivo" rows="2" th:field="*{motivo}" placeholder="Detalle la solicitud de facilidades presentada por el contribuyente..."
+                          class="w-full bg-slate-900/60 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500" required></textarea>
+            </div>
+        </div>
+
+        <!-- 3. SELECCIÓN DE OBLIGACIONES ELEGIBLES -->
+        <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</span>
+                    <h2 class="text-sm font-bold text-slate-100">Obligaciones Tributarias Elegibles</h2>
+                </div>
+                <div class="text-xs text-slate-400">
+                    Seleccione las obligaciones a consolidar en el convenio
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="text-[11px] uppercase bg-slate-800/80 text-slate-400 border-b border-slate-700/60">
+                        <tr>
+                            <th class="py-2.5 px-3 w-10 text-center">Sel.</th>
+                            <th class="py-2.5 px-3">Código Obligación</th>
+                            <th class="py-2.5 px-3">Tributo / Concepto</th>
+                            <th class="py-2.5 px-3">Período / Cuota</th>
+                            <th class="py-2.5 px-3">Vencimiento</th>
+                            <th class="py-2.5 px-3 text-right">Saldo Pendiente (S/)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50">
+                        <tr th:each="obl : ${obligacionesElegibles}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-2.5 px-3 text-center">
+                                <input type="checkbox" name="obligacionIds" th:value="${obl.id}"
+                                       class="checkbox-obligacion rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0"
+                                       th:attr="data-saldo=${obl.saldo}">
+                            </td>
+                            <td class="py-2.5 px-3 font-semibold text-blue-400" th:text="${obl.codigoObligacion}"></td>
+                            <td class="py-2.5 px-3" th:text="${obl.concepto != null ? obl.concepto.nombre : '-'}"></td>
+                            <td class="py-2.5 px-3" th:text="${(obl.periodo != null ? obl.periodo.anio : '') + ' - Cuota ' + obl.numeroCuota}"></td>
+                            <td class="py-2.5 px-3" th:text="${#temporals.format(obl.fechaVencimiento, 'dd/MM/yyyy')}"></td>
+                            <td class="py-2.5 px-3 text-right font-bold text-slate-100" th:text="${obl.saldo}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(obligacionesElegibles)}">
+                            <td colspan="6" class="py-8 text-center text-slate-500">
+                                <p class="text-xs">No hay obligaciones pendientes elegibles para este contribuyente o aún no ha seleccionado ninguno.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Resumen en vivo de selección -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-900/60 rounded-lg border border-slate-700/50">
+                <div class="text-xs text-slate-400">
+                    Obligaciones seleccionadas: <span id="contadorSeleccionadas" class="font-bold text-blue-400">0</span>
+                </div>
+                <div class="text-sm font-bold text-slate-100 mt-2 sm:mt-0">
+                    Total Deuda Base: <span id="totalBaseTexto" class="text-emerald-400">S/ 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end space-x-3 pt-4">
+            <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes}" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors">
+                Cancelar
+            </a>
+            <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors shadow-md flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Registrar Solicitud Formal</span>
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<div th:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide) { lucide.createIcons(); }
+
+            const checkboxes = document.querySelectorAll('.checkbox-obligacion');
+            const contadorEl = document.getElementById('contadorSeleccionadas');
+            const totalBaseEl = document.getElementById('totalBaseTexto');
+
+            function actualizarTotales() {
+                let total = 0.0;
+                let count = 0;
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        count++;
+                        const saldo = parseFloat(cb.getAttribute('data-saldo')) || 0.0;
+                        total += saldo;
+                    }
+                });
+
+                if (contadorEl) contadorEl.textContent = count;
+                if (totalBaseEl) totalBaseEl.textContent = 'S/ ' + total.toFixed(2);
+            }
+
+            checkboxes.forEach(cb => cb.addEventListener('change', actualizarTotales));
+            actualizarTotales();
+        });
+    </script>
+</div>
+</body>
+</html>

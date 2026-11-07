@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Mesa de Partes Virtual — Información y Requisitos Oficiales</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE SECCIÓN -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3 justify-center sm:justify-start">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Mesa de Partes</span>
+            </nav>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold mb-3 border border-emerald-500/30">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                <span>Mesa de Partes Virtual Operativa y Habilitada</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Mesa de Partes Virtual e Ingreso de Trámites</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                Canal oficial de recepción electrónica de solicitudes, trámites TUPA y documentos dirigidos a la
+                Municipalidad Distrital de Quinua con valor legal y número correlativo único.
+            </p>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+
+        <!-- ACCIONES RÁPIDAS DE MESA DE PARTES -->
+        <div class="bg-gradient-to-r from-blue-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-blue-800">
+            <div class="space-y-2 text-center md:text-left">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800">
+                    Atención a la Ciudadanía
+                </span>
+                <h2 class="text-xl sm:text-2xl font-black text-white">Presentación de Solicitudes en Línea</h2>
+                <p class="text-xs sm:text-sm text-slate-300 max-w-xl">
+                    Registre su trámite desde cualquier lugar, adjunte sus documentos en formato digital y obtenga su constancia oficial con código QR de verificación.
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <a th:href="@{/mesa-partes/nueva-solicitud}" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/30 transition-all">
+                    <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i>
+                    Registrar Nueva Solicitud
+                </a>
+                <a th:href="@{/mesa-partes/mis-solicitudes}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 rounded-2xl text-xs font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors">
+                    <i data-lucide="folder" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Mis Solicitudes
+                </a>
+            </div>
+        </div>
+
+        <!-- FUNCIONALIDADES PREVISTAS PARA LA MESA DE PARTES VIRTUAL -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    Módulo en Proceso de Integración Técnica
+                </span>
+                <h2 class="text-xl font-bold text-slate-900 mt-2">
+                    Funcionalidades Previstas de la Mesa de Partes Virtual
+                </h2>
+                <p class="text-xs text-slate-600 mt-1">
+                    Capacidades técnicas que estarán disponibles para los administrados al completarse el módulo correspondiente:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="file-plus" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">1. Presentación Digital de Documentos</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Carga digital de solicitudes, cartas, oficios y expedientes en formato PDF con firma manuscrita o digital las 24 horas del día.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="barcode" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">2. Generación de Cargo Oficial</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Emisión automática del cargo de recepción digital con número único de expediente, fecha y hora cierta de ingreso.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="git-branch" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">3. Derivación y Flujo Orgánico</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Trazabilidad interna inmediata hacia la oficina o gerencia municipal competente para su oportuna atención.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">4. Seguimiento en Línea</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Consulta ciudadana en tiempo real del estado del trámite (Registrado, En Calificación, En Proceso, Resuelto).
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">5. Subsanación de Observaciones</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Mecanismo transparente para subsanar requisitos u observaciones técnicas dentro de los plazos legales establecidos.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-2">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900">6. Notificaciones Electrónicas</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Avisos al correo institucional del administrado sobre actos administrativos, resoluciones o informes emitidos.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- REQUISITOS GENERALES SEGÚN LEY N° 27444 -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    Marco Legal Vigente
+                </span>
+                <h2 class="text-xl font-bold text-slate-900 mt-2">
+                    Requisitos para la Presentación de Solicitudes (TUO Ley N° 27444)
+                </h2>
+                <p class="text-xs text-slate-600 mt-1">
+                    Todo documento dirigido a la entidad municipal debe cumplir con los requisitos establecidos en el Artículo 124 del TUO de la Ley del Procedimiento Administrativo General:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
+                <ul class="space-y-3">
+                    <li class="flex items-start space-x-2.5">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Identificación del Administrado:</strong> Nombres y apellidos completos, DNI o Carné de Extranjería, y domicilio procesal.</span>
+                    </li>
+                    <li class="flex items-start space-x-2.5">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Petitorio Claro:</strong> La expresión concreta y precisa de lo solicitado, señalando los fundamentos de hecho y derecho.</span>
+                    </li>
+                    <li class="flex items-start space-x-2.5">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Lugar, Fecha y Firma:</strong> Indicación de la fecha de presentación y firma del solicitante o representante legal.</span>
+                    </li>
+                </ul>
+                <ul class="space-y-3">
+                    <li class="flex items-start space-x-2.5">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Documentos Adjuntos:</strong> Copia de los documentos que sustenten la solicitud conforme al TUPA institucional cuando corresponda.</span>
+                    </li>
+                    <li class="flex items-start space-x-2.5">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Correo Electrónico de Contacto:</strong> Autorización expresa para recepción de notificaciones cuando se habilite el canal digital.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CANALES PRESENCIALES ACTIVOS -->
+        <div class="bg-slate-900 text-white rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="space-y-2 text-center sm:text-left">
+                <h3 class="text-base font-bold text-white flex items-center justify-center sm:justify-start">
+                    <i data-lucide="building" class="w-4 h-4 mr-2 text-blue-400"></i>
+                    Ventanilla Única Presencial
+                </h3>
+                <p class="text-xs text-slate-300">
+                    Sede Institucional: Plaza de Armas s/n, Quinua, Huamanga, Ayacucho.<br>
+                    Horario: Lunes a Viernes de 08:00 a 13:00 y 14:00 a 17:00 horas.
+                </p>
+            </div>
+            <a th:href="@{/contacto}" class="inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-xs text-blue-900 bg-white hover:bg-blue-50 transition-colors shadow-sm flex-shrink-0">
+                <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+                Enviar Consulta Previa
+            </a>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

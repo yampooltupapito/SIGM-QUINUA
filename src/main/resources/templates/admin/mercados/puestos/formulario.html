@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${esEdicion ? 'Editar Puesto Comercial' : 'Nuevo Puesto Comercial'} + ' | SIGM-QUINUA'"></title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/{id}(id=${mercado.id})}" th:text="${mercado.nombre}" class="hover:text-blue-400 transition-colors"></a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id})}" class="hover:text-blue-400 transition-colors">Puestos</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${esEdicion ? 'Editar Puesto' : 'Nuevo Puesto'}"></span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span th:text="${esEdicion ? 'Modificar Datos de Puesto' : 'Registrar Nuevo Puesto Comercial'}"></span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="${'Mercado: ' + mercado.nombre + ' (' + mercado.codigo + ')'}"></p>
+        </div>
+
+        <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id})}"
+           class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Volver al Listado
+        </a>
+    </div>
+
+    <!-- Formulario Principal -->
+    <div class="bg-[#1e293b] p-6 sm:p-8 rounded-2xl border border-[#202c3d] shadow-xl">
+        <form id="formPuestoComercial" class="space-y-6">
+            <input type="hidden" id="mercadoId" th:value="${mercado.id}" />
+            <input type="hidden" id="esEdicion" th:value="${esEdicion}" />
+            <input type="hidden" id="puestoId" th:if="${esEdicion}" th:value="${puestoOriginal.id}" />
+            <input type="hidden" id="version" th:if="${esEdicion}" th:value="${puestoOriginal.version}" />
+
+            <!-- Mensaje de Alerta en caso de error -->
+            <div id="alertaError" class="hidden p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-start gap-2">
+                <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <div id="mensajeErrorTexto"></div>
+            </div>
+
+            <!-- Bloque 1: Identificación y Clasificación -->
+            <div>
+                <h3 class="text-sm font-bold text-white border-b border-[#202c3d] pb-2 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    1. Identificación y Clasificación
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Código del Puesto *</label>
+                        <input type="text" id="codigo" required maxlength="50" placeholder="Ej. P-001, SEC-A-12"
+                               th:value="${esEdicion ? puestoOriginal.codigo : ''}"
+                               th:disabled="${esEdicion}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors uppercase disabled:opacity-60" />
+                        <p class="text-[11px] text-slate-500 mt-1">Identificador único en el mercado.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Número Visible / Placa *</label>
+                        <input type="text" id="numero" required maxlength="30" placeholder="Ej. 101, B-05"
+                               th:value="${esEdicion ? puestoOriginal.numero : ''}"
+                               th:disabled="${esEdicion}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60" />
+                        <p class="text-[11px] text-slate-500 mt-1">Número visible impreso o numeración física.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Puesto Comercial *</label>
+                        <select id="tipoPuestoId" required class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                            <option value="">Seleccione tipo...</option>
+                            <option th:each="t : ${tiposPuesto}" th:value="${t.id}" th:text="${t.nombre}"
+                                    th:selected="${esEdicion && puestoOriginal.tipoPuestoId == t.id}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre Referencial / Denominación</label>
+                    <input type="text" id="nombreReferencial" maxlength="150" placeholder="Ej. Puesto Artesanías Mama Ocllo, Kiosko Central"
+                           th:value="${esEdicion ? puestoOriginal.nombreReferencial : ''}"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors" />
+                </div>
+            </div>
+
+            <!-- Bloque 2: Ubicación Física y Dependencias -->
+            <div>
+                <h3 class="text-sm font-bold text-white border-b border-[#202c3d] pb-2 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    2. Ubicación Física y Espacial
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Sector Comercial (Opcional)</label>
+                        <select id="sectorId" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500"
+                                th:disabled="${esEdicion}">
+                            <option value="">Sin sector asignado (Directo al mercado)</option>
+                            <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.codigo + ' - ' + s.nombre}"
+                                    th:selected="${esEdicion && puestoOriginal.sectorId == s.id}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Pabellón (Opcional)</label>
+                        <select id="pabellonId" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500"
+                                th:disabled="${esEdicion}">
+                            <option value="">Sin pabellón asignado</option>
+                            <option th:each="p : ${pabellones}" th:value="${p.id}" th:text="${p.codigo + ' - ' + p.nombre}"
+                                    th:selected="${esEdicion && puestoOriginal.pabellonId == p.id}"></option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Nivel / Piso *</label>
+                        <input type="number" id="nivel" min="1" max="10" required
+                               th:value="${esEdicion ? puestoOriginal.nivel : 1}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500" />
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Referencia Interna de Ubicación</label>
+                    <input type="text" id="ubicacionReferencia" maxlength="255" placeholder="Ej. Pasillo principal frente a puerta 2, Esquina norte"
+                           th:value="${esEdicion ? puestoOriginal.ubicacionReferencia : ''}"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors" />
+                </div>
+            </div>
+
+            <!-- Bloque 3: Dimensiones y Métricas -->
+            <div>
+                <h3 class="text-sm font-bold text-white border-b border-[#202c3d] pb-2 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    3. Dimensiones Físicas (Metros)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Ancho (metros)</label>
+                        <input type="number" step="0.01" min="0" id="anchoMetros" placeholder="Ej. 2.50"
+                               th:value="${esEdicion ? puestoOriginal.anchoMetros : ''}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Largo (metros)</label>
+                        <input type="number" step="0.01" min="0" id="largoMetros" placeholder="Ej. 3.00"
+                               th:value="${esEdicion ? puestoOriginal.largoMetros : ''}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Área Total (m²)</label>
+                        <input type="number" step="0.01" min="0" id="areaMetrosCuadrados" placeholder="Auto-calculada si ancho x largo"
+                               th:value="${esEdicion ? puestoOriginal.areaMetrosCuadrados : ''}"
+                               class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloque 4: Descripción y Estado -->
+            <div>
+                <h3 class="text-sm font-bold text-white border-b border-[#202c3d] pb-2 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    4. Observaciones y Condición
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" th:if="${!esEdicion}">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Estado Físico Inicial</label>
+                        <select id="estadoFisico" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                            <option value="OPERATIVO">OPERATIVO — En óptimas condiciones</option>
+                            <option value="EN_MANTENIMIENTO">EN MANTENIMIENTO — Requiere reparaciones</option>
+                            <option value="INHABILITADO">INHABILITADO — Condición no apta</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Estado Operativo Inicial</label>
+                        <select id="estado" class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                            <option value="DISPONIBLE">DISPONIBLE — Apto para adjudicación</option>
+                            <option value="RESERVADO">RESERVADO — Trámite en curso</option>
+                            <option value="NO_ASIGNABLE">NO ASIGNABLE — Uso institucional</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción / Características del Puesto</label>
+                    <textarea id="descripcion" rows="3" maxlength="500" placeholder="Detalle equipamiento, puntos de agua, energía o acabados..."
+                              th:text="${esEdicion ? puestoOriginal.descripcion : ''}"
+                              class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3.5 py-2.5 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors"></textarea>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#202c3d]">
+                <a th:href="@{/dashboard/mercados/{id}/puestos(id=${mercado.id})}"
+                   class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" id="btnGuardarPuesto"
+                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span th:text="${esEdicion ? 'Guardar Cambios' : 'Registrar Puesto'}"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/puestos-formulario.js}"></script>
+</th:block>
+</body>
+</html>

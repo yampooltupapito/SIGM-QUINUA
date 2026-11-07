@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE SELECT (Select)
+     ========================================================================== -->
+<div th:fragment="select(id, name, label, required, optionsFragment, errorMsg)" class="sigm-form-group">
+    <label th:if="${!#strings.isEmpty(label)}" th:for="${id}" class="sigm-label">
+        <span th:text="${label}">Seleccione opción</span>
+        <span th:if="${required}" class="sigm-label-required" aria-hidden="true">*</span>
+    </label>
+    <select th:id="${id}"
+            th:name="${name}"
+            th:required="${required}"
+            th:attr="aria-invalid=${!#strings.isEmpty(errorMsg) ? 'true' : 'false'}"
+            th:classappend="${!#strings.isEmpty(errorMsg) ? 'is-invalid' : ''}"
+            class="sigm-select">
+        <th:block th:if="${optionsFragment != null}">
+            <th:block th:replace="${optionsFragment}"></th:block>
+        </th:block>
+    </select>
+    <p th:if="${!#strings.isEmpty(errorMsg)}" class="sigm-field-error" role="alert">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span th:text="${errorMsg}">Seleccione una opción válida</span>
+    </p>
+</div>
+
+</body>
+</html>
+

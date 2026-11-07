@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+    <title layout:title-pattern="$LAYOUT_TITLE — $CONTENT_TITLE">Portal Tributario | Municipalidad Distrital de Quinua</title>
+    <!-- Tailwind CSS Compilado Localmente -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <!-- Lucide Icons Local -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <th:block layout:fragment="page-css"></th:block>
+    <style>
+        :root {
+            --color-gov-blue: #1d4ed8;
+            --color-gov-dark: #0f172a;
+            --color-surface: #ffffff;
+            --color-bg-page: #f8fafc;
+            --color-border: #e2e8f0;
+        }
+        body {
+            background-color: var(--color-bg-page);
+            color: #0f172a;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+            outline: 2px solid #1d4ed8;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Barra Superior Institucional Oficial -->
+    <header class="bg-[#101827] text-white border-b border-slate-800 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center font-bold text-blue-400">
+                    <i data-lucide="shield-check" class="w-4 h-4 mr-1 text-emerald-400"></i>
+                    Plataforma Oficial Tributaria — Quinua
+                </span>
+                <span class="text-slate-600 hidden md:inline">|</span>
+                <span class="text-slate-400 hidden md:inline">Ley de Tributación Municipal y TUO Código Tributario</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a th:href="@{/}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i> Portal Institucional
+                </a>
+                <a th:href="@{/mesa-partes}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i> Mesa de Partes
+                </a>
+                <span class="text-slate-600">|</span>
+                <span class="text-slate-300 font-medium" sec:authentication="name">Ciudadano</span>
+                <form th:action="@{/logout}" method="post" class="inline">
+                    <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}"/>
+                    <button type="submit" class="text-rose-400 hover:text-rose-300 font-semibold transition-colors flex items-center gap-1">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Salir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Encabezado Principal y Selector de Contribuyente Activo -->
+    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-11 h-11 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm flex-shrink-0">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            Mi Portal Tributario
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">En Línea</span>
+                        </h1>
+                        <p class="text-xs text-slate-500">Consulta de predios, obligaciones, pagos y documentos municipales</p>
+                    </div>
+                </div>
+
+                <!-- Selector de Contribuyente Activo (Multi-representación) -->
+                <div class="flex items-center gap-2.5">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Perfil Activo:</div>
+                        <div class="text-xs font-semibold text-slate-800"
+                             th:text="${contribuyenteActivo != null ? contribuyenteActivo.nombreRazonSocial : 'Sin contribuyente vinculado'}">
+                            Contribuyente
+                        </div>
+                    </div>
+
+                    <form th:if="${contextos != null && !contextos.isEmpty()}" th:action="@{/portal/tributario/cambiar-contexto}" method="post" class="flex items-center gap-1.5">
+                        <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}"/>
+                        <select name="contribuyenteId" onchange="this.form.submit()"
+                                class="text-xs bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 shadow-sm">
+                            <option th:each="ctx : ${contextos}"
+                                    th:value="${ctx.contribuyenteId}"
+                                    th:text="${ctx.codigoContribuyente + ' - ' + ctx.nombreRazonSocial + ' (' + ctx.tipoVinculacionEtiqueta + ')'}"
+                                    th:selected="${ctx.esActivo}">
+                                C001 - Juan Pérez
+                            </option>
+                        </select>
+                    </form>
+
+                    <a th:href="@{/portal/tributario/vinculaciones}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors shadow-sm"
+                       title="Vincular otro contribuyente titular o representado">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span class="hidden md:inline">Vincular</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Navegación por Pestañas del Portal Ciudadano -->
+            <nav class="flex space-x-1 overflow-x-auto mt-4 pt-2 border-t border-slate-100 text-xs font-semibold no-scrollbar">
+                <a th:href="@{/portal/tributario/dashboard}"
+                   th:classappend="${seccionActiva == 'dashboard'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Resumen
+                </a>
+                <a th:href="@{/portal/tributario/predios}"
+                   th:classappend="${seccionActiva == 'predios'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="building-2" class="w-4 h-4"></i> Mis Predios
+                </a>
+                <a th:href="@{/portal/tributario/obligaciones}"
+                   th:classappend="${seccionActiva == 'obligaciones'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> Obligaciones
+                </a>
+                <a th:href="@{/portal/tributario/impuesto-predial}"
+                   th:classappend="${seccionActiva == 'impuesto-predial'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="home" class="w-4 h-4"></i> Predial
+                </a>
+                <a th:href="@{/portal/tributario/arbitrios}"
+                   th:classappend="${seccionActiva == 'arbitrios'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="trees" class="w-4 h-4"></i> Arbitrios
+                </a>
+                <a th:href="@{/portal/tributario/cuenta-corriente}"
+                   th:classappend="${seccionActiva == 'cuenta-corriente'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="wallet" class="w-4 h-4"></i> Cuenta Corriente
+                </a>
+                <a th:href="@{/portal/tributario/pagos}"
+                   th:classappend="${seccionActiva == 'pagos'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i> Mis Pagos
+                </a>
+                <a th:href="@{/portal/tributario/recibos}"
+                   th:classappend="${seccionActiva == 'recibos'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="receipt" class="w-4 h-4"></i> Mis Recibos
+                </a>
+                <a th:href="@{/portal/tributario/deudas}"
+                   th:classappend="${seccionActiva == 'deudas'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Mis Deudas
+                </a>
+                <a th:href="@{/portal/tributario/fraccionamientos}"
+                   th:classappend="${seccionActiva == 'fraccionamientos'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="calendar-check" class="w-4 h-4"></i> Fraccionamientos
+                </a>
+                <a th:href="@{/portal/tributario/notificaciones}"
+                   th:classappend="${seccionActiva == 'notificaciones'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="inbox" class="w-4 h-4"></i> Notificaciones
+                </a>
+                <a th:href="@{/portal/tributario/vinculaciones}"
+                   th:classappend="${seccionActiva == 'vinculaciones'} ? 'text-blue-700 border-b-2 border-blue-700 bg-blue-50/50' : 'text-slate-600 hover:text-blue-700 hover:bg-slate-50'"
+                   class="px-3.5 py-2 rounded-t-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    <i data-lucide="link-2" class="w-4 h-4"></i> Vinculación
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Mensajes de Notificación Flash -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+        <div th:if="${successMessage}" class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center justify-between mb-4 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                <span th:text="${successMessage}">Operación realizada exitosamente.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div th:if="${errorMessage}" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between mb-4 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-600 flex-shrink-0"></i>
+                <span th:text="${errorMessage}">Ha ocurrido un error en la solicitud.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+    </div>
+
+    <!-- Contenido Principal Dinámico -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        <!-- Advertencia cuando no hay ningún contribuyente vinculado -->
+        <div th:if="${contribuyenteActivo == null && seccionActiva != 'vinculaciones'}" class="bg-amber-50 border border-amber-200 p-6 rounded-2xl text-center mb-6 shadow-sm">
+            <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            </div>
+            <h2 class="text-base font-bold text-amber-900">No tienes una cuenta tributaria vinculada y aprobada</h2>
+            <p class="text-xs text-amber-700 max-w-xl mx-auto mt-1 mb-4">
+                Por motivos de confidencialidad y conforme a la Ley de Protección de Datos Personales (Ley N° 29733), debes acreditar tu identidad o representación antes de consultar información fiscal.
+            </p>
+            <a th:href="@{/portal/tributario/vinculaciones}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition-colors">
+                <i data-lucide="link-2" class="w-4 h-4"></i> Solicitar Vinculación de Cuenta
+            </a>
+        </div>
+
+        <div layout:fragment="content">
+            <p>Contenido del Portal Tributario</p>
+        </div>
+    </main>
+
+    <!-- Pie de Página Institucional del Portal -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-slate-500 text-xs mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-700">SIGM-QUINUA</span>
+                <span>— Municipalidad Distrital de Quinua</span>
+            </div>
+            <div class="text-[11px] text-slate-400">
+                Atención presencial: Plaza Principal s/n, Quinua, Huamanga, Ayacucho | Lunes a Viernes 08:00 - 17:00
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    </script>
+    <th:block layout:fragment="scripts"></th:block>
+    <th:block layout:fragment="page-scripts"></th:block>
+</body>
+</html>
+

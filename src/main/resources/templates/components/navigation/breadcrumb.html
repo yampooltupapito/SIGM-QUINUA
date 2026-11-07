@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<!-- ==========================================================================
+     1. COMPONENTE BREADCRUMB (Migas de pan institucionales)
+     Uso: <nav th:replace="~{components/navigation/breadcrumb :: breadcrumb('Mesa de Partes', 'Bandeja de Entrada')}"></nav>
+     ========================================================================== -->
+<nav th:fragment="breadcrumb(seccion, paginaActual)" aria-label="Ruta de navegación"
+     class="flex items-center flex-wrap gap-1.5 text-xs text-slate-400 mb-3">
+    <a sec:authorize="hasRole('SUPERADMIN')" th:href="@{/admin/dashboard}" class="hover:text-blue-400 transition-colors inline-flex items-center gap-1">
+        <i data-lucide="home" class="w-3.5 h-3.5"></i>
+        <span>Inicio</span>
+    </a>
+    <a sec:authorize="!hasRole('SUPERADMIN')" th:href="@{/bienvenida}" class="hover:text-blue-400 transition-colors inline-flex items-center gap-1">
+        <i data-lucide="home" class="w-3.5 h-3.5"></i>
+        <span>Mi Panel</span>
+    </a>
+    <th:block th:if="${!#strings.isEmpty(seccion)}">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i>
+        <span class="text-slate-300 font-medium" th:text="${seccion}">Módulo</span>
+    </th:block>
+    <th:block th:if="${!#strings.isEmpty(paginaActual)}">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i>
+        <span class="text-blue-400 font-semibold" aria-current="page" th:text="${paginaActual}">Vista Actual</span>
+    </th:block>
+</nav>
+
+<!-- ==========================================================================
+     2. COMPONENTE PAGE HEADER (Encabezado estándar de pantalla)
+     Uso: <div th:replace="~{components/navigation/breadcrumb :: pageHeader('layers', 'MÓDULO 1', 'Título', 'Subtítulo')}"></div>
+     ========================================================================== -->
+<div th:fragment="pageHeader(icono, badge, titulo, subtitulo)"
+     class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-theme">
+    <div class="flex items-start sm:items-center space-x-3.5">
+        <div class="p-2.5 bg-blue-600/15 rounded-xl border border-blue-500/30 text-blue-400 flex-shrink-0">
+            <i th:attr="data-lucide=${!#strings.isEmpty(icono) ? icono : 'layers'}" class="w-6 h-6"></i>
+        </div>
+        <div>
+            <div class="flex items-center gap-2">
+                <span th:if="${!#strings.isEmpty(badge)}"
+                      class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 rounded border border-blue-500/30"
+                      th:text="${badge}">MÓDULO</span>
+                <h1 class="text-xl font-bold text-slate-100 tracking-tight" th:text="${titulo}">Título de Página</h1>
+            </div>
+            <p th:if="${!#strings.isEmpty(subtitulo)}" class="text-xs text-slate-400 mt-1" th:text="${subtitulo}">Subtítulo descriptivo</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+

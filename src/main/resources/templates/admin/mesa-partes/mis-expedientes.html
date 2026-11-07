@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Mis Expedientes Asignados — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Mi Carga</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Atención Personalizada</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="briefcase" class="w-6 h-6 text-emerald-400"></i>
+                Mis Expedientes Asignados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Expedientes municipales asignados directamente a su usuario para evaluación, informe y trámite.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="inbox" class="w-4 h-4 text-amber-400"></i>
+                Derivaciones Recibidas
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Bandeja General
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Mis Expedientes -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-700/70 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Carga Laboral Activa</span>
+            <span class="text-xs text-slate-400" th:text="${expedientes.totalElements + ' expedientes asignados'}">0</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60 font-semibold">
+                <tr>
+                    <th class="py-3 px-4">Número</th>
+                    <th class="py-3 px-4">Asunto / Trámite</th>
+                    <th class="py-3 px-4">Administrado</th>
+                    <th class="py-3 px-4">Fecha Presentación</th>
+                    <th class="py-3 px-4">Prioridad</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${expedientes.empty}">
+                    <td colspan="7" class="py-10 text-center text-slate-500">
+                        <i data-lucide="coffee" class="w-10 h-10 mx-auto mb-2 opacity-40 text-emerald-500"></i>
+                        <p class="font-medium text-slate-400">No tiene expedientes pendientes de atención</p>
+                        <p class="text-[11px]">Cuando la jefatura le asigne un expediente aparecerá en este listado.</p>
+                    </td>
+                </tr>
+                <tr th:each="e : ${expedientes.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-mono font-bold text-blue-400">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${e.id})}"
+                           class="hover:underline" th:text="${e.numeroExpediente}">MPV-2026-00001</a>
+                    </td>
+                    <td class="py-3 px-4 max-w-xs">
+                        <p class="font-semibold text-slate-200 truncate" th:text="${e.asunto}">Asunto</p>
+                        <p class="text-[11px] text-slate-400 truncate" th:text="${e.tipoTramiteNombre}">Trámite</p>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="text-slate-200" th:text="${e.solicitanteNombreCompleto}">Administrado</span>
+                        <p class="text-[10px] text-slate-500 font-mono" th:text="${e.solicitanteNumeroDocumento}">DNI</p>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap text-slate-400" th:text="${e.fechaPresentacion != null ? #temporals.format(e.fechaPresentacion, 'dd/MM/yyyy HH:mm') : '-'}">
+                        01/01/2026
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                        <span th:if="${e.prioridad != null and e.prioridad.name() == 'URGENTE'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">URGENTE</span>
+                        <span th:if="${e.prioridad != null and e.prioridad.name() == 'ALTA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">ALTA</span>
+                        <span th:if="${e.prioridad == null or (e.prioridad.name() != 'URGENTE' and e.prioridad.name() != 'ALTA')}" class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-700/50 text-slate-300" th:text="${e.prioridad != null ? e.prioridad.name() : 'NORMAL'}">NORMAL</span>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                        <span class="px-2.5 py-1 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30" th:text="${e.estadoActual}">EN_ATENCION</span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}/seguimiento(id=${e.id})}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded border border-blue-500/30 text-xs transition-colors"
+                           title="Registrar Actuación o Informe">
+                            <i data-lucide="file-plus-2" class="w-3.5 h-3.5"></i>
+                            Actuaciones
+                        </a>
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${e.id})}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs transition-colors">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            Revisar
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${expedientes.totalPages > 1}" class="px-4 py-3 border-t border-slate-700/70 flex items-center justify-between text-xs text-slate-400">
+            <span>Página <strong th:text="${expedientes.number + 1}">1</strong> de <strong th:text="${expedientes.totalPages}">1</strong></span>
+            <div class="flex items-center gap-1">
+                <a th:if="${expedientes.hasPrevious()}"
+                   th:href="@{/dashboard/mesa-partes/mis-expedientes(page=${expedientes.number - 1})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Anterior</a>
+                <a th:if="${expedientes.hasNext()}"
+                   th:href="@{/dashboard/mesa-partes/mis-expedientes(page=${expedientes.number + 1})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

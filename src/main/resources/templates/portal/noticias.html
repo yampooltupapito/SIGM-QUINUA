@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Noticias y Comunicados Oficiales — Municipalidad de Quinua</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE SECCIÓN -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3 justify-center sm:justify-start">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Noticias y Comunicados</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Noticias y Comunicados Oficiales</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                Información verificada, convocatorias de empleo, notas de prensa y avisos institucionales de la Municipalidad Distrital de Quinua.
+            </p>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+        <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Pestañas de tipo -->
+            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                <a th:href="@{/noticias(q=${busquedaQ})}"
+                   th:classappend="${filtroTipo == 'TODOS'} ? 'bg-blue-700 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                   class="px-3.5 py-1.5 rounded-lg text-xs transition-colors">
+                    Todos
+                </a>
+                <a th:href="@{/noticias(tipo='NOTICIA', q=${busquedaQ})}"
+                   th:classappend="${filtroTipo == 'NOTICIA'} ? 'bg-blue-700 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                   class="px-3.5 py-1.5 rounded-lg text-xs transition-colors">
+                    Noticias
+                </a>
+                <a th:href="@{/noticias(tipo='COMUNICADO', q=${busquedaQ})}"
+                   th:classappend="${filtroTipo == 'COMUNICADO'} ? 'bg-amber-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                   class="px-3.5 py-1.5 rounded-lg text-xs transition-colors">
+                    Comunicados
+                </a>
+                <a th:href="@{/noticias(tipo='CONVOCATORIA', q=${busquedaQ})}"
+                   th:classappend="${filtroTipo == 'CONVOCATORIA'} ? 'bg-purple-700 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                   class="px-3.5 py-1.5 rounded-lg text-xs transition-colors">
+                    Convocatorias
+                </a>
+            </div>
+
+            <!-- Buscador -->
+            <form th:action="@{/noticias}" method="get" class="w-full md:w-72 relative">
+                <input type="hidden" name="tipo" th:if="${filtroTipo != 'TODOS'}" th:value="${filtroTipo}">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                <input type="text" name="q" th:value="${busquedaQ}" placeholder="Buscar publicaciones..."
+                       class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors">
+            </form>
+        </div>
+
+        <!-- GRILLA DE NOTICIAS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <th:block th:each="noticia : ${noticiasPage.content}">
+                <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-lg transition-all hover:border-blue-300">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${noticia.tipo == 'COMUNICADO'} ? 'bg-amber-100 text-amber-800' : (${noticia.tipo == 'CONVOCATORIA'} ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')"
+                                  th:text="${noticia.tipo}">
+                                NOTICIA
+                            </span>
+                            <time th:if="${noticia.fechaPublicacion != null}"
+                                  th:datetime="${noticia.fechaPublicacion}"
+                                  th:text="${#temporals.format(noticia.fechaPublicacion, 'dd/MM/yyyy')}">
+                                01/01/2026
+                            </time>
+                        </div>
+
+                        <h2 class="text-base font-bold text-slate-900 hover:text-blue-700 transition-colors leading-snug">
+                            <a th:href="@{/noticias/{slug}(slug=${noticia.slug})}" th:text="${noticia.titulo}">
+                                Título de la Publicación
+                            </a>
+                        </h2>
+
+                        <p class="text-xs text-slate-600 mt-3 line-clamp-3 leading-relaxed" th:text="${noticia.resumen}">
+                            Resumen explicativo de la nota institucional.
+                        </p>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 truncate max-w-[170px]" th:text="${noticia.autor}">
+                            Municipalidad de Quinua
+                        </span>
+                        <a th:href="@{/noticias/{slug}(slug=${noticia.slug})}"
+                           class="text-xs font-bold text-blue-700 hover:text-blue-900 inline-flex items-center">
+                            Leer completo <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-0.5"></i>
+                        </a>
+                    </div>
+                </article>
+            </th:block>
+
+            <div th:if="${noticiasPage.content == null || noticiasPage.content.isEmpty()}"
+                 class="col-span-1 md:col-span-3 text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 text-slate-500">
+                <i data-lucide="file-question" class="w-12 h-12 mx-auto text-slate-400 mb-3"></i>
+                <h3 class="text-base font-bold text-slate-700">No se encontraron publicaciones</h3>
+                <p class="text-xs text-slate-500 mt-1">No hay noticias o comunicados que coincidan con los criterios de búsqueda.</p>
+                <div class="mt-4">
+                    <a th:href="@{/noticias}" class="inline-flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200">
+                        Restablecer Filtros
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGINACIÓN -->
+        <div th:if="${noticiasPage.totalPages > 1}" class="flex justify-center items-center space-x-2 pt-6">
+            <a th:if="${noticiasPage.hasPrevious()}"
+               th:href="@{/noticias(page=${noticiasPage.number - 1}, tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Anterior
+            </a>
+            <span class="text-xs text-slate-500">
+                Página <strong th:text="${noticiasPage.number + 1}">1</strong> de <strong th:text="${noticiasPage.totalPages}">1</strong>
+            </span>
+            <a th:if="${noticiasPage.hasNext()}"
+               th:href="@{/noticias(page=${noticiasPage.number + 1}, tipo=${filtroTipo != 'TODOS' ? filtroTipo : null}, q=${busquedaQ})}"
+               class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Siguiente
+            </a>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

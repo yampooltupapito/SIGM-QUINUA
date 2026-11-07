@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Pagos Registrados</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Historial de Pagos y Recibos</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Comprobantes y recibos de caja emitidos oficialmente por la Municipalidad de Quinua.
+        </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Recibo</th>
+                        <th class="px-6 py-3.5">Fecha y Hora</th>
+                        <th class="px-6 py-3.5">Medio de Pago</th>
+                        <th class="px-6 py-3.5">Referencia Op.</th>
+                        <th class="px-6 py-3.5">Monto Pagado</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Constancia</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="p : ${pagosPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${p.codigoPago}">PAG-2026-0001</td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${#temporals.format(p.fechaPago, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:30</td>
+                        <td class="px-6 py-4 text-xs font-semibold" th:text="${p.medioPagoDescripcion}">EFECTIVO EN CAJA</td>
+                        <td class="px-6 py-4 font-mono text-xs text-slate-500" th:text="${p.referenciaOperacion != null ? p.referenciaOperacion : '-'}">-</td>
+                        <td class="px-6 py-4 font-mono font-bold text-slate-900" th:text="${'S/ ' + p.montoRecibido}">S/ 50.00</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${p.estado == 'CONFIRMADO' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}"
+                                  th:text="${p.estadoDescripcion}">CONFIRMADO</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a th:href="@{'/api/portal/comerciante/pagos/' + ${p.pagoId} + '/constancia'}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Recibo PDF
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${pagosPage.empty}">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="credit-card" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra pagos efectuados en el sistema.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

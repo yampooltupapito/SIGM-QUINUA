@@ -1,0 +1,23 @@
+/* ==========================================================================
+   SIGM-QUINUA — ESTRUCTURA DEL PORTAL PÚBLICO E INSTITUCIONAL
+   ========================================================================== */
+
+body.public-body {
+    background-color: var(--portal-bg);
+    color: var(--portal-text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.bg-gov-blue { background-color: var(--color-primary); }
+.text-gov-blue { color: var(--color-primary); }
+.border-gov-blue { border-color: var(--color-primary); }
+.bg-gov-dark { background-color: var(--sigm-navy-900); }
+
+/* Acordeón de Preguntas Frecuentes (FAQ) */
+.faq-item[open] .faq-icon {
+    transform: rotate(180deg);
+}
+

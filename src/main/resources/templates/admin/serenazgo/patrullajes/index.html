@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Patrullajes | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de Página -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-indigo-400 font-semibold mb-1">
+                <span>SEGURIDAD CIUDADANA Y SERENAZGO</span>
+                <span>/</span>
+                <span class="text-slate-400">PATRULLAJES Y RECORRIDOS</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-7 h-7 text-indigo-500"></i>
+                Gestión de Patrullajes
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Programación, ejecución y seguimiento de recorridos preventivos del Serenazgo municipal.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/serenazgo/patrullajes/exportar/excel(codigo=${filtro != null ? filtro.codigo : ''}, termino=${filtro != null ? filtro.termino : ''}, estado=${filtro != null ? filtro.estado : ''}, tipoPatrullaje=${filtro != null ? filtro.tipoPatrullaje : ''}, sectorId=${filtro != null ? filtro.sectorId : ''}, desde=${filtro != null ? filtro.desde : ''}, hasta=${filtro != null ? filtro.hasta : ''})}"
+               class="inline-flex items-center space-x-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl text-xs font-semibold transition"
+               title="Exportar a Microsoft Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Exportar Excel</span>
+            </a>
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_PATRULLAJES_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL')"
+               th:href="@{/dashboard/serenazgo/patrullajes/nuevo}"
+               class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/20 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Patrullaje</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Aviso Legal de No Competencia Policial (Ley N° 31297) -->
+    <div class="rounded-xl p-3 bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div class="text-xs text-slate-300 space-y-0.5">
+            <span class="font-bold text-amber-300">Marco Legal Institucional (Ley del Servicio de Serenazgo Municipal - Ley N° 31297):</span>
+            <p>
+                Los patrullajes y recorridos ejecutados por el cuerpo de Serenazgo de Quinua tienen carácter exclusivamente preventivo, disuasivo y de auxilio comunitario. No constituyen actuaciones judiciales ni reemplazan la facultad investigativa y de detención reservada constitucionalmente a la Policía Nacional del Perú (PNP).
+            </p>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    <div th:if="${mensajeExito}" class="rounded-xl p-4 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+        <p class="text-xs text-emerald-300 font-medium" th:text="${mensajeExito}"></p>
+    </div>
+    <div th:if="${mensajeError}" class="rounded-xl p-4 bg-rose-500/10 border border-rose-500/30 flex items-center gap-3">
+        <i data-lucide="x-circle" class="w-5 h-5 text-rose-400 shrink-0"></i>
+        <p class="text-xs text-rose-300 font-medium" th:text="${mensajeError}"></p>
+    </div>
+
+    <!-- Tarjetas de Indicadores KPI en Tiempo Real -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-slate-400">Total Patrullajes</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-white font-mono" th:text="${kpis.total}">0</span>
+                <i data-lucide="shield" class="w-4 h-4 text-slate-400"></i>
+            </div>
+        </div>
+        <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-blue-300">Programados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-blue-400 font-mono" th:text="${kpis.programados}">0</span>
+                <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+            </div>
+        </div>
+        <div class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-indigo-300">Asignados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-indigo-400 font-mono" th:text="${kpis.asignados}">0</span>
+                <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+        </div>
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-emerald-300">En Curso</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-emerald-400 font-mono" th:text="${kpis.enCurso}">0</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+        </div>
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-amber-300">En Pausa</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-amber-400 font-mono" th:text="${kpis.enPausa}">0</span>
+                <i data-lucide="pause-circle" class="w-4 h-4 text-amber-400"></i>
+            </div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60 flex flex-col justify-between">
+            <span class="text-[11px] font-semibold text-slate-400">Finalizados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-xl font-bold text-slate-200 font-mono" th:text="${kpis.finalizados}">0</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-slate-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros en Servidor -->
+    <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4">
+        <form method="get" th:action="@{/dashboard/serenazgo/patrullajes}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Buscar (Código / Objetivo)</label>
+                <input type="text" name="termino" th:value="${filtro.termino}"
+                       placeholder="PAT-... u objetivo"
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">Todos los Estados</option>
+                    <option th:each="st : ${estados}" th:value="${st}" th:text="${st.descripcion}" th:selected="${filtro.estado == st}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Modalidad</label>
+                <select name="tipoPatrullaje" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">Todas las Modalidades</option>
+                    <option th:each="tp : ${tipos}" th:value="${tp}" th:text="${tp.descripcion}" th:selected="${filtro.tipoPatrullaje == tp}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Sector Territorial</label>
+                <select name="sectorId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">Todos los Sectores</option>
+                    <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.codigo + ' - ' + sec.nombre}" th:selected="${filtro.sectorId == sec.id}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Desde</label>
+                <input type="date" name="desde" th:value="${filtro.desde}"
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Hasta</label>
+                <input type="date" name="hasta" th:value="${filtro.hasta}"
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center space-x-1">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/serenazgo/patrullajes}" class="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition" title="Limpiar Filtros">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Patrullajes -->
+    <div class="bg-slate-800/40 border border-slate-700/60 rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                <tr>
+                    <th class="px-4 py-3">Código</th>
+                    <th class="px-4 py-3">Modalidad</th>
+                    <th class="px-4 py-3">Sector / Zona</th>
+                    <th class="px-4 py-3">Ruta Oficial</th>
+                    <th class="px-4 py-3">Responsable</th>
+                    <th class="px-4 py-3">Móvil</th>
+                    <th class="px-4 py-3">Horario</th>
+                    <th class="px-4 py-3 text-center">Checkpoints</th>
+                    <th class="px-4 py-3 text-center">Estado</th>
+                    <th class="px-4 py-3 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${patrullajes.empty}">
+                    <td colspan="10" class="px-4 py-8 text-center text-slate-500">
+                        <i data-lucide="shield-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        No se encontraron registros de patrullajes con los criterios especificados.
+                    </td>
+                </tr>
+                <tr th:each="pat : ${patrullajes.content}" class="hover:bg-slate-800/60 transition">
+                    <td class="px-4 py-3 font-mono font-bold text-indigo-400">
+                        <a th:href="@{/dashboard/serenazgo/patrullajes/{id}(id=${pat.id})}" class="hover:underline" th:text="${pat.codigo}"></a>
+                        <span th:if="${pat.esExtraordinario}" class="block text-[9px] font-sans font-bold text-amber-400 uppercase">Extraordinario</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="font-medium text-slate-200" th:text="${pat.tipoPatrullajeDescripcion}"></span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="block font-medium text-slate-200" th:text="${pat.sectorNombre}"></span>
+                        <span class="block text-[10px] text-slate-400" th:text="${pat.zonaNombre != null ? pat.zonaNombre : 'Sector general'}"></span>
+                    </td>
+                    <td class="px-4 py-3 max-w-[180px] truncate" th:title="${pat.rutaNombre}">
+                        <span th:if="${pat.rutaNombre != null}" class="text-slate-300 font-medium" th:text="${pat.rutaNombre}"></span>
+                        <span th:unless="${pat.rutaNombre != null}" class="text-slate-500 italic">Ruta flexible</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="block font-medium text-slate-200" th:text="${pat.responsableNombre}"></span>
+                        <span class="block text-[10px] text-slate-400 font-mono" th:text="${pat.responsableCodigo}"></span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span th:if="${pat.unidadPlaca != null}" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-indigo-300" th:text="${pat.unidadPlaca}"></span>
+                        <span th:unless="${pat.unidadPlaca != null}" class="text-slate-500 italic text-[11px]">A pie</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="block text-slate-300" th:text="${#temporals.format(pat.fechaHoraInicioProgramada, 'dd/MM/yyyy HH:mm')}"></span>
+                        <span th:if="${pat.fechaHoraInicioReal != null}" class="block text-[10px] text-emerald-400" th:text="'Real: ' + ${#temporals.format(pat.fechaHoraInicioReal, 'HH:mm')}"></span>
+                    </td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                              th:classappend="${pat.totalPuntosRuta > 0 && pat.puntosVisitados == pat.totalPuntosRuta ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700/60 text-slate-300'}"
+                              th:text="${pat.puntosVisitados + ' / ' + pat.totalPuntosRuta}">
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <span th:if="${pat.estado.name() == 'PROGRAMADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">PROGRAMADO</span>
+                        <span th:if="${pat.estado.name() == 'ASIGNADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">ASIGNADO</span>
+                        <span th:if="${pat.estado.name() == 'EN_CURSO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center gap-1 mx-auto w-fit">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            EN CURSO
+                        </span>
+                        <span th:if="${pat.estado.name() == 'EN_PAUSA'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">EN PAUSA</span>
+                        <span th:if="${pat.estado.name() == 'FINALIZADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-300 border border-slate-600">FINALIZADO</span>
+                        <span th:if="${pat.estado.name() == 'CANCELADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">CANCELADO</span>
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end space-x-1">
+                            <a th:href="@{/dashboard/serenazgo/patrullajes/{id}(id=${pat.id})}"
+                               class="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-slate-700 rounded-lg transition" title="Ver Detalle y Operar">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/patrullajes/{id}/ficha-pdf(id=${pat.id})}" target="_blank"
+                               class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-slate-700 rounded-lg transition" title="Ficha de Patrullaje PDF">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación en Servidor -->
+        <div th:if="${patrullajes.totalPages > 1}" class="px-4 py-3 bg-slate-900/60 border-t border-slate-700 flex items-center justify-between">
+            <span class="text-xs text-slate-400">
+                Página <span class="font-bold text-white" th:text="${patrullajes.number + 1}"></span> de <span class="font-bold text-white" th:text="${patrullajes.totalPages}"></span> (<span th:text="${patrullajes.totalElements}"></span> patrullajes)
+            </span>
+            <div class="flex items-center space-x-2">
+                <a th:if="${!patrullajes.first}"
+                   th:href="@{/dashboard/serenazgo/patrullajes(page=${patrullajes.number - 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipoPatrullaje=${filtro.tipoPatrullaje}, sectorId=${filtro.sectorId}, desde=${filtro.desde}, hasta=${filtro.hasta})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition">
+                    &larr; Anterior
+                </a>
+                <a th:if="${!patrullajes.last}"
+                   th:href="@{/dashboard/serenazgo/patrullajes(page=${patrullajes.number + 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipoPatrullaje=${filtro.tipoPatrullaje}, sectorId=${filtro.sectorId}, desde=${filtro.desde}, hasta=${filtro.hasta})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition">
+                    Siguiente &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

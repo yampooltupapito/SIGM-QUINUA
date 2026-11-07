@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Cuentas Corrientes Tributarias — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Principal y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200">Cuentas Corrientes</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                <i data-lucide="landmark" class="w-6 h-6 text-emerald-400"></i>
+                Cuentas Corrientes Tributarias
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-0.5">
+                Libro mayor de cargos, abonos y control de saldos consolidados por contribuyente.
+            </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+            <a th:href="@{/dashboard/tributaria/cuentas-corrientes/exportar/excel(query=${query}, estado=${estadoSeleccionado}, conDeuda=${conDeuda})}"
+               class="inline-flex items-center px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-all">
+                <i data-lucide="sheet" class="w-4 h-4 mr-1.5 text-emerald-400"></i>
+                Exportar Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Financieros de Cuentas Corrientes -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Total Cuentas Aperturadas</span>
+                <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <p class="text-xl font-bold text-white mt-1.5" th:text="${totalCuentas}">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Contribuyentes con cuenta institucional</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Cuentas con Saldo Deudor</span>
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <p class="text-xl font-bold text-rose-400 mt-1.5" th:text="${cuentasConDeuda}">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Contribuyentes con obligaciones pendientes</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Saldo Deudor Consolidado</span>
+                <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <p class="text-xl font-bold text-emerald-400 mt-1.5"
+               th:text="'S/ ' + ${#numbers.formatDecimal(saldoTotalConsolidado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Total exigible en el distrito</p>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="p-4 rounded-xl bg-[#202c3d] border border-[#334155]">
+        <form th:action="@{/dashboard/tributaria/cuentas-corrientes}" method="get" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-400 mb-1">Buscar Contribuyente / Código de Cuenta</label>
+                <div class="relative">
+                    <input type="text" name="query" th:value="${query}"
+                           placeholder="Código de cuenta, DNI, RUC o razón social..."
+                           class="w-full pl-9 pr-3 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-500">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-2 text-slate-500"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Estado de Cuenta</label>
+                <select name="estado" class="w-full px-2.5 py-1.5 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}"
+                            th:value="${est}"
+                            th:text="${est.descripcion}"
+                            th:selected="${estadoSeleccionado == est}">Activa</option>
+                </select>
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/tributaria/cuentas-corrientes}" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Cuentas Corrientes -->
+    <div class="rounded-xl bg-[#202c3d] border border-[#334155] overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] border-b border-[#334155] text-slate-400 uppercase tracking-wider text-[11px]">
+                <tr>
+                    <th class="py-3 px-3.5">Código Cuenta</th>
+                    <th class="py-3 px-3.5">Contribuyente</th>
+                    <th class="py-3 px-3.5">Documento</th>
+                    <th class="py-3 px-3.5 text-right">Total Cargos (+)</th>
+                    <th class="py-3 px-3.5 text-right">Total Abonos (-)</th>
+                    <th class="py-3 px-3.5 text-right">Saldo Deudor</th>
+                    <th class="py-3 px-3.5 text-center">Deudas</th>
+                    <th class="py-3 px-3.5 text-center">Estado</th>
+                    <th class="py-3 px-3.5 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60">
+                <tr th:if="${#lists.isEmpty(cuentas.content)}" class="text-center text-slate-500 py-8">
+                    <td colspan="9" class="py-12 text-center">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                        <p class="text-sm font-medium text-slate-400">No se encontraron cuentas corrientes tributarias</p>
+                    </td>
+                </tr>
+
+                <tr th:each="c : ${cuentas.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-3.5 font-mono font-medium text-emerald-400">
+                        <a th:href="@{'/dashboard/tributaria/cuentas-corrientes/' + ${c.id}}"
+                           th:text="${c.codigoCuenta}"
+                           class="hover:underline">CTA-CT-000001-PEN</a>
+                    </td>
+                    <td class="py-3 px-3.5 font-medium text-slate-200" th:text="${c.contribuyenteNombre}">Juan Pérez</td>
+                    <td class="py-3 px-3.5 text-slate-400" th:text="${c.contribuyenteDocumento}">DNI: 12345678</td>
+                    <td class="py-3 px-3.5 text-right font-mono text-slate-300"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(c.totalCargos, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-right font-mono text-slate-300"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(c.totalAbonos, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-right font-mono font-bold"
+                        th:classappend="${c.saldoActual.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-rose-400' : 'text-emerald-400'}"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(c.saldoActual, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-center">
+                        <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold"
+                              th:classappend="${c.totalObligacionesPendientes > 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-500/10 text-slate-400'}"
+                              th:text="${c.totalObligacionesPendientes} + ' pend.'">0 pend.</span>
+                    </td>
+                    <td class="py-3 px-3.5 text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${c.badgeClass}"
+                              th:text="${c.estado.descripcion}">Activa</span>
+                    </td>
+                    <td class="py-3 px-3.5 text-right space-x-1">
+                        <a th:href="@{'/dashboard/tributaria/cuentas-corrientes/' + ${c.id}}"
+                           class="p-1.5 inline-flex text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50 rounded transition-colors"
+                           title="Ver Estado de Cuenta">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <a th:href="@{'/dashboard/tributaria/cuentas-corrientes/' + ${c.id} + '/pdf'}"
+                           target="_blank"
+                           class="p-1.5 inline-flex text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 rounded transition-colors"
+                           title="Estado de Cuenta PDF">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${cuentas.totalPages > 1}" class="p-3.5 bg-[#1e293b] border-t border-[#334155] flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${cuentas.number + 1}">1</span> de
+                <span class="font-bold text-white" th:text="${cuentas.totalPages}">1</span>
+                (<span th:text="${cuentas.totalElements}">0</span> cuentas registradas)
+            </div>
+            <div class="flex gap-1">
+                <a th:if="${cuentas.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/cuentas-corrientes(page=${cuentas.number - 1}, query=${query}, estado=${estadoSeleccionado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300">Anterior</a>
+                <a th:if="${cuentas.hasNext()}"
+                   th:href="@{/dashboard/tributaria/cuentas-corrientes(page=${cuentas.number + 1}, query=${query}, estado=${estadoSeleccionado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

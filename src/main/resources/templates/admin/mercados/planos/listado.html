@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Planos Interactivos de Mercados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400">Mercados Municipales</a>
+                <span>/</span>
+                <span class="text-slate-200">Planos Interactivos</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                Planos Interactivos y Distribución Espacial
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Visualización gráfica de sectores, pabellones y puestos sincronizada en tiempo real con PostgreSQL.</p>
+        </div>
+        <div class="flex items-center gap-2.5" th:if="${plano != null}">
+            <a th:href="@{/dashboard/mercados/planos/{id}(id=${mercadoSeleccionadoId})}"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span>Abrir Visor</span>
+            </a>
+            <a th:href="@{/dashboard/mercados/planos/{id}/editar(id=${mercadoSeleccionadoId})}"
+               sec:authorize="hasAuthority('MERCADOS_PLANO_EDITAR')"
+               class="px-3.5 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700/60 flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Editar Plano</span>
+            </a>
+            <a th:href="@{/dashboard/mercados/planos/{id}/versiones(id=${mercadoSeleccionadoId})}"
+               sec:authorize="hasAuthority('MERCADOS_PLANO_VERSIONES_VER')"
+               class="px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700/60 flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Historial</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Selector de Mercado -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form method="get" th:action="@{/dashboard/mercados/planos}" class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3.5">
+            <div class="flex-1">
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Seleccionar Mercado Municipal</label>
+                <select name="mercadoId" onchange="this.form.submit()"
+                        class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-medium">
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre} + ' (' + ${m.codigo} + ')'"
+                            th:selected="${m.id == mercadoSeleccionadoId}"></option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-2.5 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors">
+                    Actualizar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Si el Mercado Seleccionado tiene Plano Configurado -->
+    <div th:if="${plano != null}" class="space-y-6">
+
+        <!-- Métricas Rápidas del Plano -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Puestos</span>
+                <span class="text-xl font-bold text-white mt-1 block" th:text="${estadisticas != null ? estadisticas.totalPuestos : 0}">0</span>
+                <span class="text-[10px] text-slate-400">En distribución gráfica</span>
+            </div>
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Disponibles</span>
+                <span class="text-xl font-bold text-emerald-400 mt-1 block" th:text="${estadisticas != null ? estadisticas.puestosDisponibles : 0}">0</span>
+                <span class="text-[10px] text-emerald-500/80 font-medium" th:text="${estadisticas != null ? estadisticas.porcentajeDisponibilidad + '%' : '0%'}">0%</span>
+            </div>
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-blue-400 uppercase tracking-wider">Ocupados</span>
+                <span class="text-xl font-bold text-blue-400 mt-1 block" th:text="${estadisticas != null ? estadisticas.puestosOcupados : 0}">0</span>
+                <span class="text-[10px] text-blue-400/80 font-medium" th:text="${estadisticas != null ? estadisticas.porcentajeOcupacion + '%' : '0%'}">0%</span>
+            </div>
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-amber-400 uppercase tracking-wider">Reservados</span>
+                <span class="text-xl font-bold text-amber-400 mt-1 block" th:text="${estadisticas != null ? estadisticas.puestosReservados : 0}">0</span>
+                <span class="text-[10px] text-slate-400">En trámite / evaluación</span>
+            </div>
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mantenimiento</span>
+                <span class="text-xl font-bold text-slate-300 mt-1 block" th:text="${estadisticas != null ? estadisticas.puestosInactivos : 0}">0</span>
+                <span class="text-[10px] text-slate-400">Estado inactivo</span>
+            </div>
+            <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+                <span class="block text-[10px] font-bold text-rose-400 uppercase tracking-wider">Restringidos</span>
+                <span class="text-xl font-bold text-rose-400 mt-1 block" th:text="${estadisticas != null ? estadisticas.puestosRestringidos : 0}">0</span>
+                <span class="text-[10px] text-slate-400">Clausurados / sanción</span>
+            </div>
+        </div>
+
+        <!-- Ficha Técnica del Plano -->
+        <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700/60 pb-4 mb-4">
+                <div>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-900/60 text-blue-400 border border-blue-700/50 uppercase tracking-wider"
+                          th:text="'Código: ' + ${plano.codigo}">PLN-01</span>
+                    <h2 class="text-lg font-bold text-white mt-1.5" th:text="${plano.nombre}">Plano General</h2>
+                    <p class="text-xs text-slate-400" th:text="${plano.descripcion != null ? plano.descripcion : 'Sin descripción adicional'}">Descripción del plano</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Versión Vigente</span>
+                        <span class="text-xs font-mono font-bold text-emerald-400" th:text="'v' + (${plano.versionActualNumero != null ? plano.versionActualNumero : 1})">v1</span>
+                    </div>
+                    <div class="text-right pl-3 border-l border-slate-700">
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Lienzo Base</span>
+                        <span class="text-xs font-mono text-slate-300" th:text="${plano.anchoBase} + ' x ' + ${plano.altoBase} + ' px'">1400 x 900 px</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Última actualización sincronizada con base de datos:</span>
+                    <span class="font-medium text-slate-300" th:text="${#temporals.format(plano.updatedAt, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <a th:href="@{/dashboard/mercados/planos/{id}(id=${mercadoSeleccionadoId})}"
+                       class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        <span>Abrir Visor Interactivo</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Si el Mercado NO tiene plano configurado: Estado Vacío Profesional -->
+    <div th:if="${plano == null && mercado != null}" class="bg-[#1e293b] p-12 rounded-2xl border border-[#202c3d] shadow-lg text-center max-w-2xl mx-auto">
+        <div class="w-16 h-16 rounded-2xl bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mx-auto mb-4 text-blue-400">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2" th:text="'El ' + ${mercado.nombre} + ' aún no tiene un plano configurado'">Mercado sin plano</h3>
+        <p class="text-xs text-slate-400 max-w-md mx-auto mb-6">
+            Configura el lienzo gráfico inicial para este mercado para ubicar visualmente sus puestos, sectores, pabellones y pasillos sin alterar asignaciones administrativas.
+        </p>
+        <a th:href="@{/dashboard/mercados/planos/{id}/crear(id=${mercado.id})}"
+           sec:authorize="hasAuthority('MERCADOS_PLANO_CREAR')"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Configurar Plano Maestro para este Mercado</span>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

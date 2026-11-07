@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Catálogo de Trámites y TUPA — Configuración Mesa de Partes</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. ENCABEZADO INSTITUCIONAL -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-slate-700/60 p-6 shadow-xl">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>SIGM-QUINUA — MESA DE PARTES VIRTUAL (PROMPT 19)</span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="sliders-horizontal" class="w-6 h-6 text-blue-400"></i>
+                    <span>Configuración Administrativa y Catálogo de Trámites</span>
+                </h1>
+                <p class="text-xs text-slate-300 max-w-3xl leading-relaxed">
+                    Gestión integral de procedimientos TUPA, plazos legales, requisitos documentales, formularios dinámicos versionados
+                    y ciclo institucional de aprobación de la Municipalidad Distrital de Quinua.
+                </p>
+            </div>
+
+            <!-- Botones Superiores -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button type="button" id="btnNuevoTramite" sec:authorize="hasAuthority('MESAPARTES_TRAMITE_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                        class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-950/40 hover:scale-[1.02] transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Nuevo Trámite</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. NAVEGACIÓN POR PESTAÑAS -->
+    <div th:replace="~{admin/mesa-partes/configuracion/tabs :: tabsNav('tramites')}"></div>
+
+    <!-- 3. BARRA DE FILTROS -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-4 shadow-lg">
+        <form method="get" th:action="@{/dashboard/mesa-partes/configuracion/tramites}" class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex flex-1 flex-wrap items-center gap-3 w-full">
+                <!-- Buscador de texto -->
+                <div class="relative flex-1 min-w-[240px]">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" name="q" th:value="${filtroQ}" placeholder="Buscar por código, nombre o TUPA..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-[#334155] rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Filtro por Estado -->
+                <select name="estado" class="px-3 py-2 bg-slate-900/80 border border-[#334155] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option th:each="est : ${estadosCatalogo}" th:value="${est}" th:text="${est}" th:selected="${est == filtroEstado}"></option>
+                </select>
+
+                <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-colors">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 4. TABLA DEL CATÁLOGO DE TRÁMITES -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 border-b border-slate-700/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <tr>
+                    <th class="px-4 py-3.5">Código / TUPA</th>
+                    <th class="px-4 py-3.5">Denominación y Trámite</th>
+                    <th class="px-4 py-3.5">Oficina Responsable</th>
+                    <th class="px-4 py-3.5">Plazo Legal</th>
+                    <th class="px-4 py-3.5">Canales</th>
+                    <th class="px-4 py-3.5">Tasa</th>
+                    <th class="px-4 py-3.5">Versión</th>
+                    <th class="px-4 py-3.5">Estado</th>
+                    <th class="px-4 py-3.5 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 font-normal">
+                <tr th:if="${tramitesPage.content.isEmpty()}">
+                    <td colspan="9" class="px-4 py-10 text-center text-slate-400">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 text-slate-500"></i>
+                        <p class="text-sm font-medium">No se encontraron trámites registrados con los filtros aplicados.</p>
+                    </td>
+                </tr>
+                <tr th:each="t : ${tramitesPage.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="px-4 py-3 font-mono font-medium text-blue-400 whitespace-nowrap">
+                        <div th:text="${t.codigo}">EXP-001</div>
+                        <div th:if="${t.codigoTupa != null}" class="text-[10px] text-slate-400" th:text="'TUPA: ' + ${t.codigoTupa}"></div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-slate-100" th:text="${t.nombre}">Nombre Trámite</div>
+                        <div class="text-[11px] text-slate-400 line-clamp-1" th:text="${t.descripcion != null ? t.descripcion : 'Sin descripción'}"></div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-slate-300" th:text="${t.oficinaResponsableNombre}">
+                        Gerencia de Desarrollo Urbano
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="font-medium text-slate-200" th:text="${t.plazoDias} + ' ' + ${t.unidadPlazo}">30 DÍAS_HABILES</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="flex items-center space-x-1.5">
+                            <span th:if="${t.permitePresentacionVirtual}" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Virtual</span>
+                            <span th:if="${t.permitePresencial}" class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/30">Presencial</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span th:if="${t.requiereTasa}" class="text-amber-400 font-mono font-medium" th:text="'S/ ' + ${#numbers.formatDecimal(t.montoTasa, 1, 2)}">S/ 0.00</span>
+                        <span th:unless="${t.requiereTasa}" class="text-slate-400 text-[10px]">Gratuito</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <button type="button" class="btnVerVersiones font-mono text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                                th:data-id="${t.id}" th:data-codigo="${t.codigo}" title="Ver historial inmutable de versiones">
+                            v<span th:text="${t.versionActual}">1</span>
+                        </button>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span th:if="${t.estadoCatalogo.name() == 'BORRADOR'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-slate-700/60 text-slate-300 border border-slate-600">BORRADOR</span>
+                        <span th:if="${t.estadoCatalogo.name() == 'EN_REVISION'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">EN REVISIÓN</span>
+                        <span th:if="${t.estadoCatalogo.name() == 'APROBADO'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">APROBADO</span>
+                        <span th:if="${t.estadoCatalogo.name() == 'PUBLICADO'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">PUBLICADO</span>
+                        <span th:if="${t.estadoCatalogo.name() == 'SUSPENDIDO'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">SUSPENDIDO</span>
+                        <span th:if="${t.estadoCatalogo.name() == 'INACTIVO'}" class="px-2 py-1 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-500 border border-slate-700">INACTIVO</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            <!-- Editar (Borradores o aprobados) -->
+                            <button th:if="${t.estadoCatalogo.name() != 'PUBLICADO'}" type="button" class="btnEditarTramite p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                                    th:data-id="${t.id}" title="Editar procedimiento">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+
+                            <!-- Enviar a Revisión -->
+                            <button th:if="${t.estadoCatalogo.name() == 'BORRADOR'}" type="button" class="btnAccionTransicion p-1.5 rounded-lg text-amber-400 hover:bg-amber-500/20 transition-colors"
+                                    th:data-id="${t.id}" data-accion="enviar-revision" data-titulo="Enviar a Revisión Técnica" title="Enviar a Revisión">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </button>
+
+                            <!-- Aprobar -->
+                            <button th:if="${t.estadoCatalogo.name() == 'EN_REVISION'}" type="button" class="btnAccionTransicion p-1.5 rounded-lg text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                                    th:data-id="${t.id}" data-accion="aprobar" data-titulo="Aprobar Trámite Institucional" title="Aprobar Trámite">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            </button>
+
+                            <!-- Publicar -->
+                            <button th:if="${t.estadoCatalogo.name() == 'APROBADO' || t.estadoCatalogo.name() == 'BORRADOR'}" type="button" class="btnAccionTransicion p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                                    th:data-id="${t.id}" data-accion="publicar" data-titulo="Publicar Trámite Oficial" title="Publicar Versión Oficial">
+                                <i data-lucide="globe" class="w-4 h-4"></i>
+                            </button>
+
+                            <!-- Suspender -->
+                            <button th:if="${t.estadoCatalogo.name() == 'PUBLICADO'}" type="button" class="btnAccionTransicion p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-colors"
+                                    th:data-id="${t.id}" data-accion="suspender" data-titulo="Suspender Procedimiento" title="Suspender Trámite">
+                                <i data-lucide="pause-circle" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. MODAL: REGISTRAR / EDITAR TRÁMITE -->
+    <div id="modalTramite" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-3xl rounded-2xl bg-[#202c3d] border border-[#334155] p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-plus" class="w-5 h-5 text-blue-400"></i>
+                    <h3 id="modalTramiteTitulo" class="text-sm font-bold text-slate-100">Nuevo Procedimiento / Trámite</h3>
+                </div>
+                <button type="button" id="btnCerrarModalTramite" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="formTramite" class="space-y-4 text-xs">
+                <input type="hidden" id="tramiteId" name="id">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Código Interno (*)</label>
+                        <input type="text" id="tramiteCodigo" name="codigo" required maxlength="50" placeholder="Ej: EXP-URB-01"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Código TUPA (opcional)</label>
+                        <input type="text" id="tramiteCodigoTupa" name="codigoTupa" maxlength="50" placeholder="Ej: TUPA-2026-04"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nombre del Trámite (*)</label>
+                    <input type="text" id="tramiteNombre" name="nombre" required maxlength="200" placeholder="Denominación común del trámite"
+                           class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Denominación Oficial TUPA</label>
+                    <input type="text" id="tramiteDenominacionOficial" name="denominacionOficial" maxlength="250" placeholder="Denominación legal según ordenanza o TUPA"
+                           class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Oficina Responsable (*)</label>
+                        <select id="tramiteOficinaId" name="oficinaResponsableId" required
+                                class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="">Seleccione oficina...</option>
+                            <option th:each="o : ${oficinas}" th:value="${o.id}" th:text="${o.nombre}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Categoría</label>
+                        <input type="text" id="tramiteCategoria" name="categoria" value="GENERAL" maxlength="100"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Plazo Legal (días) (*)</label>
+                        <input type="number" id="tramitePlazoDias" name="plazoDias" min="1" max="365" value="30" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Unidad de Cómputo (*)</label>
+                        <select id="tramiteUnidadPlazo" name="unidadPlazo" required
+                                class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="u : ${unidadesPlazo}" th:value="${u}" th:text="${u}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Base Normativa / Referencia Legal</label>
+                    <textarea id="tramiteBaseNormativa" name="baseNormativa" rows="2" placeholder="Ej: TUO Ley 27444, D.S. N° 004-2019-JUS, Ordenanza Municipal N° ..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-slate-900/50 rounded-xl border border-slate-700/60">
+                    <label class="flex items-center space-x-2 text-slate-300">
+                        <input type="checkbox" id="tramiteRequiereDocumentos" name="requiereDocumentos" checked class="rounded border-slate-700 text-blue-600">
+                        <span>Requiere Requisitos</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-slate-300">
+                        <input type="checkbox" id="tramitePermiteVirtual" name="permitePresentacionVirtual" checked class="rounded border-slate-700 text-blue-600">
+                        <span>Mesa Virtual Habilitada</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-slate-300">
+                        <input type="checkbox" id="tramitePermitePresencial" name="permitePresencial" checked class="rounded border-slate-700 text-blue-600">
+                        <span>Atención Presencial</span>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <label class="flex items-center space-x-2 text-slate-300 mt-2">
+                        <input type="checkbox" id="tramiteRequiereTasa" name="requiereTasa" class="rounded border-slate-700 text-blue-600">
+                        <span>Aplica Tasa / Costo</span>
+                    </label>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Monto Tasa (S/)</label>
+                        <input type="number" step="0.01" id="tramiteMontoTasa" name="montoTasa" value="0.00" min="0"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Cuenta Banco de la Nación</label>
+                        <input type="text" id="tramiteCuentaTasa" name="cuentaTasa" placeholder="N° Cuenta corriente"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-700/60">
+                    <button type="button" id="btnCancelarTramite" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md">
+                        Guardar Trámite
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. MODAL: ACCIONES DE TRANSICIÓN (REVISIÓN, APROBACIÓN, PUBLICACIÓN, SUSPENSIÓN) -->
+    <div id="modalTransicion" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-2xl space-y-4">
+            <h3 id="modalTransicionTitulo" class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400"></i>
+                <span>Confirmar Acción de Procedimiento</span>
+            </h3>
+            <p id="modalTransicionMensaje" class="text-xs text-slate-300 leading-relaxed">
+                Ingrese el motivo de la acción institucional para el registro de auditoría.
+            </p>
+            <form id="formTransicion" class="space-y-3">
+                <input type="hidden" id="transicionTramiteId">
+                <input type="hidden" id="transicionAccion">
+                <textarea id="transicionMotivo" rows="3" placeholder="Motivo o sustento técnico..."
+                          class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" id="btnCancelarTransicion" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. MODAL: HISTORIAL DE VERSIONES INMUTABLES -->
+    <div id="modalVersiones" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-3xl rounded-2xl bg-[#202c3d] border border-[#334155] p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-5 h-5 text-blue-400"></i>
+                    <h3 id="modalVersionesTitulo" class="text-sm font-bold text-slate-100">Versiones Inmutables</h3>
+                </div>
+                <button type="button" id="btnCerrarModalVersiones" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="contenedorListaVersiones" class="max-h-96 overflow-y-auto space-y-2">
+                <!-- Se inyecta dinámicamente con JS -->
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Configuración -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mesapartes/configuracion.js}"></script>
+</th:block>
+</body>
+</html>

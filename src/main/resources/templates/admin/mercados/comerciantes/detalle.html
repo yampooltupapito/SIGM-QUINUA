@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Comerciante ' + comerciante.codigoComerciante + ' | SIGM-QUINUA'}"></title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/comerciantes}" class="hover:text-blue-400 transition-colors">Comerciantes</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${comerciante.codigoComerciante}"></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight" th:text="${comerciante.titularNombre}"></h1>
+                <span th:if="${comerciante.estado.name() == 'ACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Activo</span>
+                <span th:if="${comerciante.estado.name() == 'PENDIENTE_VERIFICACION'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pendiente de Verificación</span>
+                <span th:if="${comerciante.estado.name() == 'SUSPENDIDO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">Suspendido</span>
+                <span th:if="${comerciante.estado.name() == 'INACTIVO'}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">Inactivo</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="${'Código: ' + comerciante.codigoComerciante + ' | Modalidad: ' + comerciante.tipoComercianteDescripcion + ' | ' + comerciante.tipoDocumento + ': ' + comerciante.documentoEnmascarado}"></p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a th:href="@{/dashboard/mercados/comerciantes/{id}/editar(id=${comerciante.id})}"
+               sec:authorize="hasAuthority('MERCADOS_COMERCIANTE_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-[#334155] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Editar
+            </a>
+
+            <button type="button"
+                    th:data-id="${comerciante.id}"
+                    th:data-nombre="${comerciante.titularNombre}"
+                    th:data-estado="${comerciante.estado}"
+                    onclick="abrirModalEstado(this.getAttribute('data-id'), this.getAttribute('data-nombre'), this.getAttribute('data-estado'))"
+                    sec:authorize="hasAuthority('MERCADOS_COMERCIANTE_CAMBIAR_ESTADO') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                Cambiar Estado
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="border-b border-[#334155] px-6 flex gap-4 overflow-x-auto text-xs">
+            <button type="button" onclick="cambiarPestana('tabInfo')" id="btnTabInfo" class="tab-btn py-3.5 border-b-2 font-semibold border-blue-500 text-blue-400">Información y Contacto</button>
+            <button type="button" onclick="cambiarPestana('tabActividades')" id="btnTabActividades" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Actividades Comerciales</button>
+            <button th:if="${comerciante.isPersonaJuridica()}" type="button" onclick="cambiarPestana('tabRepresentantes')" id="btnTabRepresentantes" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Representantes Legales</button>
+            <button type="button" onclick="cambiarPestana('tabPuestos')" id="btnTabPuestos" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Puestos Asignados</button>
+            <button type="button" onclick="cambiarPestana('tabAutorizaciones')" id="btnTabAutorizaciones" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Autorizaciones</button>
+            <button type="button" onclick="cambiarPestana('tabDocumentos')" id="btnTabDocumentos" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Documentos</button>
+            <button type="button" onclick="cambiarPestana('tabExpedientes')" id="btnTabExpedientes" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Expedientes MPV</button>
+            <button type="button" onclick="cambiarPestana('tabHistorial')" id="btnTabHistorial" class="tab-btn py-3.5 border-b-2 font-semibold border-transparent text-slate-400 hover:text-slate-200">Historial de Estados</button>
+        </div>
+
+        <div class="p-6">
+            <!-- Pestaña 1: Información General y Contacto -->
+            <div id="tabInfo" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#101827] p-5 rounded-xl border border-[#334155] space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Identidad del Titular</h3>
+                        <div class="text-xs space-y-2">
+                            <div><span class="text-slate-400">Modalidad:</span> <span class="font-semibold text-white ml-1" th:text="${comerciante.tipoComercianteDescripcion}"></span></div>
+                            <div><span class="text-slate-400" th:text="${comerciante.tipoDocumento + ':'}"></span> <span class="font-mono font-semibold text-blue-400 ml-1" th:text="${comerciante.numeroDocumento}"></span></div>
+                            <div th:if="${comerciante.isPersonaJuridica()}"><span class="text-slate-400">Razón Social:</span> <span class="font-semibold text-white ml-1" th:text="${comerciante.razonSocial}"></span></div>
+                            <div th:if="${comerciante.isPersonaJuridica() && comerciante.nombreComercial != null}"><span class="text-slate-400">Nombre Comercial:</span> <span class="text-slate-200 ml-1" th:text="${comerciante.nombreComercial}"></span></div>
+                            <div><span class="text-slate-400">Fecha de Registro:</span> <span class="text-slate-200 ml-1" th:text="${#temporals.format(comerciante.fechaRegistro, 'dd/MM/yyyy')}"></span></div>
+                            <div><span class="text-slate-400">Estado:</span> <span class="font-semibold text-emerald-400 ml-1" th:text="${comerciante.estadoDescripcion}"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#101827] p-5 rounded-xl border border-[#334155] space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Datos de Contacto</h3>
+                        <div class="text-xs space-y-2">
+                            <div><span class="text-slate-400">Teléfono:</span> <span class="text-white ml-1" th:text="${comerciante.telefono != null ? comerciante.telefono : 'No registrado'}"></span></div>
+                            <div><span class="text-slate-400">Correo Electrónico:</span> <span class="text-white ml-1" th:text="${comerciante.correo != null ? comerciante.correo : 'No registrado'}"></span></div>
+                            <div><span class="text-slate-400">Dirección / Domicilio:</span> <span class="text-white ml-1" th:text="${comerciante.direccion != null ? comerciante.direccion : 'No registrado'}"></span></div>
+                            <div><span class="text-slate-400">Observaciones:</span> <span class="text-slate-300 ml-1" th:text="${comerciante.observaciones != null ? comerciante.observaciones : 'Sin observaciones'}"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Actividades Comerciales -->
+            <div id="tabActividades" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Código</th>
+                                <th class="px-4 py-2.5">Actividad</th>
+                                <th class="px-4 py-2.5">Categoría</th>
+                                <th class="px-4 py-2.5">Descripción</th>
+                                <th class="px-4 py-2.5">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="act : ${comerciante.actividades}">
+                                <td class="px-4 py-2.5 font-mono text-blue-400" th:text="${act.codigo}"></td>
+                                <td class="px-4 py-2.5 font-semibold text-white" th:text="${act.nombre}"></td>
+                                <td class="px-4 py-2.5 text-slate-300" th:text="${act.categoria != null ? act.categoria : '-'}"></td>
+                                <td class="px-4 py-2.5 text-slate-400" th:text="${act.descripcion != null ? act.descripcion : '-'}"></td>
+                                <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400">Activo</span></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.actividades)}">
+                                <td colspan="5" class="px-4 py-6 text-center text-slate-400">No tiene actividades comerciales asignadas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Representantes Legales (PJ) -->
+            <div th:if="${comerciante.isPersonaJuridica()}" id="tabRepresentantes" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Representante</th>
+                                <th class="px-4 py-2.5">DNI</th>
+                                <th class="px-4 py-2.5">Cargo</th>
+                                <th class="px-4 py-2.5">Inicio</th>
+                                <th class="px-4 py-2.5">Fin</th>
+                                <th class="px-4 py-2.5">Condición</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="rep : ${comerciante.representantes}">
+                                <td class="px-4 py-2.5 font-semibold text-white" th:text="${rep.nombreCompleto}"></td>
+                                <td class="px-4 py-2.5 font-mono" th:text="${rep.dni}"></td>
+                                <td class="px-4 py-2.5 text-slate-300" th:text="${rep.tipoRepresentacionDescripcion}"></td>
+                                <td class="px-4 py-2.5" th:text="${#temporals.format(rep.fechaInicio, 'dd/MM/yyyy')}"></td>
+                                <td class="px-4 py-2.5" th:text="${rep.fechaFin != null ? #temporals.format(rep.fechaFin, 'dd/MM/yyyy') : 'Indefinido'}"></td>
+                                <td class="px-4 py-2.5">
+                                    <span th:if="${rep.vigente}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400">Vigente</span>
+                                    <span th:unless="${rep.vigente}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-500/10 text-slate-400">No Vigente</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.representantes)}">
+                                <td colspan="6" class="px-4 py-6 text-center text-slate-400">No registra representantes legales acreditados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 4: Puestos Asignados -->
+            <div id="tabPuestos" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Mercado</th>
+                                <th class="px-4 py-2.5">Puesto</th>
+                                <th class="px-4 py-2.5">Sector / Pabellón</th>
+                                <th class="px-4 py-2.5">Tipo Asignación</th>
+                                <th class="px-4 py-2.5">Estado</th>
+                                <th class="px-4 py-2.5">Vigencia</th>
+                                <th class="px-4 py-2.5 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="p : ${comerciante.puestosAsociados}">
+                                <td class="px-4 py-2.5 font-semibold text-white" th:text="${p.mercadoNombre}"></td>
+                                <td class="px-4 py-2.5 font-mono text-blue-400" th:text="${p.puestoCodigo}"></td>
+                                <td class="px-4 py-2.5 text-slate-300" th:text="${(p.sectorNombre != null ? p.sectorNombre : '') + ' / ' + (p.pabellonNombre != null ? p.pabellonNombre : '')}"></td>
+                                <td class="px-4 py-2.5" th:text="${p.tipoAsignacion}"></td>
+                                <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400" th:text="${p.estadoAsignacion}"></span></td>
+                                <td class="px-4 py-2.5" th:text="${#temporals.format(p.fechaInicio, 'dd/MM/yyyy') + ' - ' + (p.fechaFin != null ? #temporals.format(p.fechaFin, 'dd/MM/yyyy') : 'Indefinido')}"></td>
+                                <td class="px-4 py-2.5 text-right">
+                                    <a th:if="${p.asignacionId != null}" th:href="@{/dashboard/mercados/asignaciones/{id}(id=${p.asignacionId})}"
+                                       class="text-blue-400 hover:text-blue-300 font-semibold">Ver Detalle</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.puestosAsociados)}">
+                                <td colspan="7" class="px-4 py-6 text-center text-slate-400">El comerciante no registra puestos asignados actualmente.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 5: Autorizaciones -->
+            <div id="tabAutorizaciones" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Resolución / N°</th>
+                                <th class="px-4 py-2.5">Tipo</th>
+                                <th class="px-4 py-2.5">Estado</th>
+                                <th class="px-4 py-2.5">Emisión</th>
+                                <th class="px-4 py-2.5">Vencimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="aut : ${comerciante.autorizaciones}">
+                                <td class="px-4 py-2.5 font-mono font-semibold text-white" th:text="${aut.numeroResolucion}"></td>
+                                <td class="px-4 py-2.5" th:text="${aut.tipoAutorizacion}"></td>
+                                <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400" th:text="${aut.estado}"></span></td>
+                                <td class="px-4 py-2.5" th:text="${aut.fechaEmision != null ? #temporals.format(aut.fechaEmision, 'dd/MM/yyyy') : '-'}"></td>
+                                <td class="px-4 py-2.5" th:text="${aut.fechaVigenciaFin != null ? #temporals.format(aut.fechaVigenciaFin, 'dd/MM/yyyy') : 'Permanente'}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.autorizaciones)}">
+                                <td colspan="5" class="px-4 py-6 text-center text-slate-400">No registra autorizaciones comerciales formales emitidas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 6: Documentos -->
+            <div id="tabDocumentos" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Tipo</th>
+                                <th class="px-4 py-2.5">Número / Título</th>
+                                <th class="px-4 py-2.5">Observaciones</th>
+                                <th class="px-4 py-2.5">Fecha Subida</th>
+                                <th class="px-4 py-2.5">Registrado Por</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="doc : ${comerciante.documentos}">
+                                <td class="px-4 py-2.5 font-semibold text-blue-400" th:text="${doc.tipoDocumento}"></td>
+                                <td class="px-4 py-2.5 text-white" th:text="${doc.numeroDocumento != null ? doc.numeroDocumento : doc.titulo}"></td>
+                                <td class="px-4 py-2.5 text-slate-400" th:text="${doc.observaciones != null ? doc.observaciones : '-'}"></td>
+                                <td class="px-4 py-2.5" th:text="${#temporals.format(doc.fechaSubida, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td class="px-4 py-2.5 font-mono text-slate-300" th:text="${doc.subidoPor}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.documentos)}">
+                                <td colspan="5" class="px-4 py-6 text-center text-slate-400">No registra documentos asociados en el repositorio central.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 7: Expedientes MPV -->
+            <div id="tabExpedientes" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">N° Expediente</th>
+                                <th class="px-4 py-2.5">Asunto</th>
+                                <th class="px-4 py-2.5">Estado</th>
+                                <th class="px-4 py-2.5">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="exp : ${comerciante.expedientes}">
+                                <td class="px-4 py-2.5 font-mono font-semibold text-blue-400" th:text="${exp.numeroExpediente}"></td>
+                                <td class="px-4 py-2.5 text-white" th:text="${exp.asunto}"></td>
+                                <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400" th:text="${exp.estado}"></span></td>
+                                <td class="px-4 py-2.5" th:text="${exp.fechaRegistro != null ? #temporals.format(exp.fechaRegistro, 'dd/MM/yyyy') : '-'}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.expedientes)}">
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-400">No registra expedientes vinculados en la Mesa de Partes Virtual.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 8: Historial Inmutable -->
+            <div id="tabHistorial" class="tab-content space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Fecha y Hora</th>
+                                <th class="px-4 py-2.5">Transición</th>
+                                <th class="px-4 py-2.5">Motivo Administrativo</th>
+                                <th class="px-4 py-2.5">Usuario Responsable</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#334155]">
+                            <tr th:each="h : ${comerciante.historialEstados}">
+                                <td class="px-4 py-2.5 font-mono text-slate-400" th:text="${#temporals.format(h.fechaCambio, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td class="px-4 py-2.5">
+                                    <span class="text-slate-400" th:text="${h.estadoAnterior}"></span>
+                                    <span class="text-blue-400 mx-1">→</span>
+                                    <span class="font-semibold text-emerald-400" th:text="${h.estadoNuevo}"></span>
+                                </td>
+                                <td class="px-4 py-2.5 text-slate-200" th:text="${h.motivo}"></td>
+                                <td class="px-4 py-2.5 font-mono text-slate-300" th:text="${h.usuarioUsername != null ? h.usuarioUsername : 'SISTEMA'}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(comerciante.historialEstados)}">
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-400">No registra transiciones de estado previas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir modal de cambio de estado -->
+    <div th:replace="~{admin/mercados/comerciantes/componentes/modal-estado :: div}"></div>
+
+    <!-- Scripts Cliente -->
+    <script th:src="@{/js/mercados/comerciantes-detalle.js}"></script>
+    <script th:src="@{/js/mercados/comerciantes-listado.js}"></script>
+</div>
+</body>
+</html>

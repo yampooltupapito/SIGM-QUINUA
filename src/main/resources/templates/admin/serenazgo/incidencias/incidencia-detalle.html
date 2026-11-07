@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Incidencia ' + ${incidencia.codigo} + ' — Serenazgo Quinua'">Ficha de Incidencia</title>
+    <!-- Leaflet CSS para visualización geográfica -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .leaflet-container {
+            background-color: #0f172a !important;
+            font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-900/50 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación completada con éxito.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 bg-rose-900/50 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Navegación y Encabezado de la Incidencia -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/incidencias}" class="hover:text-blue-400 flex items-center gap-1">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Incidencias
+                </a>
+                <span>/</span>
+                <span class="font-mono" th:text="${incidencia.codigo}">INC-2026-00001</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-bold text-slate-100 font-mono" th:text="${incidencia.codigo}">INC-2026-00001</h1>
+
+                <!-- Badge Estado -->
+                <span th:if="${incidencia.estado.name() == 'REGISTRADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-sky-950/70 text-sky-300 border border-sky-700/50">REGISTRADA</span>
+                <span th:if="${incidencia.estado.name() == 'EN_EVALUACION'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-950/70 text-purple-300 border border-purple-700/50">EN EVALUACIÓN</span>
+                <span th:if="${incidencia.estado.name() == 'ASIGNADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-950/70 text-indigo-300 border border-indigo-700/50">ASIGNADA</span>
+                <span th:if="${incidencia.estado.name() == 'EN_ATENCION'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/50">EN ATENCIÓN</span>
+                <span th:if="${incidencia.estado.name() == 'RESUELTA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950/70 text-emerald-300 border border-emerald-700/50">RESUELTA</span>
+                <span th:if="${incidencia.estado.name() == 'CERRADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-400 border border-slate-700">CERRADA</span>
+                <span th:if="${incidencia.estado.name() == 'DESCARTADA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-950/70 text-rose-400 border border-rose-800/50">DESCARTADA</span>
+
+                <!-- Badge Prioridad -->
+                <span th:if="${incidencia.prioridad.name() == 'BAJA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">BAJA</span>
+                <span th:if="${incidencia.prioridad.name() == 'MEDIA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/50">MEDIA</span>
+                <span th:if="${incidencia.prioridad.name() == 'ALTA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-950/70 text-orange-300 border border-orange-700/50">ALTA</span>
+                <span th:if="${incidencia.prioridad.name() == 'CRITICA'}" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-950/80 text-rose-300 border border-rose-700/50 animate-pulse">CRÍTICA</span>
+
+                <!-- Badge Confidencialidad -->
+                <span class="px-2 py-0.5 text-[11px] font-medium bg-slate-800 text-slate-400 rounded border border-slate-700"
+                      th:text="${incidencia.nivelConfidencialidad.descripcion}">Ordinario</span>
+            </div>
+            <p class="text-sm text-slate-300 font-medium mt-1" th:text="${incidencia.titulo}">Título de la incidencia</p>
+        </div>
+
+        <!-- Botones de Acción Operativa y Modales -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Descargar Ficha PDF -->
+            <a th:href="@{/dashboard/serenazgo/incidencias/{id}/pdf(id=${incidencia.id})}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-medium rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="file-down" class="w-4 h-4"></i> Ficha PDF
+            </a>
+
+            <!-- Editar datos generales -->
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+               th:href="@{/dashboard/serenazgo/incidencias/{id}/editar(id=${incidencia.id})}"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="edit-3" class="w-4 h-4 text-amber-400"></i> Editar
+            </a>
+
+            <!-- Cambiar Prioridad -->
+            <button sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_PRIORIZAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+                    onclick="abrirModalPrioridad()"
+                    class="px-3 py-2 bg-amber-900/60 hover:bg-amber-800/80 text-amber-200 text-xs font-medium rounded-lg border border-amber-700/60 flex items-center gap-1.5 transition">
+                <i data-lucide="chevrons-up-down" class="w-4 h-4"></i> Prioridad
+            </button>
+
+            <!-- Cambiar Estado -->
+            <button sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_CAMBIAR_ESTADO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+                    onclick="abrirModalEstado()"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition shadow">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Transición Estado
+            </button>
+
+            <!-- Cierre Administrativo -->
+            <button sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+                    onclick="abrirModalCierre()"
+                    class="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition shadow">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Cerrar
+            </button>
+
+            <!-- Descartar Registro -->
+            <button sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+                    onclick="abrirModalDescarte()"
+                    class="px-3 py-2 bg-rose-900/50 hover:bg-rose-800/70 text-rose-300 text-xs font-medium rounded-lg border border-rose-700/50 flex items-center gap-1.5 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Descartar
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación Interna -->
+    <div class="border-b border-slate-700/70">
+        <nav class="flex space-x-6">
+            <button onclick="cambiarPestana('tab-resumen')" id="btn-tab-resumen"
+                    class="tab-btn pb-3 text-sm font-medium border-b-2 border-blue-500 text-blue-400 flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Resumen & Hechos
+            </button>
+            <button onclick="cambiarPestana('tab-ubicacion')" id="btn-tab-ubicacion"
+                    class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-4 h-4"></i> Ubicación Geográfica
+            </button>
+            <button onclick="cambiarPestana('tab-documentos')" id="btn-tab-documentos"
+                    class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i data-lucide="paperclip" class="w-4 h-4"></i> Documentos & Fotos
+                <span class="px-1.5 py-0.5 text-[10px] bg-slate-800 text-slate-300 rounded-full"
+                      th:text="${incidencia.documentos != null ? incidencia.documentos.size() : 0}">0</span>
+            </button>
+            <button onclick="cambiarPestana('tab-comentarios')" id="btn-tab-comentarios"
+                    class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i data-lucide="message-square" class="w-4 h-4"></i> Seguimiento & Notas
+                <span class="px-1.5 py-0.5 text-[10px] bg-slate-800 text-slate-300 rounded-full"
+                      th:text="${incidencia.comentarios != null ? incidencia.comentarios.size() : 0}">0</span>
+            </button>
+            <button onclick="cambiarPestana('tab-historial')" id="btn-tab-historial"
+                    class="tab-btn pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4"></i> Línea de Tiempo
+            </button>
+        </nav>
+    </div>
+
+    <!-- CONTENIDO PESTAÑA 1: RESUMEN Y HECHOS -->
+    <div id="tab-resumen" class="pestana-panel space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Columna Izquierda: Hechos y Observaciones -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Descripción de los Hechos -->
+                <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/50 pb-2">
+                        <i data-lucide="align-left" class="w-4 h-4 text-amber-400"></i>
+                        Descripción Objetiva de los Hechos
+                    </h3>
+                    <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line" th:text="${incidencia.descripcion}">
+                        Descripción fáctica detallada...
+                    </p>
+                </div>
+
+                <!-- Observaciones Internas -->
+                <div th:if="${incidencia.observacionesInternas != null && !incidencia.observacionesInternas.isEmpty()}"
+                     class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/50 pb-2">
+                        <i data-lucide="eye-off" class="w-4 h-4 text-purple-400"></i>
+                        Observaciones Administrativas Internas
+                    </h3>
+                    <p class="text-sm text-slate-400 leading-relaxed italic" th:text="${incidencia.observacionesInternas}">
+                        Anotaciones internas...
+                    </p>
+                </div>
+
+                <!-- Si está cerrada o descartada: Motivo formal -->
+                <div th:if="${incidencia.motivoCierre != null}" class="bg-emerald-950/40 border border-emerald-600/50 rounded-xl p-5 text-emerald-200 space-y-2">
+                    <h4 class="font-semibold flex items-center gap-2 text-emerald-300 text-sm">
+                        <i data-lucide="check-check" class="w-4 h-4"></i> Motivo de Cierre Administrativo
+                    </h4>
+                    <p class="text-xs text-emerald-200/90 whitespace-pre-line" th:text="${incidencia.motivoCierre}">Cierre efectuado...</p>
+                </div>
+
+                <div th:if="${incidencia.motivoDescarte != null}" class="bg-rose-950/40 border border-rose-600/50 rounded-xl p-5 text-rose-200 space-y-2">
+                    <h4 class="font-semibold flex items-center gap-2 text-rose-300 text-sm">
+                        <i data-lucide="alert-octagon" class="w-4 h-4"></i> Motivo de Descarte
+                    </h4>
+                    <p class="text-xs text-rose-200/90 whitespace-pre-line" th:text="${incidencia.motivoDescarte}">Descarte formal...</p>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Metadatos y Reportante -->
+            <div class="space-y-6">
+                <!-- Tarjeta de Metadatos -->
+                <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3 text-xs">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/50 pb-2">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Metadatos del Evento
+                    </h3>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Tipo de Incidencia:</span>
+                        <span class="font-medium text-slate-200 text-right" th:text="${incidencia.tipoNombre}">Tipo</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Canal de Reporte:</span>
+                        <span class="font-medium text-slate-200" th:text="${incidencia.canalReporteDesc}">Llamada</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Origen del Hecho:</span>
+                        <span class="font-medium text-slate-200" th:text="${incidencia.origenHechoDesc}">Reportado</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Fecha Ocurrencia:</span>
+                        <span class="font-medium text-slate-200"
+                              th:text="${incidencia.fechaOcurrencia != null ? #temporals.format(incidencia.fechaOcurrencia, 'dd/MM/yyyy HH:mm') : 'No especificada'}">25/10/2026</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Fecha Registro:</span>
+                        <span class="font-medium text-slate-200"
+                              th:text="${#temporals.format(incidencia.fechaReporte, 'dd/MM/yyyy HH:mm')}">25/10/2026</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Registrado por:</span>
+                        <span class="font-medium text-slate-200" th:text="${incidencia.usuarioRegistroNombre}">Operador</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Oficina Responsable:</span>
+                        <span class="font-medium text-slate-200" th:text="${incidencia.oficinaResponsableNombre != null ? incidencia.oficinaResponsableNombre : 'Seguridad Ciudadana'}">Seguridad Ciudadana</span>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Información del Reportante (Protegida) -->
+                <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3 text-xs">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/50 pb-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i> Datos del Reportante
+                    </h3>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Condición:</span>
+                        <span class="font-medium"
+                              th:classappend="${incidencia.reportanteAnonimo} ? 'text-amber-400' : 'text-emerald-400'"
+                              th:text="${incidencia.reportanteAnonimo} ? 'REPORTE ANÓNIMO' : 'CIUDADANO IDENTIFICADO'">Identificado</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Nombre:</span>
+                        <span class="font-medium text-slate-200 text-right" th:text="${incidencia.reportanteNombre}">Juan Pérez</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Teléfono:</span>
+                        <span class="font-medium text-slate-200 font-mono" th:text="${incidencia.reportanteTelefono}">966***</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Dirección:</span>
+                        <span class="font-medium text-slate-200 text-right" th:text="${incidencia.reportanteDireccion != null ? incidencia.reportanteDireccion : '-'}">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PESTAÑA 2: UBICACIÓN GEOGRÁFICA -->
+    <div id="tab-ubicacion" class="pestana-panel hidden space-y-6">
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="text-base font-semibold text-slate-100 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="map" class="w-4 h-4 text-emerald-400"></i> Sectorización y Referencia Espacial
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/40">
+                    <span class="text-xs text-slate-400 block mb-0.5">Sector de Patrullaje:</span>
+                    <span class="font-medium text-slate-200" th:text="${incidencia.sectorNombre != null ? incidencia.sectorNombre : 'Sin Sector'}">Sector Central</span>
+                </div>
+                <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/40">
+                    <span class="text-xs text-slate-400 block mb-0.5">Zona Específica:</span>
+                    <span class="font-medium text-slate-200" th:text="${incidencia.zonaNombre != null ? incidencia.zonaNombre : 'Todo el sector'}">Plaza</span>
+                </div>
+                <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/40">
+                    <span class="text-xs text-slate-400 block mb-0.5">Coordenadas:</span>
+                    <span class="font-mono text-xs text-slate-200"
+                          th:text="${incidencia.latitud != null && incidencia.longitud != null ? incidencia.latitud + ', ' + incidencia.longitud : 'No georreferenciadas'}">
+                        -13.045, -74.135
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/40">
+                <span class="text-xs text-slate-400 block mb-0.5">Referencia Descriptiva:</span>
+                <span class="text-sm font-medium text-slate-200" th:text="${incidencia.ubicacionReferencia}">Referencia</span>
+            </div>
+
+            <!-- Mapa Leaflet interactivo si existen coordenadas -->
+            <div th:if="${incidencia.latitud != null && incidencia.longitud != null}">
+                <div id="mapaIncidencia" class="w-full h-80 rounded-xl border border-slate-700/80 overflow-hidden shadow-inner"></div>
+            </div>
+            <div th:unless="${incidencia.latitud != null && incidencia.longitud != null}" class="p-8 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                <i data-lucide="map-pin-off" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm">Esta incidencia no cuenta con coordenadas numéricas exactas registradas.</p>
+                <p class="text-xs text-slate-600 mt-1">La localización se basa en la referencia descriptiva y la sectorización asignada.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PESTAÑA 3: DOCUMENTOS Y ADJUNTOS -->
+    <div id="tab-documentos" class="pestana-panel hidden space-y-6">
+        <!-- Formulario para subir archivo -->
+        <div sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_ADJUNTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+             th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+             class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+            <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <i data-lucide="upload" class="w-4 h-4 text-blue-400"></i> Adjuntar Documento o Registro Fotográfico
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/adjuntos(id=${incidencia.id})}"
+                  method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Seleccionar Archivo (PDF, PNG, JPG, DOCX)</label>
+                    <input type="file" name="archivo" required
+                           class="w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Descripción / Asunto</label>
+                    <input type="text" name="descripcion" placeholder="Ej. Acta de constatación"
+                           class="w-full px-3 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                        <input type="checkbox" name="esFotografia" value="true" class="w-3.5 h-3.5 text-blue-600 rounded bg-slate-900 border-slate-700"/>
+                        <span>Es Fotografía</span>
+                    </label>
+                    <button type="submit" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition shadow flex items-center gap-1">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Subir
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Listado de Documentos -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 bg-slate-900/60 border-b border-slate-700/60">
+                <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    <i data-lucide="file" class="w-4 h-4 text-emerald-400"></i> Archivos Vinculados a la Incidencia
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-900/80 border-b border-slate-700/70 text-slate-400 uppercase tracking-wider">
+                            <th class="py-2.5 px-4">Archivo / Descripción</th>
+                            <th class="py-2.5 px-4">Tipo MIME</th>
+                            <th class="py-2.5 px-4">Tamaño</th>
+                            <th class="py-2.5 px-4">Hash Integridad (SHA-256)</th>
+                            <th class="py-2.5 px-4">Subido Por</th>
+                            <th class="py-2.5 px-4">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50">
+                        <tr th:if="${incidencia.documentos == null || incidencia.documentos.empty}">
+                            <td colspan="6" class="py-8 text-center text-slate-500">
+                                No se registran documentos ni fotografías adjuntas para esta incidencia.
+                            </td>
+                        </tr>
+                        <tr th:each="doc : ${incidencia.documentos}" class="hover:bg-slate-800/40">
+                            <td class="py-2.5 px-4">
+                                <div class="flex items-center gap-2">
+                                    <i th:if="${doc.esFotografia}" data-lucide="image" class="w-4 h-4 text-purple-400"></i>
+                                    <i th:unless="${doc.esFotografia}" data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                                    <div>
+                                        <p class="font-medium text-slate-200" th:text="${doc.nombreArchivo}">archivo.pdf</p>
+                                        <p th:if="${doc.descripcion != null}" class="text-[11px] text-slate-400" th:text="${doc.descripcion}">descripción</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-2.5 px-4 text-slate-400 font-mono" th:text="${doc.tipoMime}">application/pdf</td>
+                            <td class="py-2.5 px-4 text-slate-300" th:text="${#numbers.formatDecimal(doc.tamanoBytes / 1024.0, 1, 1) + ' KB'}">120 KB</td>
+                            <td class="py-2.5 px-4 font-mono text-[10px] text-slate-400" th:text="${doc.hashSha256}">hash</td>
+                            <td class="py-2.5 px-4 text-slate-300" th:text="${doc.usuarioNombre}">Admin</td>
+                            <td class="py-2.5 px-4 text-slate-400" th:text="${#temporals.format(doc.createdAt, 'dd/MM/yyyy HH:mm')}">25/10/2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PESTAÑA 4: SEGUIMIENTO ADMINISTRATIVO Y NOTAS -->
+    <div id="tab-comentarios" class="pestana-panel hidden space-y-6">
+        <!-- Formulario para agregar nota -->
+        <div sec:authorize="hasAnyAuthority('SERENAZGO_INCIDENCIAS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+             th:if="${incidencia.estado.name() != 'CERRADA' && incidencia.estado.name() != 'DESCARTADA'}"
+             class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-3">
+            <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-blue-400"></i> Agregar Nota o Comentario Administrativo
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/comentarios(id=${incidencia.id})}" method="post" class="space-y-3">
+                <textarea name="comentario" rows="2" required placeholder="Escriba una actualización o seguimiento administrativo..."
+                          class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                        <input type="checkbox" name="esInterno" value="true" checked class="w-3.5 h-3.5 text-blue-600 rounded bg-slate-900 border-slate-700"/>
+                        <span>Nota de uso interno exclusivamente</span>
+                    </label>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition shadow flex items-center gap-1.5">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i> Publicar Nota
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Timeline de Notas Internas -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i> Bitácora de Seguimiento
+            </h3>
+
+            <div th:if="${incidencia.comentarios == null || incidencia.comentarios.empty}" class="py-6 text-center text-slate-500 text-xs">
+                No existen notas ni comentarios administrativos registrados.
+            </div>
+
+            <div th:unless="${incidencia.comentarios == null || incidencia.comentarios.empty}" class="space-y-3">
+                <div th:each="c : ${incidencia.comentarios}" class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/40 space-y-1.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 font-medium text-slate-300">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span th:text="${c.usuarioNombre}">Usuario</span>
+                            <span th:if="${c.esInterno}" class="px-1.5 py-0.5 text-[10px] bg-purple-950/70 text-purple-300 rounded border border-purple-800/50">INTERNO</span>
+                        </div>
+                        <span class="text-slate-500" th:text="${#temporals.format(c.createdAt, 'dd/MM/yyyy HH:mm:ss')}">25/10/2026 11:00</span>
+                    </div>
+                    <p class="text-slate-200 whitespace-pre-line text-sm" th:text="${c.comentario}">Texto de la nota...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PESTAÑA 5: HISTORIAL Y LÍNEA DE TIEMPO -->
+    <div id="tab-historial" class="pestana-panel hidden space-y-6">
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="history" class="w-4 h-4 text-blue-400"></i> Historial Inmutable de Transiciones y Eventos
+            </h3>
+
+            <div class="relative pl-6 border-l-2 border-slate-700 space-y-6">
+                <div th:each="h : ${incidencia.historial}" class="relative">
+                    <!-- Icono / Punto del timeline -->
+                    <div class="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-blue-600 border-2 border-slate-900"></div>
+
+                    <div class="bg-slate-900/70 border border-slate-700/50 rounded-lg p-3 text-xs space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-blue-400" th:text="${h.tipoEventoDesc}">CAMBIO DE ESTADO</span>
+                            <span class="text-slate-500" th:text="${#temporals.format(h.createdAt, 'dd/MM/yyyy HH:mm:ss')}">25/10/2026</span>
+                        </div>
+                        <p class="text-slate-200" th:text="${h.motivo}">Motivo de la transición...</p>
+                        <div class="flex items-center gap-4 text-slate-400 pt-1 text-[11px] border-t border-slate-800">
+                            <span th:if="${h.estadoNuevo != null}">
+                                Estado: <strong class="text-slate-300" th:text="${h.estadoAnterior} + ' → ' + ${h.estadoNuevo}">REGISTRADA → EN_EVALUACION</strong>
+                            </span>
+                            <span th:if="${h.prioridadNueva != null}">
+                                Prioridad: <strong class="text-slate-300" th:text="${h.prioridadAnterior} + ' → ' + ${h.prioridadNueva}">MEDIA → ALTA</strong>
+                            </span>
+                            <span class="ml-auto text-slate-500">Operador: <span class="text-slate-400" th:text="${h.usuarioNombre}">Admin</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALES DE CONTROL OPERATIVO                                          -->
+    <!-- ===================================================================== -->
+
+    <!-- Modal 1: Cambiar Estado -->
+    <div id="modalEstado" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-400"></i> Transición de Estado
+                </h3>
+                <button onclick="cerrarModal('modalEstado')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/estado(id=${incidencia.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Estado Actual</label>
+                    <input type="text" th:value="${incidencia.estadoDesc}" disabled
+                           class="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo Estado <span class="text-rose-400">*</span></label>
+                    <select name="nuevoEstado" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="est : ${estados}"
+                                th:if="${est.name() != 'CERRADA' && est.name() != 'DESCARTADA'}"
+                                th:value="${est}"
+                                th:text="${est.descripcion}">Estado</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de la Transición <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Justifique el cambio de estado según los hechos constatados..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalEstado')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg shadow">Confirmar Transición</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Modificar Prioridad -->
+    <div id="modalPrioridad" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="chevrons-up-down" class="w-4 h-4 text-amber-400"></i> Modificar Prioridad Administrativa
+                </h3>
+                <button onclick="cerrarModal('modalPrioridad')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/prioridad(id=${incidencia.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Prioridad Actual</label>
+                    <input type="text" th:value="${incidencia.prioridadDesc}" disabled
+                           class="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nueva Prioridad <span class="text-rose-400">*</span></label>
+                    <select name="nuevaPrioridad" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="prio : ${prioridades}"
+                                th:value="${prio}"
+                                th:text="${prio.descripcion}">Prioridad</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Justificación Técnica <span class="text-rose-400">*</span></label>
+                    <textarea name="justificacion" rows="3" required placeholder="Fundamente el criterio de priorización o reclasificación..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalPrioridad')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-lg shadow">Actualizar Prioridad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Cierre Administrativo -->
+    <div id="modalCierre" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-semibold text-emerald-400 flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Cierre Administrativo
+                </h3>
+                <button onclick="cerrarModal('modalCierre')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/cerrar(id=${incidencia.id})}" method="post" class="space-y-4">
+                <p class="text-xs text-slate-300">
+                    El cierre administrativo concluye el registro institucional en Serenazgo. No implica resolución judicial ni penal.
+                </p>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de Cierre <span class="text-rose-400">*</span></label>
+                    <textarea name="motivoCierre" rows="3" required placeholder="Detalle los motivos y actuaciones previas que fundamentan el cierre..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Conclusiones Finales (Opcional)</label>
+                    <textarea name="conclusiones" rows="2" placeholder="Resumen o recomendaciones operativas..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalCierre')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg shadow">Confirmar Cierre</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Descartar Incidencia -->
+    <div id="modalDescarte" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] border border-rose-800 rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-semibold text-rose-400 flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Descartar Registro
+                </h3>
+                <button onclick="cerrarModal('modalDescarte')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form th:action="@{/dashboard/serenazgo/incidencias/{id}/descartar(id=${incidencia.id})}" method="post" class="space-y-4">
+                <p class="text-xs text-rose-200/90">
+                    Esta acción descartará el reporte por improcedencia, falsedad o duplicidad. La información se mantendrá en auditoría histórica.
+                </p>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo de Descarte <span class="text-rose-400">*</span></label>
+                    <textarea name="motivoDescarte" rows="3" required placeholder="Explique la causal de descarte (ej. llamada falsa, reporte improcedente)..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModal('modalDescarte')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded-lg shadow">Confirmar Descarte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        function cambiarPestana(idTab) {
+            document.querySelectorAll('.pestana-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const panel = document.getElementById(idTab);
+            const btn = document.getElementById('btn-' + idTab);
+            if (panel) panel.classList.remove('hidden');
+            if (btn) {
+                btn.classList.add('border-blue-500', 'text-blue-400');
+                btn.classList.remove('border-transparent', 'text-slate-400');
+            }
+
+            if (idTab === 'tab-ubicacion' && window.mapaLeaflet) {
+                setTimeout(() => window.mapaLeaflet.invalidateSize(), 200);
+            }
+        }
+
+        function abrirModalEstado() { document.getElementById('modalEstado').classList.remove('hidden'); }
+        function abrirModalPrioridad() { document.getElementById('modalPrioridad').classList.remove('hidden'); }
+        function abrirModalCierre() { document.getElementById('modalCierre').classList.remove('hidden'); }
+        function abrirModalDescarte() { document.getElementById('modalDescarte').classList.remove('hidden'); }
+        function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            const lat = /*[[${incidencia.latitud}]]*/ null;
+            const lng = /*[[${incidencia.longitud}]]*/ null;
+            const codigo = /*[[${incidencia.codigo}]]*/ 'Incidencia';
+
+            if (lat && lng && document.getElementById('mapaIncidencia')) {
+                const map = L.map('mapaIncidencia').setView([lat, lng], 16);
+                window.mapaLeaflet = map;
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+
+                const marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup(`<strong>${codigo}</strong><br>Ubicación reportada`).openPopup();
+            }
+        });
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     1. COMPONENTE STATUS BADGE (Estados de expedientes, mercados, serenazgo, tributos)
+     ========================================================================== -->
+<span th:fragment="statusBadge(estado)"
+      class="sigm-badge"
+      th:with="est=${estado != null ? estado.toString().toUpperCase() : 'REGISTRADO'}"
+      th:classappend="${est == 'ACTIVO' or est == 'EXITO' or est == 'ÉXITO' or est == 'VIGENTE' or est == 'RESUELTO' or est == 'RESUELTA' or est == 'PAGADO' or est == 'DISPONIBLE' or est == 'VERIFICADO' or est == 'EN_SUBSANACION' or est == 'ATENDIDA'} ? 'sigm-badge--success' :
+                      (${est == 'PENDIENTE' or est == 'ALERTA' or est == 'PRESENTADO' or est == 'OBSERVADO' or est == 'SUSPENDIDO' or est == 'POR_VENCER'} ? 'sigm-badge--warning' :
+                      (${est == 'INACTIVO' or est == 'FALLO' or est == 'ANULADO' or est == 'RECHAZADO' or est == 'VENCIDO' or est == 'CANCELADO' or est == 'CRITICA'} ? 'sigm-badge--danger' :
+                      (${est == 'ARCHIVADO' or est == 'CERRADO' or est == 'BORRADOR'} ? 'sigm-badge--neutral' : 'sigm-badge--info')))"
+      th:text="${#strings.replace(est, '_', ' ')}">
+    ESTADO
+</span>
+
+<!-- ==========================================================================
+     2. COMPONENTE PRIORITY BADGE (Prioridad URGENTE, ALTA, NORMAL, BAJA)
+     ========================================================================== -->
+<span th:fragment="priorityBadge(prioridad)"
+      class="sigm-badge"
+      th:with="prio=${prioridad != null ? prioridad.toString().toUpperCase() : 'NORMAL'}"
+      th:classappend="${prio == 'URGENTE' or prio == 'CRITICA' or prio == 'EMERGENCIA'} ? 'sigm-badge--danger' :
+                      (${prio == 'ALTA'} ? 'sigm-badge--warning' : 'sigm-badge--neutral')">
+    <span th:if="${prio == 'URGENTE' or prio == 'CRITICA'}" class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+    <span th:text="${prio}">NORMAL</span>
+</span>
+
+</body>
+</html>
+

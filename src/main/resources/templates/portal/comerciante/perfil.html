@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mi Perfil y Datos de Contacto</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Mi Perfil Comercial</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Información del registro oficial en el padrón de mercados municipales de Quinua.
+        </p>
+    </div>
+
+    <!-- Tarjeta de Datos Registrales Inmutables -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i data-lucide="shield" class="w-4 h-4 text-blue-600"></i> Datos Oficiales Registrados
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Titular / Razón Social</span>
+                <p class="text-sm font-bold text-slate-900 mt-1" th:text="${perfil.nombreOTitular}">-</p>
+            </div>
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Código de Registro</span>
+                <p class="text-sm font-mono font-bold text-blue-700 mt-1" th:text="${perfil.codigoComerciante}">-</p>
+            </div>
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo de Comerciante</span>
+                <p class="text-sm font-semibold text-slate-800 mt-1" th:text="${perfil.tipoComerciante}">-</p>
+            </div>
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Documento de Identidad</span>
+                <p class="text-sm font-mono text-slate-700 mt-1" th:text="${perfil.tipoDocumento + ': ' + perfil.numeroDocumentoEnmascarado}">-</p>
+            </div>
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado de Registro</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mt-1 bg-emerald-100 text-emerald-800" th:text="${perfil.estado}">ACTIVO</span>
+            </div>
+            <div>
+                <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Vínculo Actual</span>
+                <p class="text-sm font-semibold text-slate-700 mt-1" th:text="${perfil.tipoVinculo}">TITULAR</p>
+            </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-slate-400 shrink-0"></i>
+            <span>Por motivos de seguridad y validez registral, los datos de identidad civil y titularidad solo pueden modificarse de forma presencial ante la Subgerencia de Comercialización y Mercados.</span>
+        </div>
+    </div>
+
+    <!-- Formulario de Actualización de Contacto Autorizado -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+            <i data-lucide="phone-call" class="w-4 h-4 text-blue-600"></i> Actualización de Datos de Contacto
+        </h2>
+        <p class="text-xs text-slate-500 mb-6">Mantenga sus datos actualizados para recibir notificaciones sobre vigencias y trámites.</p>
+
+        <div id="alertSuccess" class="hidden mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-800 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <span>Datos de contacto actualizados correctamente.</span>
+        </div>
+        <div id="alertError" class="hidden mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs font-medium text-rose-800 flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-600"></i>
+            <span id="errorMessage">Error al guardar los datos.</span>
+        </div>
+
+        <form id="formContacto" onsubmit="guardarContacto(event)" class="space-y-4 max-w-xl">
+            <div>
+                <label for="telefono" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Teléfono o Celular de Contacto</label>
+                <input type="tel" id="telefono" name="telefono" th:value="${perfil.telefono}" required maxlength="15" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label for="email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Correo Electrónico para Avisos</label>
+                <input type="email" id="email" name="email" th:value="${perfil.email}" required maxlength="150" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label for="direccion" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Dirección de Contacto / Domicilio Actual</label>
+                <input type="text" id="direccion" name="direccion" th:value="${perfil.direccion}" maxlength="250" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" id="btnGuardar" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+                    <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        function guardarContacto(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuardar');
+            const alertSuccess = document.getElementById('alertSuccess');
+            const alertError = document.getElementById('alertError');
+            const errorMsg = document.getElementById('errorMessage');
+
+            alertSuccess.classList.add('hidden');
+            alertError.classList.add('hidden');
+            btn.disabled = true;
+
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+            const payload = {
+                telefono: document.getElementById('telefono').value,
+                email: document.getElementById('email').value,
+                direccion: document.getElementById('direccion').value
+            };
+
+            fetch('/api/portal/comerciante/perfil/contacto', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(payload)
+            }).then(async res => {
+                btn.disabled = false;
+                if (res.ok) {
+                    alertSuccess.classList.remove('hidden');
+                    if (window.lucide) lucide.createIcons();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    errorMsg.innerText = data.message || 'No se pudo actualizar los datos.';
+                    alertError.classList.remove('hidden');
+                    if (window.lucide) lucide.createIcons();
+                }
+            }).catch(() => {
+                btn.disabled = false;
+                errorMsg.innerText = 'Error de comunicación con el servidor.';
+                alertError.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Modal de Cambio de Estado Físico y Operativo -->
+<div th:fragment="modalEstadoPuesto" id="modalEstadoPuesto" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#1e293b] border border-[#202c3d] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-[#e2e8f0]">
+        <div class="flex items-center justify-between pb-4 border-b border-[#202c3d]">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h3 class="text-base font-bold text-white">Modificar Estado del Puesto</h3>
+            </div>
+            <button type="button" onclick="cerrarModalEstado()" class="text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form id="formCambiarEstadoPuesto" class="mt-4 space-y-4">
+            <input type="hidden" id="modalPuestoId" />
+            <input type="hidden" id="modalMercadoId" th:value="${mercado.id}" />
+
+            <div>
+                <span class="text-xs text-slate-400 font-medium">Puesto seleccionado:</span>
+                <span id="modalPuestoCodigo" class="text-sm font-bold text-blue-400 ml-1"></span>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Estado Físico (Estructura/Espacio)</label>
+                <select id="modalNuevoEstadoFisico" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                    <option value="OPERATIVO">OPERATIVO — En óptimas condiciones</option>
+                    <option value="EN_MANTENIMIENTO">EN MANTENIMIENTO — Bajo reparación o refacción</option>
+                    <option value="INHABILITADO">INHABILITADO — No apto para operación</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Estado Operativo (Disponibilidad)</label>
+                <select id="modalNuevoEstadoOperativo" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500">
+                    <option value="DISPONIBLE">DISPONIBLE — Apto para nueva asignación</option>
+                    <option value="OCUPADO">OCUPADO — Con comerciante asignado</option>
+                    <option value="RESERVADO">RESERVADO — En proceso administrativo</option>
+                    <option value="NO_ASIGNABLE">NO ASIGNABLE — Restricción administrativa</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-xs font-semibold text-slate-300">Justificación Técnica / Motivo *</label>
+                    <span id="charCountMotivo" class="text-xs text-slate-500">0/500</span>
+                </div>
+                <textarea id="modalMotivo" rows="3" required minlength="5" maxlength="500" placeholder="Detalle el motivo técnico de la modificación..."
+                          class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-blue-500 transition-colors"></textarea>
+                <p class="text-xs text-slate-500 mt-1">Este registro quedará registrado en la auditoría inmutable de PostgreSQL.</p>
+            </div>
+
+            <div id="modalEstadoAlerta" class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400"></div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#202c3d]">
+                <button type="button" onclick="cerrarModalEstado()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" id="btnGuardarEstado" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5">
+                    Confirmar Cambio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

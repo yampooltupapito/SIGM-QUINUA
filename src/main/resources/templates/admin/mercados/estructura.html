@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Estructura Jerárquica — ' + ${mercado.nombre} + ' | SIGM-QUINUA'">Estructura Jerárquica | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Módulos Municipales</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{'/dashboard/mercados/' + ${mercado.id}}" th:text="${mercado.nombre}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercado</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Estructura Jerárquica</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="git-merge" class="w-6 h-6 text-emerald-400"></i>
+                <span th:text="'Organización Física: ' + ${mercado.nombre}">Estructura Jerárquica</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Visualización de jerarquías: Mercado &rarr; Sectores &rarr; Pabellones &rarr; Puestos Comerciales y Zonas.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button type="button" id="btnExpandirTodo"
+                    class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="chevrons-down" class="w-4 h-4 text-blue-400"></i>
+                <span>Expandir Todo</span>
+            </button>
+
+            <button type="button" id="btnColapsarTodo"
+                    class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="chevrons-up" class="w-4 h-4 text-slate-400"></i>
+                <span>Colapsar Todo</span>
+            </button>
+
+            <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/sectores'}"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-amber-400"></i>
+                <span>Gestión Sectores</span>
+            </a>
+
+            <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones'}"
+               class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="building" class="w-4 h-4 text-blue-400"></i>
+                <span>Gestión Pabellones</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Reales (Sin duplicados) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Sectores -->
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center justify-between">
+            <div class="space-y-1">
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sectores</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold text-white" th:text="${estadisticas.totalSectores}">0</span>
+                    <span class="text-xs text-emerald-400 font-semibold" th:text="${estadisticas.sectoresActivos} + ' activos'">0 activos</span>
+                </div>
+                <p class="text-[10px] text-slate-500" th:text="${estadisticas.sectoresInactivos} + ' inactivos o susp.'">0 inactivos</p>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Pabellones -->
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center justify-between">
+            <div class="space-y-1">
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Pabellones</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold text-white" th:text="${estadisticas.totalPabellones}">0</span>
+                    <span class="text-xs text-emerald-400 font-semibold" th:text="${estadisticas.pabellonesActivos} + ' activos'">0 activos</span>
+                </div>
+                <p class="text-[10px] text-slate-500" th:text="${estadisticas.pabellonesInactivos} + ' inactivos o susp.'">0 inactivos</p>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i data-lucide="building" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Puestos Totales -->
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center justify-between">
+            <div class="space-y-1">
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Puestos Comerciales</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold text-white" th:text="${estadisticas.totalPuestos}">0</span>
+                    <span class="text-xs text-blue-400 font-semibold" th:text="${estadisticas.puestosOcupados} + ' ocupados'">0 ocupados</span>
+                </div>
+                <p class="text-[10px] text-emerald-400 font-semibold" th:text="${estadisticas.puestosDisponibles} + ' disponibles'">0 disponibles</p>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i data-lucide="store" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Zonas Comerciales y Comunes -->
+        <div class="card p-4 rounded-2xl bg-card border border-theme flex items-center justify-between">
+            <div class="space-y-1">
+                <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Zonas Físicas</p>
+                <div class="flex items-baseline space-x-2">
+                    <span class="text-2xl font-bold text-white" th:text="${estadisticas.totalZonas}">0</span>
+                    <span class="text-xs text-amber-400 font-semibold" th:text="${estadisticas.zonasAsignables} + ' asignables'">0 asignables</span>
+                </div>
+                <p class="text-[10px] text-slate-400" th:text="${estadisticas.zonasComunes} + ' áreas comunes'">0 comunes</p>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <i data-lucide="map" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Búsqueda Rápida en el Árbol -->
+    <div class="card p-3 rounded-2xl bg-card border border-theme flex items-center space-x-3">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+        <input type="text" id="filtroArbol"
+               placeholder="Filtrar por nombre o código de sector, pabellón o puesto en el árbol..."
+               class="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none">
+        <span class="text-[11px] text-slate-500 hidden sm:inline">Visualización en cascada</span>
+    </div>
+
+    <!-- Contenedor del Árbol Jerárquico -->
+    <div class="space-y-4" id="contenedorArbol">
+
+        <!-- 1. SECTORES COMERCIALES -->
+        <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2 px-1">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-blue-400"></i>
+                <span>Sectores Comerciales (<span th:text="${#lists.size(estructura.sectores)}">0</span>)</span>
+            </h3>
+
+            <div th:if="${#lists.isEmpty(estructura.sectores)}" class="card p-8 rounded-2xl bg-card border border-theme text-center text-slate-500 text-xs">
+                No hay sectores comerciales registrados en este mercado.
+            </div>
+
+            <!-- Iteración de Sectores -->
+            <div th:each="secNodo : ${estructura.sectores}" class="nodo-arbol card rounded-2xl bg-card border border-theme overflow-hidden shadow-lg transition-all"
+                 th:data-search="${secNodo.sector.codigo + ' ' + secNodo.sector.nombre + ' ' + secNodo.sector.categoriaComercial}">
+
+                <!-- Encabezado del Sector -->
+                <div class="p-4 bg-slate-900/60 border-b border-theme/60 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer toggle-nodo"
+                     data-target-id="contenido-sector-${secNodo.sector.id}"
+                     th:attr="data-target-id='contenido-sector-' + ${secNodo.sector.id}">
+
+                    <div class="flex items-center space-x-3">
+                        <button type="button" class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center transition-transform nodo-chevron">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+
+                        <div class="flex items-center space-x-2.5">
+                            <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-blue-400 border border-slate-700"
+                                  th:text="${secNodo.sector.codigo}">SEC-01</span>
+                            <span class="text-sm font-bold text-white" th:text="${secNodo.sector.nombre}">Sector Comidas</span>
+                        </div>
+
+                        <span th:if="${secNodo.sector.categoriaComercial != null}"
+                              class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                              th:text="${secNodo.sector.categoriaComercial}">Gastronomía</span>
+
+                        <span th:if="${secNodo.sector.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400">ACTIVO</span>
+                        <span th:unless="${secNodo.sector.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-500/10 text-slate-400" th:text="${secNodo.sector.estado}">INACTIVO</span>
+                    </div>
+
+                    <div class="flex items-center space-x-4 text-xs text-slate-400 pl-9 md:pl-0">
+                        <span>Pabellones: <strong class="text-white" th:text="${#lists.size(secNodo.pabellones)}">0</strong></span>
+                        <span>Puestos directos: <strong class="text-white" th:text="${#lists.size(secNodo.puestosDirectos)}">0</strong></span>
+                        <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/sectores/' + ${secNodo.sector.id}}"
+                           class="text-blue-400 hover:text-blue-300 font-semibold flex items-center space-x-1"
+                           onclick="event.stopPropagation();">
+                            <span>Ver Sector</span>
+                            <i data-lucide="external-link" class="w-3 h-3"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Contenido del Sector (Pabellones y Puestos Directos) -->
+                <div th:id="'contenido-sector-' + ${secNodo.sector.id}" class="p-4 space-y-4 bg-slate-950/20">
+
+                    <!-- Pabellones del Sector -->
+                    <div th:if="${not #lists.isEmpty(secNodo.pabellones)}" class="space-y-3">
+                        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2 flex items-center space-x-1.5">
+                            <i data-lucide="building" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>Pabellones en este sector</span>
+                        </div>
+
+                        <!-- Iteración de Pabellones en Sector -->
+                        <div th:each="pabNodo : ${secNodo.pabellones}" class="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-3"
+                             th:data-search="${pabNodo.pabellon.codigo + ' ' + pabNodo.pabellon.nombre}">
+
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="font-mono text-xs font-bold text-slate-300" th:text="${pabNodo.pabellon.codigo}">PAB-A</span>
+                                    <span class="text-xs font-semibold text-white" th:text="${pabNodo.pabellon.nombre}">Galería Sur</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400" th:text="'Piso ' + ${pabNodo.pabellon.nivel}">Piso 1</span>
+                                    <span th:if="${pabNodo.pabellon.estado == 'ACTIVO'}" class="text-[10px] text-emerald-400 font-bold">&bull; Activo</span>
+                                    <span th:unless="${pabNodo.pabellon.estado == 'ACTIVO'}" class="text-[10px] text-slate-400" th:text="'&bull; ' + ${pabNodo.pabellon.estado}">&bull; Inactivo</span>
+                                </div>
+                                <div class="flex items-center space-x-3 text-xs text-slate-400">
+                                    <span>Puestos: <strong class="text-white" th:text="${#lists.size(pabNodo.puestos)}">0</strong></span>
+                                    <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones/' + ${pabNodo.pabellon.id}}"
+                                       class="text-blue-400 hover:text-blue-300 font-semibold text-[11px]">Ver Pabellón</a>
+                                </div>
+                            </div>
+
+                            <!-- Grilla de Puestos en este Pabellón -->
+                            <div th:if="${not #lists.isEmpty(pabNodo.puestos)}" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pt-1">
+                                <div th:each="pto : ${pabNodo.puestos}"
+                                     class="p-2 rounded-lg bg-slate-950 border border-slate-800/80 text-center space-y-1 hover:border-blue-500/50 transition-colors"
+                                     th:data-search="${pto.codigo + ' ' + pto.numero}">
+                                    <div class="font-mono text-[11px] font-bold text-white truncate" th:text="${pto.codigo}">P-01</div>
+                                    <div class="text-[10px] text-slate-400 truncate" th:text="'N° ' + ${pto.numero}">N° 1</div>
+                                    <div>
+                                        <span th:if="${pto.estado == 'DISPONIBLE'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400">DISP</span>
+                                        <span th:if="${pto.estado == 'OCUPADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-500/10 text-blue-400">OCUP</span>
+                                        <span th:if="${pto.estado == 'RESERVADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400">RESV</span>
+                                        <span th:if="${pto.estado == 'MANTENIMIENTO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-rose-500/10 text-rose-400">MANT</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(pabNodo.puestos)}" class="text-[11px] text-slate-500 italic py-1">
+                                Sin puestos vinculados a este pabellón.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Puestos Directos del Sector -->
+                    <div th:if="${not #lists.isEmpty(secNodo.puestosDirectos)}" class="p-3.5 rounded-xl bg-slate-900/30 border border-slate-800/60 space-y-2">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i data-lucide="store" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Puestos directos del sector (sin pabellón)</span>
+                            <span class="text-white" th:text="'(' + ${#lists.size(secNodo.puestosDirectos)} + ')'">(0)</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pt-1">
+                            <div th:each="pto : ${secNodo.puestosDirectos}"
+                                 class="p-2 rounded-lg bg-slate-950 border border-slate-800/80 text-center space-y-1 hover:border-amber-500/50 transition-colors"
+                                 th:data-search="${pto.codigo + ' ' + pto.numero}">
+                                <div class="font-mono text-[11px] font-bold text-white truncate" th:text="${pto.codigo}">P-01</div>
+                                <div class="text-[10px] text-slate-400 truncate" th:text="'N° ' + ${pto.numero}">N° 1</div>
+                                <div>
+                                    <span th:if="${pto.estado == 'DISPONIBLE'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400">DISP</span>
+                                    <span th:if="${pto.estado == 'OCUPADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-500/10 text-blue-400">OCUP</span>
+                                    <span th:if="${pto.estado == 'RESERVADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400">RESV</span>
+                                    <span th:if="${pto.estado == 'MANTENIMIENTO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-rose-500/10 text-rose-400">MANT</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(secNodo.pabellones) and #lists.isEmpty(secNodo.puestosDirectos)}"
+                         class="text-xs text-slate-500 italic py-2 pl-2">
+                        Este sector aún no tiene pabellones ni puestos vinculados.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PABELLONES INDEPENDIENTES (Sin Sector) -->
+        <div th:if="${not #lists.isEmpty(estructura.pabellonesSinSector)}" class="space-y-3 pt-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2 px-1">
+                <i data-lucide="building" class="w-4 h-4 text-indigo-400"></i>
+                <span>Pabellones Independientes (Sin Sector Asignado) (<span th:text="${#lists.size(estructura.pabellonesSinSector)}">0</span>)</span>
+            </h3>
+
+            <div th:each="pabNodo : ${estructura.pabellonesSinSector}" class="nodo-arbol card rounded-2xl bg-card border border-theme overflow-hidden shadow-lg"
+                 th:data-search="${pabNodo.pabellon.codigo + ' ' + pabNodo.pabellon.nombre}">
+
+                <div class="p-4 bg-slate-900/60 border-b border-theme/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-indigo-400 border border-slate-700"
+                              th:text="${pabNodo.pabellon.codigo}">PAB-IND</span>
+                        <span class="text-sm font-bold text-white" th:text="${pabNodo.pabellon.nombre}">Pabellón Sin Sector</span>
+                        <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold" th:text="'Piso ' + ${pabNodo.pabellon.nivel}">Piso 1</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs text-slate-400">
+                        <span>Puestos: <strong class="text-white" th:text="${#lists.size(pabNodo.puestos)}">0</strong></span>
+                        <a th:href="@{'/dashboard/mercados/' + ${mercado.id} + '/pabellones/' + ${pabNodo.pabellon.id}}"
+                           class="text-blue-400 hover:text-blue-300 font-semibold">Ver Pabellón</a>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-950/20">
+                    <div th:if="${not #lists.isEmpty(pabNodo.puestos)}" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        <div th:each="pto : ${pabNodo.puestos}"
+                             class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-center space-y-1"
+                             th:data-search="${pto.codigo + ' ' + pto.numero}">
+                            <div class="font-mono text-[11px] font-bold text-white truncate" th:text="${pto.codigo}">P-01</div>
+                            <div class="text-[10px] text-slate-400 truncate" th:text="'N° ' + ${pto.numero}">N° 1</div>
+                            <div>
+                                <span th:if="${pto.estado == 'DISPONIBLE'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400">DISP</span>
+                                <span th:if="${pto.estado == 'OCUPADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-500/10 text-blue-400">OCUP</span>
+                                <span th:if="${pto.estado == 'RESERVADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400">RESV</span>
+                                <span th:if="${pto.estado == 'MANTENIMIENTO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-rose-500/10 text-rose-400">MANT</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(pabNodo.puestos)}" class="text-xs text-slate-500 italic">
+                        Sin puestos vinculados a este pabellón independiente.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. PUESTOS DIRECTOS DEL MERCADO -->
+        <div th:if="${not #lists.isEmpty(estructura.puestosDirectos)}" class="space-y-3 pt-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2 px-1">
+                <i data-lucide="store" class="w-4 h-4 text-emerald-400"></i>
+                <span>Puestos Directos del Mercado (Sin Sector ni Pabellón) (<span th:text="${#lists.size(estructura.puestosDirectos)}">0</span>)</span>
+            </h3>
+
+            <div class="card p-4 rounded-2xl bg-card border border-theme shadow-lg">
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                    <div th:each="pto : ${estructura.puestosDirectos}"
+                         class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-center space-y-1"
+                         th:data-search="${pto.codigo + ' ' + pto.numero}">
+                        <div class="font-mono text-[11px] font-bold text-white truncate" th:text="${pto.codigo}">P-01</div>
+                        <div class="text-[10px] text-slate-400 truncate" th:text="'N° ' + ${pto.numero}">N° 1</div>
+                        <div>
+                            <span th:if="${pto.estado == 'DISPONIBLE'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400">DISP</span>
+                            <span th:if="${pto.estado == 'OCUPADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-500/10 text-blue-400">OCUP</span>
+                            <span th:if="${pto.estado == 'RESERVADO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400">RESV</span>
+                            <span th:if="${pto.estado == 'MANTENIMIENTO'}" class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-rose-500/10 text-rose-400">MANT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ZONAS COMERCIALES Y ÁREAS COMUNES -->
+        <div class="space-y-3 pt-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2 px-1">
+                <i data-lucide="map" class="w-4 h-4 text-amber-400"></i>
+                <span>Zonas Físicas y Áreas Comunes (<span th:text="${#lists.size(estructura.zonas)}">0</span>)</span>
+            </h3>
+
+            <div th:if="${#lists.isEmpty(estructura.zonas)}" class="card p-6 rounded-2xl bg-card border border-theme text-center text-slate-500 text-xs">
+                No hay zonas registradas para este mercado.
+            </div>
+
+            <div th:unless="${#lists.isEmpty(estructura.zonas)}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div th:each="zona : ${estructura.zonas}"
+                     class="card p-3.5 rounded-xl bg-card border border-theme space-y-2 hover:border-slate-600 transition-colors"
+                     th:data-search="${zona.codigo + ' ' + zona.nombre + ' ' + zona.tipoZona}">
+
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono text-xs font-bold text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700"
+                              th:text="${zona.codigo}">ZON-01</span>
+                        <span th:if="${zona.esAsignable}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Asignable</span>
+                        <span th:unless="${zona.esAsignable}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">Área Común</span>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-bold text-white" th:text="${zona.nombre}">Zona de Carga</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5 truncate" th:text="${zona.descripcion != null ? zona.descripcion : 'Sin descripción.'}">Acceso de camiones</div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800 pt-2">
+                        <span th:text="${zona.tipoZonaDescripcion}">Servicios Comunes</span>
+                        <span class="font-mono text-slate-400" th:text="'Orden: ' + ${zona.ordenVisual}">Orden: 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-estructura.js}"></script>
+</th:block>
+</body>
+</html>

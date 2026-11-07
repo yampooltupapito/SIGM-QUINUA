@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${zonaId != null ? 'Editar Zona — SIGM-QUINUA' : 'Nueva Zona de Patrullaje — SIGM-QUINUA'}">Formulario de Zona</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Mensajes de Error -->
+    <div th:if="${errorMessage}" class="p-4 bg-rose-900/50 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${errorMessage}">Error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-2">
+                <a th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas')}" class="text-slate-400 hover:text-slate-200 transition">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-slate-100" th:text="${zonaId != null ? 'Editar Zona: ' + zonaCodigo : 'Registrar Nueva Zona de Patrullaje'}">
+                    Zona de Patrullaje
+                </h1>
+            </div>
+            <p class="text-sm text-slate-400 mt-1">
+                Subdivisión operativa perteneciente a un sector territorial para rondas y patrullajes de serenazgo.
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <form method="post" th:action="${zonaId != null ? '/dashboard/serenazgo/zonas/' + zonaId + '/editar' : '/dashboard/serenazgo/zonas'}"
+          th:object="${zonaForm}" class="bg-[#202c3d] rounded-xl border border-slate-700/60 p-6 space-y-6 shadow-lg">
+
+        <input th:if="${zonaId != null}" type="hidden" th:field="*{version}"/>
+
+        <!-- Grupo 1: Sector y Nomenclatura -->
+        <div>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-emerald-400 mb-4 pb-2 border-b border-slate-700 flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                Adscripción y Nomenclatura
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div th:if="${zonaId == null}">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sector Territorial <span class="text-rose-400">*</span></label>
+                    <select th:field="*{sectorId}" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="">Seleccione sector...</option>
+                        <option th:each="s : ${sectores}" th:value="${s.id}" th:text="${s.codigo} + ' - ' + ${s.nombre}"></option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('sectorId')}" th:errors="*{sectorId}" class="text-xs text-rose-400 mt-1"></p>
+                </div>
+                <div th:if="${zonaId != null}">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sector Asignado</label>
+                    <div class="px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-300 text-sm font-medium" th:text="${sectorNombre}">Sector Centro</div>
+                    <p class="text-xs text-slate-500 mt-1">Para cambiar de sector use la opción "Reasignar Sector" en la ficha técnica.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Código de Zona</label>
+                    <input type="text" th:field="*{codigo}" th:readonly="${zonaId != null}" placeholder="Ej: ZON-2026-0001 (Automático)"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm font-mono focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nombre de la Zona <span class="text-rose-400">*</span></label>
+                    <input type="text" th:field="*{nombre}" placeholder="Ej: Zona Plaza Mayor y Alrededores" required
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"/>
+                    <p th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}" class="text-xs text-rose-400 mt-1"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grupo 2: Operatividad y Prioridad -->
+        <div>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-emerald-400 mb-4 pb-2 border-b border-slate-700 flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+                Prioridad Operativa y Vigencia
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Prioridad Operativa</label>
+                    <select th:field="*{prioridadOperativa}" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500">
+                        <option th:each="p : ${prioridades}" th:value="${p}" th:text="${p.descripcion}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Inicio Vigencia</label>
+                    <input type="date" th:field="*{fechaInicioVigencia}"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Fin Vigencia</label>
+                    <input type="date" th:field="*{fechaFinVigencia}"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grupo 3: Descripción y Notas -->
+        <div>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-emerald-400 mb-4 pb-2 border-b border-slate-700 flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                Detalles Operativos
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Descripción de la Zona</label>
+                    <textarea th:field="*{descripcion}" rows="2" placeholder="Puntos viales de referencia, manzanas o pasajes comprendidos..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Observaciones</label>
+                    <textarea th:field="*{observaciones}" rows="2" placeholder="Notas sobre patrullaje a pie, zonas de iluminación deficiente..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div th:if="${zonaId == null}">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Geometría GeoJSON Inicial (Opcional)</label>
+                    <textarea th:field="*{geometriaGeojson}" rows="3" placeholder='{"type":"Polygon","coordinates":[[...]]}'
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
+            <a th:href="@{/dashboard/serenazgo/sectores(activeTab='zonas')}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition">
+                Cancelar
+            </a>
+            <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition shadow flex items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span th:text="${zonaId != null ? 'Guardar Cambios' : 'Registrar Zona'}">Guardar</span>
+            </button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

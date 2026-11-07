@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Panel de Oficina — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">Supervisión</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Jefatura de Despacho</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="layout-grid" class="w-6 h-6 text-purple-400"></i>
+                Panel de Despacho: <span class="text-purple-300" th:text="${panel.oficina.nombre}">Unidad Orgánica</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Gestión de carga laboral, asignación de trabajadores responsables y control de expedientes de la oficina.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors">
+                <i data-lucide="inbox" class="w-4 h-4"></i>
+                Derivaciones Recibidas
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Bandeja General
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores de Carga de la Oficina -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Total en Oficina</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <i data-lucide="folder" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${panel.estadisticas.totalExpedientesOficina}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Expedientes radicados</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Por Asignar</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-400">
+                    <i data-lucide="user-x" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-bold text-rose-400" th:text="${panel.estadisticas.expedientesSinResponsable}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Requieren responsable</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">En Atención</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-bold text-blue-400" th:text="${panel.estadisticas.expedientesAsignados}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Con trabajador asignado</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Servidores Activos</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-bold text-emerald-400" th:text="${panel.cargaTrabajadores.size()}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Plantel asignado</span>
+        </div>
+    </div>
+
+    <!-- Sección de Carga de Trabajo por Servidor -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+        <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+            Distribución de Carga por Trabajador
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div th:each="t : ${panel.cargaTrabajadores}"
+                 class="bg-[#101827] border border-slate-700/70 rounded-lg p-3 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-200" th:text="${t.nombreCompleto}">Nombre</p>
+                    <p class="text-[10px] text-slate-400 font-mono" th:text="${'@' + t.username}">usuario</p>
+                </div>
+                <div class="text-right">
+                    <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300" th:text="${t.totalAsignados + ' exp.'}">0 exp.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Expedientes de Oficina: Pendientes de Asignación vs En Atención -->
+    <div class="space-y-4">
+        <!-- Pendientes de Asignación -->
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+            <div class="px-4 py-3 border-b border-slate-700/70 flex items-center justify-between bg-rose-500/5">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+                    <h2 class="text-xs font-bold text-rose-300 uppercase tracking-wider">Pendientes de Asignación a Trabajador</h2>
+                </div>
+                <span class="text-xs text-rose-400 font-bold" th:text="${panel.pendientesAsignacion.size() + ' por asignar'}">0</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60 font-semibold">
+                    <tr>
+                        <th class="py-3 px-4">Número</th>
+                        <th class="py-3 px-4">Asunto / Trámite</th>
+                        <th class="py-3 px-4">Administrado</th>
+                        <th class="py-3 px-4">Fecha Radicación</th>
+                        <th class="py-3 px-4">Prioridad</th>
+                        <th class="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50">
+                    <tr th:if="${panel.pendientesAsignacion.empty}">
+                        <td colspan="6" class="py-6 text-center text-slate-500 text-xs">
+                            <i data-lucide="check-circle" class="w-6 h-6 mx-auto mb-1 text-emerald-500 opacity-60"></i>
+                            Todos los expedientes de esta oficina cuentan con trabajador asignado.
+                        </td>
+                    </tr>
+                    <tr th:each="e : ${panel.pendientesAsignacion}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${e.numeroExpediente}">MPV-2026-00001</td>
+                        <td class="py-3 px-4 max-w-xs">
+                            <p class="font-semibold text-slate-200 truncate" th:text="${e.asunto}">Asunto</p>
+                            <p class="text-[11px] text-slate-400 truncate" th:text="${e.tipoTramiteNombre}">Trámite</p>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="text-slate-200" th:text="${e.solicitanteNombreCompleto}">Administrado</span>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-400" th:text="${e.fechaPresentacion != null ? #temporals.format(e.fechaPresentacion, 'dd/MM/yyyy') : '-'}">
+                            01/01/2026
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span th:if="${e.prioridad != null and e.prioridad.name() == 'URGENTE'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">URGENTE</span>
+                            <span th:if="${e.prioridad != null and e.prioridad.name() == 'ALTA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">ALTA</span>
+                            <span th:if="${e.prioridad == null or (e.prioridad.name() != 'URGENTE' and e.prioridad.name() != 'ALTA')}" class="px-2 py-0.5 rounded text-[10px] text-slate-400" th:text="${e.prioridad != null ? e.prioridad.name() : 'NORMAL'}">NORMAL</span>
+                        </td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                            <button th:data-id="${e.id}"
+                                    th:data-num="${e.numeroExpediente}"
+                                    onclick="abrirModalAsignacion(this.getAttribute('data-id'), this.getAttribute('data-num'))"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg text-xs transition-colors shadow-sm">
+                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                                Asignar Responsable
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- En Atención / Ya Asignados -->
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+            <div class="px-4 py-3 border-b border-slate-700/70 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+                    <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Expedientes en Atención en Despacho</h2>
+                </div>
+                <span class="text-xs text-slate-400" th:text="${panel.enAtencion.size() + ' en trámite'}">0</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60 font-semibold">
+                    <tr>
+                        <th class="py-3 px-4">Número</th>
+                        <th class="py-3 px-4">Asunto</th>
+                        <th class="py-3 px-4">Administrado</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50">
+                    <tr th:if="${panel.enAtencion.empty}">
+                        <td colspan="5" class="py-6 text-center text-slate-500 text-xs">
+                            No hay expedientes actualmente en atención.
+                        </td>
+                    </tr>
+                    <tr th:each="e : ${panel.enAtencion}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400">
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${e.id})}" class="hover:underline" th:text="${e.numeroExpediente}">MPV</a>
+                        </td>
+                        <td class="py-3 px-4 max-w-xs truncate text-slate-200" th:text="${e.asunto}">Asunto</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${e.solicitanteNombreCompleto}">Administrado</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300" th:text="${e.estadoActual}">EN_ATENCION</span>
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+                            <button th:data-id="${e.id}"
+                                    th:data-num="${e.numeroExpediente}"
+                                    onclick="abrirModalReasignacion(this.getAttribute('data-id'), this.getAttribute('data-num'))"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs transition-colors">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-purple-400"></i>
+                                Reasignar
+                            </button>
+                            <a th:href="@{/dashboard/mesa-partes/expedientes/{id}/seguimiento(id=${e.id})}"
+                               class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs transition-colors">
+                                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-blue-400"></i>
+                                Trazabilidad
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Responsable -->
+    <div id="modalAsignar" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-purple-400"></i>
+                    Asignar Trabajador Responsable
+                </h3>
+                <button onclick="cerrarModalAsignar()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300">
+                Seleccione el servidor municipal que asumirá la atención del expediente <strong id="asigExpNumero" class="font-mono text-purple-300"></strong>:
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Trabajador habilitado de la oficina <span class="text-rose-400">*</span>:</label>
+                <select id="asigUsuarioId" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                    <option value="">Cargando servidores...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Indicaciones o instrucciones de atención:</label>
+                <textarea id="asigIndicaciones" rows="3" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500" placeholder="Instrucciones para el servidor responsable..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button onclick="cerrarModalAsignar()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button id="btnConfirmarAsignar" onclick="confirmarAsignacion()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Guardar Asignación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reasignar Responsable -->
+    <div id="modalReasignar" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-purple-400"></i>
+                    Reasignar Expediente
+                </h3>
+                <button onclick="cerrarModalReasignar()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300">
+                Transfiera la responsabilidad del expediente <strong id="reasigExpNumero" class="font-mono text-purple-300"></strong> a otro servidor municipal:
+            </p>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo trabajador responsable <span class="text-rose-400">*</span>:</label>
+                <select id="reasigUsuarioId" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                    <option value="">Cargando servidores...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Motivo obligatorio de reasignación <span class="text-rose-400">*</span>:</label>
+                <textarea id="reasigMotivo" rows="2" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500" placeholder="Ej. Por rotación, descanso médico, sobrecarga..."></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Nuevas indicaciones:</label>
+                <textarea id="reasigIndicaciones" rows="2" class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500" placeholder="Instrucciones adicionales..."></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button onclick="cerrarModalReasignar()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg">Cancelar</button>
+                <button id="btnConfirmarReasignar" onclick="confirmarReasignacion()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Confirmar Reasignación
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    const oficinaIdActual = /*[[${panel.oficina.id}]]*/ 1;
+    let expedienteSeleccionadoId = null;
+
+    async function cargarTrabajadores(selectElement) {
+        selectElement.innerHTML = '<option value="">Cargando servidores...</option>';
+        try {
+            const resp = await fetch(`/api/mesa-partes/oficinas/${oficinaIdActual}/trabajadores`);
+            const data = await resp.json();
+            if (resp.ok && data.success && data.data) {
+                selectElement.innerHTML = '<option value="">Seleccione servidor...</option>';
+                data.data.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = `${u.nombreCompleto} (@${u.username})`;
+                    selectElement.appendChild(opt);
+                });
+            } else {
+                selectElement.innerHTML = '<option value="">No hay servidores habilitados</option>';
+            }
+        } catch (e) {
+            selectElement.innerHTML = '<option value="">Error cargando servidores</option>';
+        }
+    }
+
+    function abrirModalAsignacion(id, numero) {
+        expedienteSeleccionadoId = id;
+        document.getElementById('asigExpNumero').textContent = numero;
+        document.getElementById('asigIndicaciones').value = '';
+        cargarTrabajadores(document.getElementById('asigUsuarioId'));
+        document.getElementById('modalAsignar').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalAsignar() {
+        document.getElementById('modalAsignar').classList.add('hidden');
+    }
+
+    function abrirModalReasignacion(id, numero) {
+        expedienteSeleccionadoId = id;
+        document.getElementById('reasigExpNumero').textContent = numero;
+        document.getElementById('reasigMotivo').value = '';
+        document.getElementById('reasigIndicaciones').value = '';
+        cargarTrabajadores(document.getElementById('reasigUsuarioId'));
+        document.getElementById('modalReasignar').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function cerrarModalReasignar() {
+        document.getElementById('modalReasignar').classList.add('hidden');
+    }
+
+    async function confirmarAsignacion() {
+        if (!expedienteSeleccionadoId) return;
+        const usuarioId = document.getElementById('asigUsuarioId').value;
+        if (!usuarioId) {
+            alert('Debe seleccionar un trabajador responsable.');
+            return;
+        }
+
+        const btn = document.getElementById('btnConfirmarAsignar');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(`/api/mesa-partes/expedientes/${expedienteSeleccionadoId}/asignar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                body: JSON.stringify({
+                    usuarioAsignadoId: parseInt(usuarioId),
+                    indicaciones: document.getElementById('asigIndicaciones').value.trim()
+                })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                alert('Responsable asignado correctamente.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo asignar responsable.'));
+                btn.disabled = false;
+                btn.textContent = 'Guardar Asignación';
+            }
+        } catch (e) {
+            alert('Error de conexión al procesar la asignación.');
+            btn.disabled = false;
+            btn.textContent = 'Guardar Asignación';
+        }
+    }
+
+    async function confirmarReasignacion() {
+        if (!expedienteSeleccionadoId) return;
+        const nuevoId = document.getElementById('reasigUsuarioId').value;
+        const motivo = document.getElementById('reasigMotivo').value.trim();
+
+        if (!nuevoId) {
+            alert('Debe seleccionar el nuevo trabajador responsable.');
+            return;
+        }
+        if (!motivo) {
+            alert('Debe ingresar un motivo obligatorio de reasignación.');
+            return;
+        }
+
+        const btn = document.getElementById('btnConfirmarReasignar');
+        btn.disabled = true;
+        btn.textContent = 'Reasignando...';
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(`/api/mesa-partes/expedientes/${expedienteSeleccionadoId}/reasignar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                body: JSON.stringify({
+                    nuevoUsuarioId: parseInt(nuevoId),
+                    motivo: motivo,
+                    indicaciones: document.getElementById('reasigIndicaciones').value.trim()
+                })
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                alert('Expediente reasignado con éxito.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo reasignar el expediente.'));
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Reasignación';
+            }
+        } catch (e) {
+            alert('Error de conexión al procesar la reasignación.');
+            btn.disabled = false;
+            btn.textContent = 'Confirmar Reasignación';
+        }
+    }
+</script>
+</th:block>
+</body>
+</html>

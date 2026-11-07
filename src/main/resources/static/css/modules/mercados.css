@@ -1,0 +1,12 @@
+/* ==========================================================================
+   SIGM-QUINUA — ESTILOS ESPECÍFICOS DE MÓDULO: MERCADOS MUNICIPALES (MKT)
+   ========================================================================== */
+
+.mkt-plano-canvas {
+    background-color: var(--sigm-navy-950);
+    background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+    background-size: 20px 20px;
+    border: 1px solid var(--border-theme);
+    border-radius: var(--radius-lg);
+}
+

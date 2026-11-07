@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Nueva Solicitud de Renovación de Ocupación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/renovaciones}" class="hover:text-blue-400">Renovaciones</a>
+                <span>/</span>
+                <span class="text-slate-200">Nueva Solicitud</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Solicitud de Renovación de Ocupación
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Trámite de prórroga para asignaciones vigentes de puestos, contratos o autorizaciones municipales.</p>
+        </div>
+        <div>
+            <a th:href="@{/dashboard/mercados/renovaciones}" class="text-xs text-slate-400 hover:text-white transition-colors">
+                &larr; Volver a la bandeja
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de Renovación -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formRenovacion" method="post" action="javascript:void(0);" onsubmit="return false;" class="space-y-6">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <!-- Sección 1: Selección de Asignación de Origen -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    1. Asignación de Puesto Vigente
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Seleccionar Asignación <span class="text-rose-500">*</span></label>
+                        <select id="selectAsignacion" name="asignacionId" required class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="">-- Seleccione una asignación vigente --</option>
+                            <option th:each="a : ${asignaciones}"
+                                    th:value="${a.id}"
+                                    th:text="${a.codigoAsignacion + ' | ' + (a.puesto != null and a.puesto.mercado != null ? a.puesto.mercado.nombre : '') + ' - Puesto ' + (a.puesto != null ? a.puesto.numero : '') + ' | ' + (a.comerciante != null ? a.comerciante.nombreOTitular : '')}"
+                                    th:selected="${a.id == asignacionId}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 2: Tipo de Renovación y Procedimiento -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    2. Modalidad de Renovación y Procedimiento Institucional
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Renovación <span class="text-rose-500">*</span></label>
+                        <select id="selectTipo" name="tipoSolicitud" required class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="RENOVACION_ASIGNACION">Renovación de Asignación de Puesto</option>
+                            <option value="RENOVACION_CONTRATO">Renovación de Contrato de Ocupación</option>
+                            <option value="RENOVACION_AUTORIZACION">Renovación de Autorización Comercial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Procedimiento Configurado</label>
+                        <select id="selectProcedimiento" name="procedimientoId" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="">-- Procedimiento institucional por defecto --</option>
+                            <option th:each="p : ${procedimientos}" th:value="${p.id}" th:text="${p.codigo + ' - ' + p.nombre}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Inicio Solicitada</label>
+                        <input type="date" id="fechaInicio" name="fechaInicioSolicitada" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Fin Solicitada</label>
+                        <input type="date" id="fechaFin" name="fechaFinSolicitada" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 3: Justificación y Expediente -->
+            <div>
+                <h2 class="text-sm font-semibold text-white mb-3 flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    3. Justificación y Vinculación Documental
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Motivo o Sustento de la Solicitud <span class="text-rose-500">*</span></label>
+                        <textarea id="motivo" name="motivo" required rows="3" placeholder="Detalle los fundamentos de continuidad comercial, cumplimiento de pagos y compromiso higiénico-sanitario..." class="w-full bg-[#101827] border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">N° Expediente MPV (Opcional)</label>
+                            <input type="number" id="expedienteId" name="expedienteId" placeholder="Ej. 1045" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/60">
+                <a th:href="@{/dashboard/mercados/renovaciones}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium border border-slate-700 transition-colors">
+                    Cancelar
+                </a>
+                <button type="button" id="btnGuardar" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Presentar Solicitud</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Script de envio del formulario integrado -->
+    <script>
+    function enviarSolicitudRenovacion() {
+        const asigId = document.getElementById('selectAsignacion').value;
+        if (!asigId) {
+            alert('Debe seleccionar una asignación de puesto vigente obligatoria.');
+            return;
+        }
+        const motivoVal = document.getElementById('motivo').value;
+        if (!motivoVal || motivoVal.trim() === '') {
+            alert('Debe ingresar el motivo o sustento de la solicitud.');
+            return;
+        }
+
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerText = 'Enviando...';
+
+        const csrfInput = document.querySelector('input[name="_csrf"]');
+        const csrfToken = csrfInput ? csrfInput.value : '';
+
+        const payload = {
+            asignacionId: asigId,
+            tipoSolicitud: document.getElementById('selectTipo').value,
+            procedimientoId: document.getElementById('selectProcedimiento').value ? parseInt(document.getElementById('selectProcedimiento').value) : null,
+            fechaInicioSolicitada: document.getElementById('fechaInicio').value || null,
+            fechaFinSolicitada: document.getElementById('fechaFin').value || null,
+            motivo: motivoVal.trim(),
+            expedienteId: document.getElementById('expedienteId').value ? parseInt(document.getElementById('expedienteId').value) : null
+        };
+
+        fetch('/api/mercados/renovaciones', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async res => {
+            if (res.ok) {
+                const data = await res.json();
+                window.location.href = '/dashboard/mercados/gestiones-ocupacion/' + data.id;
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Error al registrar la solicitud: ' + (err.message || 'Verifique los campos requeridos'));
+                btn.disabled = false;
+                btn.innerText = 'Presentar Solicitud';
+            }
+        })
+        .catch(e => {
+            alert('Ocurrió un error en la conexión con el servidor.');
+            btn.disabled = false;
+            btn.innerText = 'Presentar Solicitud';
+        });
+    }
+
+    document.getElementById('btnGuardar').addEventListener('click', enviarSolicitudRenovacion);
+    </script>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+    if (!window._renovacionEventSet) {
+        window._renovacionEventSet = true;
+        const btn = document.getElementById('btnGuardar');
+        if (btn) {
+            btn.onclick = enviarSolicitudRenovacion;
+        }
+    }
+    </script>
+</th:block>
+</body>
+</html>

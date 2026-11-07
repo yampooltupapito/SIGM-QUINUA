@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Ayuda y Canales Oficiales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Orientación al Comerciante y Canales de Atención</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Preguntas frecuentes, procedimientos reglamentarios y canales oficiales de la Municipalidad Distrital de Quinua.
+        </p>
+    </div>
+
+    <!-- Preguntas Frecuentes -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i data-lucide="help-circle" class="w-5 h-5 text-blue-600"></i> Preguntas Frecuentes
+        </h2>
+
+        <div class="space-y-3">
+            <details class="group p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <summary class="font-semibold text-xs sm:text-sm text-slate-900 cursor-pointer flex items-center justify-between list-none">
+                    <span>¿Cómo solicito la renovación de mi contrato de ocupación?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2">
+                    Puede solicitar la renovación directamente desde el menú <span class="font-semibold">Solicitudes &gt; Nueva Renovación</span> seleccionando su puesto asignado. El trámite requiere no registrar deudas impagas de tarifas ni sanciones activas.
+                </p>
+            </details>
+
+            <details class="group p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <summary class="font-semibold text-xs sm:text-sm text-slate-900 cursor-pointer flex items-center justify-between list-none">
+                    <span>¿Dónde puedo cancelar mis obligaciones y tarifas de mercado?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2">
+                    En la Caja Central del Palacio Municipal de Quinua o en el Módulo de Recaudación del Mercado Central. Tras el pago, su recibo oficial estará disponible para descarga inmediata en este portal en la sección <span class="font-semibold">Mis Pagos</span>.
+                </p>
+            </details>
+
+            <details class="group p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <summary class="font-semibold text-xs sm:text-sm text-slate-900 cursor-pointer flex items-center justify-between list-none">
+                    <span>¿Los puestos de mercado son de libre transferencia?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2">
+                    No. Los puestos municipales son bienes de dominio público y no pueden ser subarrendados, transferidos ni cedidos directamente entre particulares. Toda modificación de titularidad requiere autorización expresa de la Subgerencia de Mercados conforme a ordenanza municipal.
+                </p>
+            </details>
+
+            <details class="group p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <summary class="font-semibold text-xs sm:text-sm text-slate-900 cursor-pointer flex items-center justify-between list-none">
+                    <span>¿Cómo descargo un documento oficial con validez jurídica?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <p class="text-xs text-slate-600 mt-2">
+                    En la sección <span class="font-semibold">Documentos</span> encontrará todos sus contratos, autorizaciones y recibos generados con firma digital institucional y código de verificación QR verificable en la plataforma municipal.
+                </p>
+            </details>
+        </div>
+    </div>
+
+    <!-- Canales Oficiales Verificados -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i data-lucide="building-2" class="w-5 h-5 text-blue-600"></i> Canales de Atención Municipal
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h3 class="font-bold text-slate-800">Subgerencia de Comercialización</h3>
+                <p class="text-slate-500 mt-1">Gerencia de Servicios Municipales y Desarrollo Económico</p>
+                <p class="text-slate-600 mt-2">Plaza de Armas s/n, Quinua, Huamanga, Ayacucho</p>
+            </div>
+
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h3 class="font-bold text-slate-800">Horario de Atención Presencial</h3>
+                <p class="text-slate-500 mt-1">Lunes a Viernes</p>
+                <p class="text-slate-700 font-semibold mt-2">08:00 hrs a 16:30 hrs</p>
+            </div>
+
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h3 class="font-bold text-slate-800">Mesa de Partes Virtual</h3>
+                <p class="text-slate-500 mt-1">Presentación de trámites y solicitudes en línea</p>
+                <p class="text-blue-700 font-semibold mt-2">Disponible las 24 horas del día</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

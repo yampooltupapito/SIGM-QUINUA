@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Supervisión e Inspección de Mercados | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones rápidas -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <span class="text-slate-200">Supervisión e Inspecciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Supervisión y Fiscalización de Mercados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de cumplimiento de normas sanitarias, orden comercial, condiciones técnicas y seguimiento de medidas correctivas.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/inspecciones/programar}"
+               sec:authorize="hasAuthority('MERCADOS_INSPECCION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Programar Inspección
+            </a>
+            <a th:href="@{/dashboard/mercados/inspecciones/calendario}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Ver Calendario
+            </a>
+            <a th:href="@{/dashboard/mercados/inspecciones/seguimiento}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Seguimiento Medidas
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Métricas Clave -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Inspecciones -->
+        <div class="bg-[#202c3d] p-5 rounded-2xl border border-[#334155] shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Inspecciones</p>
+                <h3 class="text-2xl font-black text-white mt-1" th:text="${estadisticas.totalInspecciones}">0</h3>
+                <p class="text-xs text-indigo-400 mt-1 flex items-center gap-1">
+                    <span th:text="${estadisticas.inspeccionesHoy}">0</span> programadas para hoy
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+        </div>
+
+        <!-- En Proceso / Pendientes -->
+        <div class="bg-[#202c3d] p-5 rounded-2xl border border-[#334155] shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">En Ejecución / Revisión</p>
+                <h3 class="text-2xl font-black text-blue-400 mt-1" th:text="${estadisticas.enProceso}">0</h3>
+                <p class="text-xs text-slate-400 mt-1">
+                    <span th:text="${estadisticas.programadas}">0</span> por iniciar
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+
+        <!-- Hallazgos Abiertos -->
+        <div class="bg-[#202c3d] p-5 rounded-2xl border border-[#334155] shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Hallazgos Abiertos</p>
+                <h3 class="text-2xl font-black text-rose-400 mt-1" th:text="${estadisticas.hallazgosAbiertos}">0</h3>
+                <p class="text-xs text-rose-400/80 mt-1">
+                    Total histórico: <span th:text="${estadisticas.totalHallazgos}">0</span>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+        </div>
+
+        <!-- Medidas Vencidas -->
+        <div class="bg-[#202c3d] p-5 rounded-2xl border border-[#334155] shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Medidas Vencidas</p>
+                <h3 class="text-2xl font-black text-amber-400 mt-1" th:text="${estadisticas.medidasVencidas}">0</h3>
+                <p class="text-xs text-amber-400/80 mt-1">
+                    <span th:text="${estadisticas.medidasPorVencer}">0</span> por vencer en 7 días
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación y accesos directos -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a th:href="@{/dashboard/mercados/inspecciones}"
+           class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] hover:border-indigo-500 transition-all group">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Bandeja de Inspecciones</h4>
+                    <p class="text-xs text-slate-400 mt-1">Consultar expedientes, actas emitidas y estados de fiscalización.</p>
+                </div>
+            </div>
+        </a>
+
+        <a th:href="@{/dashboard/mercados/inspecciones/seguimiento}"
+           class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] hover:border-amber-500 transition-all group">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">Control de Medidas y Subsanaciones</h4>
+                    <p class="text-xs text-slate-400 mt-1">Verificación técnica de compromisos y plazos perentorios.</p>
+                </div>
+            </div>
+        </a>
+
+        <a th:href="@{/dashboard/mercados/inspecciones/reportes}"
+           class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] hover:border-emerald-500 transition-all group">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Reportes y Exportación</h4>
+                    <p class="text-xs text-slate-400 mt-1">Generar reportes consolidados en formatos Excel (POI) y PDF.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

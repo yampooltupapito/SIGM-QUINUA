@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Ficha: ' + ${predio.codigoPredio} + ' — Recaudación Tributaria | SIGM-QUINUA'">Ficha de Predio — SIGM-QUINUA</title>
+    <!-- Leaflet CSS para visualización geográfica opcional -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .leaflet-container {
+            background-color: #0f172a !important;
+            font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado de la Ficha Predial -->
+    <div class="bg-card border border-theme rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div class="flex items-start space-x-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 flex-shrink-0">
+                    <i data-lucide="building-2" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="font-mono text-xs px-2.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg font-bold" th:text="${predio.codigoPredio}">PR-000001</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
+                              th:classappend="${predio.badgeClass}"
+                              th:text="${predio.estado.name()}">ACTIVO</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
+                              th:classappend="${predio.tipoPredio.name() == 'RURAL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}"
+                              th:text="${predio.clasificacionPredio != null ? predio.clasificacionPredio.name() : predio.tipoPredio.name()}">URBANO</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                              th:text="${predio.usoDeclarado != null ? predio.usoDeclarado.nombre : 'Uso No Declarado'}">Vivienda</span>
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight" th:text="${predio.direccionFormateada}">Jr. Sucre N° 120, Quinua</h1>
+                    <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
+                        <span><strong class="text-slate-300">Cód. Catastral:</strong> <span class="font-mono text-slate-200" th:text="${predio.codigoCatastral != null ? predio.codigoCatastral : 'Sin código oficial'}">05011001001</span></span>
+                        <span>•</span>
+                        <span>Área Terreno: <strong class="text-slate-200" th:text="${#numbers.formatDecimal(predio.areaTerrenoM2 != null ? predio.areaTerrenoM2 : predio.areaTerreno, 1, 2) + ' m²'}">250.00 m²</strong></span>
+                        <span>•</span>
+                        <span>Construcciones: <strong class="text-slate-200" th:text="${predio.construcciones.size()}">0</strong></span>
+                        <span>•</span>
+                        <span>Titulares/Poseedores: <strong class="text-slate-200" th:text="${predio.relacionesContribuyente.size()}">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción de Ficha -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openModal('modalEstado')"
+                        sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_CAMBIAR_ESTADO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-xs font-semibold transition-colors border border-slate-700 flex items-center space-x-1.5">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Cambiar Estado</span>
+                </button>
+
+                <a th:href="@{/dashboard/tributaria/predios/{id}/editar(id=${predio.id})}"
+                   sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    <span>Editar Ficha</span>
+                </a>
+
+                <a th:href="@{/dashboard/tributaria/predios}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors border border-slate-700">
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-theme flex space-x-6 overflow-x-auto text-xs font-semibold">
+        <button type="button" onclick="switchTab('tab-general')" id="btn-tab-general" class="pb-3 text-blue-400 border-b-2 border-blue-500 flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Datos Generales</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-ubicacion')" id="btn-tab-ubicacion" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            <span>Ubicación y Mapa</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-construcciones')" id="btn-tab-construcciones" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>Construcciones (<span th:text="${predio.construcciones.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-contribuyentes')" id="btn-tab-contribuyentes" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Contribuyentes (<span th:text="${predio.relacionesContribuyente.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-documentos')" id="btn-tab-documentos" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="files" class="w-4 h-4"></i>
+            <span>Documentos (<span th:text="${predio.documentos.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-historial')" id="btn-tab-historial" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Historial (<span th:text="${predio.historialEstados.size()}">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- PESTAÑA 1: DATOS GENERALES -->
+    <div id="tab-general" class="tab-panel space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-card border border-theme rounded-xl p-5 space-y-4">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-theme pb-2.5 flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                    <span>Identificación Predial</span>
+                </h3>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400 font-medium">Código Interno Municipal:</dt>
+                        <dd class="text-slate-200 font-mono font-bold text-blue-400" th:text="${predio.codigoPredio}">PR-000001</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Código Catastral Oficial:</dt>
+                        <dd class="text-slate-200 font-mono" th:text="${predio.codigoCatastral != null ? predio.codigoCatastral : 'No asignado'}">05011001001</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Clasificación Territorial:</dt>
+                        <dd class="text-slate-200" th:text="${predio.clasificacionPredio}">URBANO</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Tipo de Predio:</dt>
+                        <dd class="text-slate-200" th:text="${predio.tipoPredio}">CASA_HABITACION</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Uso Declarado:</dt>
+                        <dd class="text-slate-200 font-medium text-emerald-400" th:text="${predio.usoDeclarado != null ? predio.usoDeclarado.nombre : 'Sin Uso'}">Vivienda</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Estado Administrativo:</dt>
+                        <dd>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border"
+                                  th:classappend="${predio.badgeClass}"
+                                  th:text="${predio.estado.name()}">ACTIVO</span>
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-slate-400 font-medium">Motivo Último Cambio de Estado:</dt>
+                        <dd class="text-slate-300 italic" th:text="${predio.motivoCambioEstado != null ? predio.motivoCambioEstado : 'Registro inicial en el sistema'}">Registro inicial</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="bg-card border border-theme rounded-xl p-5 space-y-4">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-theme pb-2.5 flex items-center space-x-2">
+                    <i data-lucide="maximize-2" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Superficie y Servicios Declarados</span>
+                </h3>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400 font-medium">Área Declarada Original:</dt>
+                        <dd class="text-slate-200 font-mono font-bold" th:text="${#numbers.formatDecimal(predio.areaTerreno, 1, 2) + ' ' + (predio.unidadArea != null ? predio.unidadArea : 'M2')}">250.00 M2</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Área Terreno Estandarizada:</dt>
+                        <dd class="text-slate-200 font-mono font-bold text-emerald-400" th:text="${#numbers.formatDecimal(predio.areaTerrenoM2 != null ? predio.areaTerrenoM2 : predio.areaTerreno, 1, 2) + ' m²'}">250.00 m²</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Área Construida Total:</dt>
+                        <dd class="text-slate-200 font-mono font-bold text-blue-400" th:text="${#numbers.formatDecimal(predio.areaConstruida != null ? predio.areaConstruida : 0, 1, 2) + ' m²'}">0.00 m²</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Fecha de Registro:</dt>
+                        <dd class="text-slate-200" th:text="${#temporals.format(predio.fechaRegistro, 'dd/MM/yyyy HH:mm')}">26/10/2026 07:00</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-theme pt-3">
+                    <span class="text-xs text-slate-400 font-medium block mb-2">Servicios Básicos Disponibles:</span>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tieneAgua ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tieneAgua ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Agua Potable</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tieneDesague ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tieneDesague ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Desagüe</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tieneLuz ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tieneLuz ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Energía Eléctrica</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tieneAlumbradoPublico ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tieneAlumbradoPublico ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Alumbrado Público</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tienePistasVeredas ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tienePistasVeredas ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Pistas / Veredas</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5" th:classappend="${predio.tieneLimpiezaPublica ? 'text-emerald-400' : 'text-slate-500'}">
+                            <i th:data-lucide="${predio.tieneLimpiezaPublica ? 'check-circle' : 'x-circle'}" class="w-3.5 h-3.5"></i>
+                            <span>Limpieza Pública</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auditoría -->
+        <div class="bg-card border border-theme rounded-xl p-4 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span>Creado por: <strong class="text-slate-300" th:text="${predio.createdBy != null ? predio.createdBy : 'SISTEMA'}">ADMIN</strong></span>
+                <span class="mx-2">•</span>
+                <span>Fecha Creación: <span th:text="${#temporals.format(predio.createdAt, 'dd/MM/yyyy HH:mm')}">26/10/2026</span></span>
+            </div>
+            <div>
+                <span>Última modificación: <strong class="text-slate-300" th:text="${predio.updatedBy != null ? predio.updatedBy : 'SISTEMA'}">ADMIN</strong></span>
+                <span class="mx-2">•</span>
+                <span>Fecha: <span th:text="${#temporals.format(predio.updatedAt, 'dd/MM/yyyy HH:mm')}">26/10/2026</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 2: UBICACIÓN Y MAPA -->
+    <div id="tab-ubicacion" class="tab-panel hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Datos territoriales -->
+            <div class="bg-card border border-theme rounded-xl p-5 space-y-4">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-theme pb-2.5 flex items-center space-x-2">
+                    <i data-lucide="compass" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Dirección y Nomenclatura</span>
+                </h3>
+
+                <dl class="space-y-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400 font-medium">Distrito / Jurisdicción:</dt>
+                        <dd class="text-slate-200" th:text="${predio.distrito + ' — ' + predio.provincia + ' — ' + predio.departamento + ' (Ubigeo: ' + predio.ubigeo + ')'}">QUINUA — HUAMANGA — AYACUCHO</dd>
+                    </div>
+                    <div th:if="${predio.comunidadCentroPoblado != null and !predio.comunidadCentroPoblado.isBlank()}">
+                        <dt class="text-slate-400 font-medium">Comunidad / Centro Poblado:</dt>
+                        <dd class="text-amber-400 font-semibold" th:text="${predio.comunidadCentroPoblado}">Comunidad Rural</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Sector / Zona:</dt>
+                        <dd class="text-slate-200" th:text="${(predio.sector != null ? predio.sector : 'Sin sector') + ' / ' + (predio.zona != null ? predio.zona : 'Sin zona')}">Sector 1 / Zona A</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Vía / Manzana / Lote:</dt>
+                        <dd class="text-slate-200">
+                            <span th:text="${(predio.tipoVia != null ? predio.tipoVia + ' ' : '') + (predio.nombreVia != null ? predio.nombreVia : '')}">Jr. Sucre</span>
+                            <span th:if="${predio.numeroMunicipal != null}" th:text="' N° ' + ${predio.numeroMunicipal}"> N° 120</span>
+                            <span th:if="${predio.manzana != null}" th:text="' Mz. ' + ${predio.manzana}"> Mz. A</span>
+                            <span th:if="${predio.lote != null}" th:text="' Lt. ' + ${predio.lote}"> Lt. 05</span>
+                            <span th:if="${predio.interior != null}" th:text="' Int. ' + ${predio.interior}"> Int. 2</span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400 font-medium">Referencia Territorial:</dt>
+                        <dd class="text-slate-300 italic" th:text="${predio.referencia != null ? predio.referencia : 'Sin referencia adicional especificada'}">Frente al obelisco</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-theme pt-3 space-y-2 text-xs">
+                    <span class="text-slate-400 font-medium block">Coordenadas Geográficas (WGS84):</span>
+                    <div th:if="${predio.latitud != null and predio.longitud != null}" class="space-y-1 font-mono text-slate-300 bg-slate-900/60 p-3 rounded-lg border border-theme">
+                        <div>Latitud: <span class="text-blue-400 font-bold" th:text="${predio.latitud}">-13.0456</span></div>
+                        <div>Longitud: <span class="text-blue-400 font-bold" th:text="${predio.longitud}">-74.1389</span></div>
+                        <div class="text-[11px] text-slate-400 font-sans mt-1">
+                            Fuente: <span class="text-slate-300" th:text="${predio.fuenteCoordenadas != null ? predio.fuenteCoordenadas.nombre : 'No especificada'}">Declarado</span>
+                            <span th:if="${predio.precisionMetros != null}" th:text="' (± ' + ${predio.precisionMetros} + ' m)'"> (± 5 m)</span>
+                        </div>
+                    </div>
+                    <div th:unless="${predio.latitud != null and predio.longitud != null}" class="text-slate-500 italic">
+                        Sin coordenadas numéricas georreferenciadas.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapa Leaflet interactivo -->
+            <div class="lg:col-span-2 bg-card border border-theme rounded-xl p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-theme pb-2.5">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                        <i data-lucide="map" class="w-4 h-4 text-blue-400"></i>
+                        <span>Geolocalización del Predio (Quinua)</span>
+                    </h3>
+                    <span class="text-[11px] text-slate-400 font-mono" th:if="${predio.latitud != null and predio.longitud != null}">EPSG:4326 (WGS84)</span>
+                </div>
+
+                <div th:if="${predio.latitud != null and predio.longitud != null}">
+                    <div id="mapaPredio" class="w-full h-80 rounded-xl border border-slate-700/80 overflow-hidden shadow-inner"></div>
+                </div>
+                <div th:unless="${predio.latitud != null and predio.longitud != null}" class="p-12 text-center text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                    <i data-lucide="map-pin-off" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
+                    <p class="text-sm font-medium">Predio sin coordenadas georreferenciadas</p>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                        Puede registrar las coordenadas WGS84 editando la ficha del predio para visualizar su ubicación en el mapa distrital de Quinua.
+                    </p>
+                    <div class="mt-4">
+                        <a th:href="@{/dashboard/tributaria/predios/{id}/editar(id=${predio.id})}"
+                           sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                           class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 rounded-lg text-xs font-medium transition-colors">
+                            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+                            <span>Agregar coordenadas</span>
+                        </a>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-slate-500 italic">
+                    Aviso: La representación cartográfica en pantalla es referencial para fines de administración y localización tributaria municipal. No reemplaza levantamientos catastrales oficiales ni delimita linderos registrales.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 3: CONSTRUCCIONES -->
+    <div id="tab-construcciones" class="tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-white">Construcciones y Edificaciones Declaradas</h3>
+                <p class="text-xs text-slate-400">Detalle de niveles, áreas construidas, materiales y estado de conservación.</p>
+            </div>
+            <button type="button" onclick="openModal('modalConstruccion')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_CONSTRUCCIONES', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Agregar Construcción</span>
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${predio.construcciones.isEmpty()}" class="p-10 text-center text-slate-400">
+                <i data-lucide="layers" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm">No existen construcciones o niveles registrados para este predio.</p>
+                <p class="text-xs text-slate-500 mt-1">El predio figura actualmente como terreno sin construir o sin edificaciones registradas.</p>
+            </div>
+
+            <div th:unless="${predio.construcciones.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Código</th>
+                            <th class="px-4 py-3">Descripción</th>
+                            <th class="px-4 py-3">Nivel / Piso</th>
+                            <th class="px-4 py-3">Área Const. (m²)</th>
+                            <th class="px-4 py-3">Material Predominante</th>
+                            <th class="px-4 py-3">Estado Conservación</th>
+                            <th class="px-4 py-3">Año Const.</th>
+                            <th class="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="c : ${predio.construcciones}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-blue-400" th:text="${c.codigoInterno}">ED-01</td>
+                            <td class="px-4 py-3 text-slate-200" th:text="${c.descripcion}">Vivienda familiar primer piso</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${'Piso ' + c.nivel}">Piso 1</td>
+                            <td class="px-4 py-3 font-mono font-bold text-emerald-400" th:text="${#numbers.formatDecimal(c.areaConstruida, 1, 2) + ' m²'}">85.00 m²</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${c.materialPredominante != null ? c.materialPredominante.nombre : '-'}">Ladrillo / Concreto</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${c.estadoConservacion != null ? c.estadoConservacion.nombre : '-'}">Bueno</td>
+                            <td class="px-4 py-3 font-mono text-slate-400" th:text="${c.anioConstruccion != null ? c.anioConstruccion : 'Desconocido'}">2018</td>
+                            <td class="px-4 py-3 text-right">
+                                <form th:action="@{/dashboard/tributaria/predios/{id}/construcciones/{cid}/eliminar(id=${predio.id},cid=${c.id})}"
+                                      method="POST" onsubmit="return confirm('¿Está seguro de eliminar esta construcción?');"
+                                      sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_CONSTRUCCIONES', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')">
+                                    <button type="submit" class="p-1 hover:bg-slate-700 text-rose-400 rounded transition-colors" title="Eliminar Construcción">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 4: CONTRIBUYENTES VINCULADOS -->
+    <div id="tab-contribuyentes" class="tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-white">Contribuyentes y Relaciones Jurídico-Tributarias</h3>
+                <p class="text-xs text-slate-400">Titulares declarados, copropietarios, poseedores y porcentajes de participación.</p>
+            </div>
+            <button type="button" onclick="openModal('modalContribuyente')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_RELACIONES', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Vincular Contribuyente</span>
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${predio.relacionesContribuyente.isEmpty()}" class="p-10 text-center text-slate-400">
+                <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm">No existen contribuyentes vinculados activamente a este predio.</p>
+                <p class="text-xs text-slate-500 mt-1">Utilice el botón superior para asociar un contribuyente titular, copropietario o poseedor.</p>
+            </div>
+
+            <div th:unless="${predio.relacionesContribuyente.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Código Contribuyente</th>
+                            <th class="px-4 py-3">Documento</th>
+                            <th class="px-4 py-3">Nombre o Razón Social</th>
+                            <th class="px-4 py-3">Tipo Relación</th>
+                            <th class="px-4 py-3">% Participación</th>
+                            <th class="px-4 py-3">Vigencia</th>
+                            <th class="px-4 py-3">Estado</th>
+                            <th class="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="r : ${predio.relacionesContribuyente}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-blue-400">
+                                <a th:href="@{/dashboard/tributaria/contribuyentes/{id}(id=${r.contribuyenteId})}" class="hover:underline" th:text="${r.codigoContribuyente}">CT-000001</a>
+                            </td>
+                            <td class="px-4 py-3 font-mono text-slate-300" th:text="${r.tipoDocumento + ': ' + r.numeroDocumento}">DNI: 41234567</td>
+                            <td class="px-4 py-3 font-medium text-slate-200" th:text="${r.nombreContribuyente}">QUISPE FLORES, JUAN CARLOS</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${r.tipoRelacion.name()}">TITULAR_DECLARADO</td>
+                            <td class="px-4 py-3 font-mono font-bold text-emerald-400" th:text="${r.porcentajePropiedad != null ? #numbers.formatDecimal(r.porcentajePropiedad, 1, 2) + '%' : '100.00%'}">100.00%</td>
+                            <td class="px-4 py-3 text-slate-400">
+                                <span th:text="${r.fechaInicio != null ? #temporals.format(r.fechaInicio, 'dd/MM/yyyy') : 'Desde inicio'}">01/01/2026</span>
+                                <span th:if="${r.fechaFin != null}" th:text="' al ' + ${#temporals.format(r.fechaFin, 'dd/MM/yyyy')}"></span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                                      th:classappend="${r.activo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}"
+                                      th:text="${r.activo ? 'ACTIVO' : 'CESADO'}">ACTIVO</span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <form th:action="@{/dashboard/tributaria/predios/{id}/contribuyentes/{rid}/eliminar(id=${predio.id},rid=${r.id})}"
+                                      method="POST" onsubmit="return confirm('¿Está seguro de finalizar o desvincular la relación con este contribuyente?');"
+                                      sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_RELACIONES', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')">
+                                    <button type="submit" class="p-1 hover:bg-slate-700 text-rose-400 rounded transition-colors" title="Desvincular Contribuyente">
+                                        <i data-lucide="user-x" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 5: DOCUMENTOS DE SUSTENTO -->
+    <div id="tab-documentos" class="tab-panel hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-white">Documentación de Sustento y Archivos Técnicos</h3>
+                <p class="text-xs text-slate-400">Fichas catastrales, planos, declaraciones juradas, constancias de posesión o títulos.</p>
+            </div>
+            <button type="button" onclick="openModal('modalDocumento')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_DOCUMENTOS', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                <i data-lucide="file-plus" class="w-4 h-4"></i>
+                <span>Registrar Documento</span>
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${predio.documentos.isEmpty()}" class="p-10 text-center text-slate-400">
+                <i data-lucide="folder" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm">No existen documentos de sustento archivados para este predio.</p>
+                <p class="text-xs text-slate-500 mt-1">Puede asociar fichas técnicas, títulos o planos mediante el botón superior.</p>
+            </div>
+
+            <div th:unless="${predio.documentos.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Tipo Documento</th>
+                            <th class="px-4 py-3">N° / Identificador</th>
+                            <th class="px-4 py-3">Descripción</th>
+                            <th class="px-4 py-3">Emisor</th>
+                            <th class="px-4 py-3">Fecha Documento</th>
+                            <th class="px-4 py-3">Fecha Reg.</th>
+                            <th class="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="d : ${predio.documentos}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-medium text-slate-200" th:text="${d.tipoDocumento.nombre}">Declaración Jurada</td>
+                            <td class="px-4 py-3 font-mono text-blue-400" th:text="${d.numeroDocumento != null ? d.numeroDocumento : '-'}">DJ-2026-001</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${d.descripcion}">Declaración inicial de autovalúo</td>
+                            <td class="px-4 py-3 text-slate-400" th:text="${d.emisor != null ? d.emisor : '-'}">Contribuyente</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${d.fechaDocumento != null ? #temporals.format(d.fechaDocumento, 'dd/MM/yyyy') : '-'}">15/03/2026</td>
+                            <td class="px-4 py-3 text-slate-400" th:text="${#temporals.format(d.fechaRegistro, 'dd/MM/yyyy HH:mm')}">26/10/2026</td>
+                            <td class="px-4 py-3 text-right">
+                                <form th:action="@{/dashboard/tributaria/predios/{id}/documentos/{did}/eliminar(id=${predio.id},did=${d.id})}"
+                                      method="POST" onsubmit="return confirm('¿Está seguro de eliminar este registro documental?');"
+                                      sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_GESTIONAR_DOCUMENTOS', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')">
+                                    <button type="submit" class="p-1 hover:bg-slate-700 text-rose-400 rounded transition-colors" title="Eliminar Documento">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 6: HISTORIAL DE ESTADOS -->
+    <div id="tab-historial" class="tab-panel hidden space-y-4">
+        <div>
+            <h3 class="text-sm font-bold text-white">Auditoría y Trazabilidad de Estados Administrativos</h3>
+            <p class="text-xs text-slate-400">Historial inmutable de cambios de estado, transiciones y justificaciones normativas.</p>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${predio.historialEstados.isEmpty()}" class="p-10 text-center text-slate-400">
+                <i data-lucide="history" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm">No existen cambios de estado registrados con posterioridad al alta.</p>
+            </div>
+
+            <div th:unless="${predio.historialEstados.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Fecha y Hora</th>
+                            <th class="px-4 py-3">Estado Anterior</th>
+                            <th class="px-4 py-3">Estado Nuevo</th>
+                            <th class="px-4 py-3">Motivo / Justificación</th>
+                            <th class="px-4 py-3">Usuario Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="h : ${predio.historialEstados}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 text-slate-300 font-mono" th:text="${#temporals.format(h.fechaCambio, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 08:30:00</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border bg-slate-800 text-slate-400 border-slate-700"
+                                      th:text="${h.estadoAnterior != null ? h.estadoAnterior.name() : 'NUEVO'}">NUEVO</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                      th:text="${h.nuevoEstado != null ? h.nuevoEstado.name() : (h.estadoNuevo != null ? h.estadoNuevo.name() : '')}">ACTIVO</span>
+                            </td>
+                            <td class="px-4 py-3 text-slate-200" th:text="${h.motivo}">Actualización administrativa autorizada</td>
+                            <td class="px-4 py-3 font-mono text-slate-400" th:text="${h.usuarioResponsable}">ADMIN</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: CAMBIO DE ESTADO -->
+    <div id="modalEstado" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                    <span>Cambiar Estado Administrativo</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalEstado')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/predios/{id}/estado(id=${predio.id})}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Nuevo Estado <span class="text-rose-400">*</span></label>
+                    <select name="nuevoEstado" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option th:each="e : ${estadosPredio}" th:value="${e}" th:text="${e.name()}"
+                                th:selected="${predio.estado == e}">ACTIVO</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Motivo Justificado <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" rows="3" required placeholder="Indique la justificación formal del cambio de estado..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+                    <span class="text-[11px] text-slate-500 mt-1 block">El motivo quedará registrado inmutablemente en la auditoría predial.</span>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalEstado')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold">Confirmar Cambio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: AGREGAR CONSTRUCCIÓN -->
+    <div id="modalConstruccion" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+                    <span>Registrar Construcción o Edificación</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalConstruccion')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/predios/{id}/construcciones(id=${predio.id})}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Código Interno</label>
+                        <input type="text" name="codigoInterno" placeholder="Ej. ED-01, P1"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Nivel / Piso <span class="text-rose-400">*</span></label>
+                        <input type="number" name="nivel" min="1" max="50" value="1" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Descripción</label>
+                        <input type="text" name="descripcion" placeholder="Ej. Casa de adobe con teja, primer nivel"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Área Construida (m²) <span class="text-rose-400">*</span></label>
+                        <input type="number" step="0.01" min="0.01" name="areaConstruida" required placeholder="0.00"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Año Construcción</label>
+                        <input type="number" name="anioConstruccion" min="1900" max="2100" placeholder="Ej. 2020"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Material Predominante</label>
+                        <select name="materialPredominante" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="">Seleccione material...</option>
+                            <option th:each="m : ${materiales}" th:value="${m}" th:text="${m.nombre}">Ladrillo / Concreto</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Estado de Conservación</label>
+                        <select name="estadoConservacion" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="">Seleccione estado...</option>
+                            <option th:each="ec : ${estadosConservacion}" th:value="${ec}" th:text="${ec.nombre}">Bueno</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalConstruccion')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Guardar Construcción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: VINCULAR CONTRIBUYENTE -->
+    <div id="modalContribuyente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Vincular Contribuyente al Predio</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalContribuyente')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/predios/{id}/contribuyentes(id=${predio.id})}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Buscar Contribuyente (Código o Nombre) <span class="text-rose-400">*</span></label>
+                    <div class="relative">
+                        <input type="text" id="busquedaContribuyenteInput" placeholder="Escriba código o nombre..."
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                               autocomplete="off">
+                        <div id="resultadosContribuyente" class="hidden absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-theme rounded-lg shadow-xl max-h-48 overflow-y-auto z-10"></div>
+                    </div>
+                    <input type="hidden" name="contribuyenteId" id="contribuyenteIdSeleccionado" required>
+                    <div id="contribuyenteSeleccionadoInfo" class="hidden mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-300 flex items-center justify-between">
+                        <span id="contribuyenteSeleccionadoTexto"></span>
+                        <button type="button" onclick="limpiarContribuyenteSeleccionado()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Relación <span class="text-rose-400">*</span></label>
+                        <select name="tipoRelacion" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option th:each="tr : ${tiposRelacion}" th:value="${tr}" th:text="${tr.name()}">TITULAR_DECLARADO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">% de Participación</label>
+                        <input type="number" step="0.01" min="0.01" max="100.00" name="porcentajePropiedad" value="100.00"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Fecha Inicio</label>
+                        <input type="date" name="fechaInicio"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Fecha Fin (Opcional)</label>
+                        <input type="date" name="fechaFin"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Documento de Sustento de la Relación</label>
+                        <input type="text" name="documentoSustento" placeholder="Ej. Título de propiedad, Testimonio, Declaración Jurada N° 12..."
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalContribuyente')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Vincular Contribuyente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: REGISTRAR DOCUMENTO -->
+    <div id="modalDocumento" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="file-plus" class="w-4 h-4 text-blue-400"></i>
+                    <span>Registrar Documento de Sustento</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalDocumento')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/predios/{id}/documentos(id=${predio.id})}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Documento <span class="text-rose-400">*</span></label>
+                        <select name="tipoDocumento" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option th:each="td : ${tiposDocumento}" th:value="${td}" th:text="${td.nombre}">Declaración Jurada</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">N° / Identificador</label>
+                        <input type="text" name="numeroDocumento" placeholder="Ej. DJ-0012, Escritura 45"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Descripción <span class="text-rose-400">*</span></label>
+                        <input type="text" name="descripcion" required placeholder="Ej. Plano perimétrico visado de lote"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Entidad Emisora / Otorgante</label>
+                        <input type="text" name="emisor" placeholder="Ej. Notaría, COFOPRI, Municipalidad..."
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Fecha del Documento</label>
+                        <input type="date" name="fechaDocumento"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalDocumento')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Guardar Documento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Interacción, Pestañas, Modales y Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const predioLat = /*[[${predio.latitud}]]*/ null;
+    const predioLng = /*[[${predio.longitud}]]*/ null;
+    const predioCod = /*[[${predio.codigoPredio}]]*/ 'Predio';
+    const predioDir = /*[[${predio.direccionFormateada}]]*/ '';
+    let leafletMapInstance = null;
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('[id^="btn-tab-"]').forEach(b => {
+            b.classList.remove('text-blue-400', 'border-blue-500');
+            b.classList.add('text-slate-400', 'border-transparent');
+        });
+
+        const panel = document.getElementById(tabId);
+        if (panel) panel.classList.remove('hidden');
+
+        const btn = document.getElementById('btn-' + tabId);
+        if (btn) {
+            btn.classList.add('text-blue-400', 'border-blue-500');
+            btn.classList.remove('text-slate-400', 'border-transparent');
+        }
+
+        if (tabId === 'tab-ubicacion' && predioLat !== null && predioLng !== null) {
+            setTimeout(initMapIfNeeded, 200);
+        }
+    }
+
+    function initMapIfNeeded() {
+        const container = document.getElementById('mapaPredio');
+        if (!container) return;
+
+        if (!leafletMapInstance && predioLat !== null && predioLng !== null) {
+            leafletMapInstance = L.map('mapaPredio').setView([predioLat, predioLng], 17);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap | Municipalidad Distrital de Quinua'
+            }).addTo(leafletMapInstance);
+
+            const marker = L.marker([predioLat, predioLng]).addTo(leafletMapInstance);
+            marker.bindPopup(`<strong>${predioCod}</strong><br>${predioDir}<br><span style="font-size:11px;color:#94a3b8;">${predioLat}, ${predioLng}</span>`).openPopup();
+        } else if (leafletMapInstance) {
+            leafletMapInstance.invalidateSize();
+        }
+    }
+
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // Buscador asíncrono de contribuyentes para vinculación
+    const contribInput = document.getElementById('busquedaContribuyenteInput');
+    const resultadosBox = document.getElementById('resultadosContribuyente');
+    let debounceTimer;
+
+    if (contribInput) {
+        contribInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const val = this.value.trim();
+            if (val.length < 2) {
+                resultadosBox.classList.add('hidden');
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/v1/tributaria/contribuyentes/buscar?query=${encodeURIComponent(val)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const items = data.content || data || [];
+                        if (items.length === 0) {
+                            resultadosBox.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">No se encontraron contribuyentes</div>';
+                        } else {
+                            resultadosBox.innerHTML = items.map(c => `
+                                <div onclick="seleccionarContribuyente('${c.id}', '${c.codigoContribuyente} - ${c.nombreRazonSocial}')"
+                                     class="p-2.5 hover:bg-slate-800 cursor-pointer text-xs border-b border-theme last:border-0 transition-colors">
+                                    <span class="font-mono font-bold text-blue-400">${c.codigoContribuyente}</span>:
+                                    <span class="text-slate-200">${c.nombreRazonSocial}</span>
+                                    <span class="text-slate-500 block text-[10px]">${c.tipoDocumento || 'DOC'}: ${c.numeroDocumentoEnmascarado || c.numeroDocumento || ''}</span>
+                                </div>
+                            `).join('');
+                        }
+                        resultadosBox.classList.remove('hidden');
+                    })
+                    .catch(() => {
+                        resultadosBox.innerHTML = '<div class="p-3 text-xs text-rose-400 text-center">Error al consultar contribuyentes</div>';
+                        resultadosBox.classList.remove('hidden');
+                    });
+            }, 300);
+        });
+    }
+
+    function seleccionarContribuyente(id, texto) {
+        document.getElementById('contribuyenteIdSeleccionado').value = id;
+        document.getElementById('contribuyenteSeleccionadoTexto').innerText = texto;
+        document.getElementById('contribuyenteSeleccionadoInfo').classList.remove('hidden');
+        resultadosBox.classList.add('hidden');
+        if (contribInput) contribInput.value = '';
+    }
+
+    function limpiarContribuyenteSeleccionado() {
+        document.getElementById('contribuyenteIdSeleccionado').value = '';
+        document.getElementById('contribuyenteSeleccionadoTexto').innerText = '';
+        document.getElementById('contribuyenteSeleccionadoInfo').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inicializar pestaña por URL hash si existe
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab') || 'general';
+        switchTab('tab-' + tab);
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

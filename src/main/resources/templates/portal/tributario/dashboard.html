@@ -1,0 +1,193 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Mi Portal Tributario | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <!-- Banner de Saludo y Perfil Activo -->
+            <div class="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 rounded-2xl p-6 text-white shadow-md">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-blue-200 border border-white/20 mb-2">
+                            <i data-lucide="check-shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            Sesión Tributaria Segura y Verificada
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tight" th:text="'Hola, ' + ${dashboard.nombreCiudadano}">Hola, Ciudadano</h2>
+                        <p class="text-xs text-blue-100 max-w-2xl mt-1">
+                            Consulta tus predios, obligaciones, pagos y documentos municipales desde un solo lugar.
+                        </p>
+                    </div>
+                    <div th:if="${dashboard.contribuyenteActivo != null}" class="bg-white/10 backdrop-blur-sm rounded-xl p-3.5 border border-white/10 text-right">
+                        <div class="text-[10px] uppercase font-bold text-blue-200">Contribuyente Activo</div>
+                        <div class="text-sm font-bold text-white truncate max-w-xs" th:text="${dashboard.contribuyenteActivo.nombreRazonSocial}">Juan Pérez</div>
+                        <div class="text-[11px] text-blue-200 font-mono" th:text="'Código: ' + ${dashboard.contribuyenteActivo.codigoContribuyente} + ' | Doc: ' + ${dashboard.contribuyenteActivo.numeroDocumento}">C001</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-[10px] text-blue-200 mt-4 pt-4 border-t border-white/10">
+                    <span>Fecha de corte: <strong class="text-white" th:text="${#temporals.format(dashboard.fechaCorte, 'dd/MM/yyyy HH:mm')}">28/10/2026</strong></span>
+                    <span>|</span>
+                    <span>Distrito de Quinua, Huamanga</span>
+                </div>
+            </div>
+
+            <!-- Tarjetas de Indicadores Reales (KPIs) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mis Predios</span>
+                        <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="building-2" class="w-4 h-4"></i></div>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900 mt-2" th:text="${dashboard.totalPredios}">0</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Registrados a su nombre</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Obligaciones Pendientes</span>
+                        <div class="p-1.5 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></div>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900 mt-2" th:text="${dashboard.totalObligacionesPendientes}">0</div>
+                    <div class="text-[10px] text-amber-600 font-semibold mt-1">Por cancelar o fraccionar</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Deuda Pendiente Total</span>
+                        <div class="p-1.5 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900 mt-2" th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoPendienteTotal, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Vencido: <span class="text-rose-600 font-bold" th:text="'S/ ' + ${#numbers.formatDecimal(dashboard.saldoVencido, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Convenios Vigentes</span>
+                        <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="calendar-check" class="w-4 h-4"></i></div>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900 mt-2" th:text="${dashboard.totalConveniosVigentes}">0</div>
+                    <div class="text-[10px] text-emerald-600 font-semibold mt-1">Fraccionamientos al día</div>
+                </div>
+            </div>
+
+            <!-- Accesos Rápidos Principales -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <a th:href="@{/portal/tributario/predios}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-blue-50 text-blue-600"><i data-lucide="building-2" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Mis Predios</span>
+                </a>
+                <a th:href="@{/portal/tributario/obligaciones}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-indigo-50 text-indigo-600"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Obligaciones</span>
+                </a>
+                <a th:href="@{/portal/tributario/cuenta-corriente}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Cta. Corriente</span>
+                </a>
+                <a th:href="@{/portal/tributario/pagos}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-cyan-50 text-cyan-600"><i data-lucide="credit-card" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Mis Pagos</span>
+                </a>
+                <a th:href="@{/portal/tributario/recibos}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-teal-50 text-teal-600"><i data-lucide="receipt" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Mis Recibos</span>
+                </a>
+                <a th:href="@{/portal/tributario/fraccionamientos}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-amber-50 text-amber-600"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Convenios</span>
+                </a>
+                <a th:href="@{/portal/tributario/notificaciones}" class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-1.5">
+                    <div class="p-2 rounded-lg bg-purple-50 text-purple-600"><i data-lucide="inbox" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-800">Notificaciones</span>
+                </a>
+            </div>
+
+            <!-- Dos Columnas: Próximos Vencimientos y Últimos Pagos -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Próximos Vencimientos -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+                            <h3 class="text-sm font-bold text-slate-900">Próximos Vencimientos</h3>
+                        </div>
+                        <a th:href="@{/portal/tributario/obligaciones}" class="text-[11px] font-semibold text-blue-600 hover:underline">Ver todas</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 flex-1 mt-2">
+                        <div th:if="${dashboard.proximosVencimientos.empty}" class="py-8 text-center text-slate-400 text-xs">
+                            <i data-lucide="check-circle" class="w-8 h-8 mx-auto text-emerald-400 mb-2"></i>
+                            No registras obligaciones pendientes de pago. ¡Estás al día!
+                        </div>
+                        <div th:each="ob : ${dashboard.proximosVencimientos}" class="py-3 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800" th:text="${ob.conceptoNombre} + ' ' + ${ob.anioPeriodo}">Impuesto Predial 2026</div>
+                                <div class="text-[10px] text-slate-500" th:text="'Cuota ' + ${ob.cuotaNumero} + ' | Vence: ' + ${#temporals.format(ob.fechaVencimiento, 'dd/MM/yyyy')}">Cuota 1</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs font-black" th:classappend="${ob.vencida ? 'text-rose-600' : 'text-slate-800'}"
+                                     th:text="'S/ ' + ${#numbers.formatDecimal(ob.saldo, 1, 'COMMA', 2, 'POINT')}">S/ 45.00</div>
+                                <span th:if="${ob.vencida}" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-600">Vencida</span>
+                                <span th:unless="${ob.vencida}" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700">Por Vencer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Últimos Pagos Confirmados -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="credit-card" class="w-4 h-4 text-emerald-600"></i>
+                            <h3 class="text-sm font-bold text-slate-900">Últimos Pagos Confirmados</h3>
+                        </div>
+                        <a th:href="@{/portal/tributario/pagos}" class="text-[11px] font-semibold text-blue-600 hover:underline">Ver historial</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 flex-1 mt-2">
+                        <div th:if="${dashboard.ultimosPagos.empty}" class="py-8 text-center text-slate-400 text-xs">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                            Aún no registras pagos tributarios en el sistema.
+                        </div>
+                        <div th:each="p : ${dashboard.ultimosPagos}" class="py-3 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800" th:text="'Pago ' + ${p.codigoPago}">PAG-2026-0001</div>
+                                <div class="text-[10px] text-slate-500" th:text="${#temporals.format(p.fechaPago, 'dd/MM/yyyy HH:mm')} + ' (' + ${p.medioPago} + ')'">Fecha</div>
+                            </div>
+                            <div class="text-right flex items-center gap-3">
+                                <div>
+                                    <div class="text-xs font-black text-emerald-600" th:text="'S/ ' + ${#numbers.formatDecimal(p.montoTotal, 1, 'COMMA', 2, 'POINT')}">S/ 120.00</div>
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700">Confirmado</span>
+                                </div>
+                                <a th:if="${p.reciboId != null}" th:href="@{/portal/tributario/recibos/{id}/pdf(id=${p.reciboId})}" target="_blank"
+                                   class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Descargar Recibo">
+                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Información sobre Canales y Medios de Pago Autorizados -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 rounded-xl bg-blue-600 text-white flex-shrink-0 mt-0.5">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-blue-900">¿Cómo realizar tus pagos tributarios en Quinua?</h4>
+                        <p class="text-[11px] text-blue-700 mt-0.5 max-w-2xl">
+                            Puedes cancelar en la Caja Municipal de la Municipalidad Distrital de Quinua (Plaza Mayor s/n) en efectivo o mediante tarjeta en terminal POS institucional. También puedes solicitar un convenio de fraccionamiento si cumples los requisitos.
+                        </p>
+                    </div>
+                </div>
+                <a th:href="@{/portal/tributario/fraccionamientos}" class="px-4 py-2 rounded-lg bg-white border border-blue-300 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm whitespace-nowrap">
+                    Ver Fraccionamientos
+                </a>
+            </div>
+</div>
+</body>
+</html>

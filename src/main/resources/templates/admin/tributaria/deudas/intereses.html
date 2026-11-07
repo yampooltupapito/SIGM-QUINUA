@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        titulo='Simulador de Intereses Moratorios (TIM) - SIGM Quinua',
+        moduloActivo='tributaria',
+        submenuActivo='deudas',
+        contenido=~{::#main-content}
+      )}">
+<head>
+    <title>Simulador de Intereses Moratorios</title>
+</head>
+<body>
+<div id="main-content" class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-700/60">
+        <div class="flex items-center space-x-3">
+            <a th:href="@{/dashboard/tributaria/deudas}" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-slate-100 tracking-tight">Cálculo y Parámetros de Interés Moratorio (TIM)</h1>
+                <p class="text-xs text-slate-400 mt-0.5">Motor de cálculo conforme al Art. 33 del TUO del Código Tributario (D.S. 133-2013-EF) y normatividad SUNAT/Municipal</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="abrirModal('modalNuevoParametro')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_DEUDAS_CONFIGURAR_INTERESES') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors flex items-center space-x-1.5">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Parámetro TIM</span>
+            </button>
+            <a th:href="@{/dashboard/tributaria/deudas/cartera}"
+               class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Ver Cartera</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${successMessage}" class="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center space-x-2">
+        <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${successMessage}">Operación exitosa</span>
+    </div>
+    <div th:if="${errorMessage}" class="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center space-x-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+        <span th:text="${errorMessage}">Error detectado</span>
+    </div>
+
+    <!-- Sección de Simulación Interactiva -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Formulario de Simulación -->
+        <div class="p-5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-amber-400"></i>
+                <span>Simulador de Interés a la Fecha</span>
+            </h3>
+
+            <form method="post" th:action="@{/dashboard/tributaria/deudas/intereses/simular}" th:object="${simulacionForm}" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Monto Capital Insoluto (S/):</label>
+                    <input type="number" step="0.01" min="0.01" th:field="*{montoCapital}" required placeholder="Ej: 150.00"
+                           class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Fecha de Vencimiento de la Deuda:</label>
+                    <input type="date" th:field="*{fechaVencimiento}" required
+                           class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Fecha de Corte (Liquidación):</label>
+                    <input type="date" th:field="*{fechaCorte}" th:value="${fechaCorte}" required
+                           class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Parámetro / Concepto:</label>
+                    <select th:field="*{parametroId}" class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Automático por Vigencia --</option>
+                        <option th:each="p : ${parametros}" th:value="${p.id}" th:text="${p.codigo + ' (' + p.tasa + '% ' + p.unidadTemporal.descripcion + ')'}">TIM</option>
+                    </select>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold shadow-sm transition-colors flex items-center justify-center space-x-1.5">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        <span>Calcular Intereses</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resultado del Cálculo -->
+        <div class="lg:col-span-2 p-5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i>
+                <span>Resultado del Desglose Liquidado</span>
+            </h3>
+
+            <div th:if="${resultadoSimulacion == null}" class="p-12 text-center text-slate-400 text-xs">
+                <i data-lucide="arrow-left" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+                <p>Complete el capital y fechas en el simulador para proyectar los intereses moratorios oficiales.</p>
+            </div>
+
+            <div th:if="${resultadoSimulacion != null}" class="space-y-4">
+                <div th:if="${!resultadoSimulacion.esAptoParaCalculo}" class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+                    <span class="font-bold block mb-1">Aviso de Parámetro:</span>
+                    <p th:text="${resultadoSimulacion.mensajeError}">Error en cálculo</p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-lg bg-slate-900/60 border border-slate-700/40 text-xs font-mono">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] font-sans">CAPITAL INSOLUTO</span>
+                        <span class="text-base font-bold text-slate-200"
+                              th:text="'S/ ' + ${#numbers.formatDecimal(resultadoSimulacion.montoCapital, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] font-sans">DÍAS TRANSCURRIDOS</span>
+                        <span class="text-base font-bold text-amber-400"
+                              th:text="${resultadoSimulacion.diasMorosidad} + ' días'">0 días</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] font-sans">FACTOR DIARIO</span>
+                        <span class="text-base font-bold text-blue-400"
+                              th:text="${resultadoSimulacion.factorDiario}">0.00030000</span>
+                    </div>
+                    <div class="p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                        <span class="text-amber-400 block text-[10px] font-sans font-bold">INTERÉS CALCULADO</span>
+                        <span class="text-base font-bold text-amber-300"
+                              th:text="'S/ ' + ${#numbers.formatDecimal(resultadoSimulacion.montoInteresCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-lg bg-blue-600/10 border border-blue-500/20 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-blue-300 font-semibold uppercase tracking-wider block">Total Proyectado (Capital + Interés)</span>
+                        <span class="text-[11px] text-slate-400 font-mono"
+                              th:text="'Período evaluado: ' + ${resultadoSimulacion.fechaVencimiento} + ' al ' + ${resultadoSimulacion.fechaCorte}"></span>
+                    </div>
+                    <span class="text-2xl font-bold text-blue-200 font-mono"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(resultadoSimulacion.montoTotalSimulado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+
+                <div class="p-3 rounded-lg bg-slate-900 border border-slate-700/50 text-[11px] text-slate-400 space-y-1">
+                    <div class="text-slate-300 font-semibold" th:text="'Base Legal: ' + ${resultadoSimulacion.baseLegal}">Base legal</div>
+                    <p th:text="${resultadoSimulacion.advertenciaLegal}">Advertencia</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catálogo Oficial de Parámetros Normativos -->
+    <div class="rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm overflow-hidden space-y-0">
+        <div class="p-4 border-b border-slate-700/60 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-slate-200">Parámetros Normativos de Tasas de Interés Aprobados</h3>
+                <p class="text-[11px] text-slate-400">Historial y vigencias formales de tasas de interés moratorio y compensatorio</p>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-mono" th:text="${parametros.size()}">0</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Descripción / Denominación</th>
+                        <th class="py-3 px-4">Concepto</th>
+                        <th class="py-3 px-4">Tasa / Unidad</th>
+                        <th class="py-3 px-4">Vigencia</th>
+                        <th class="py-3 px-4">Base Legal</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40">
+                    <tr th:each="p : ${parametros}" class="hover:bg-slate-700/20 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-400" th:text="${p.codigo}">TIM-2026-SUNAT</td>
+                        <td class="py-3 px-4 font-medium text-slate-100" th:text="${p.nombre}">Tasa Mensual 2026</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${p.conceptoNombre}">TODOS</td>
+                        <td class="py-3 px-4 font-mono font-bold text-amber-300"
+                            th:text="${p.tasa} + '% (' + ${p.unidadTemporal.descripcion} + ')'">0.90% Mensual</td>
+                        <td class="py-3 px-4 font-mono text-[11px] text-slate-300"
+                            th:text="${p.fechaInicioVigencia} + (${p.fechaFinVigencia != null ? ' al ' + p.fechaFinVigencia : ' (Indefinida)'})">2026-01-01</td>
+                        <td class="py-3 px-4 text-[11px] text-slate-400 max-w-xs truncate" th:text="${p.baseLegal}">R.S. 044-2021/SUNAT</td>
+                        <td class="py-3 px-4 text-center">
+                            <span th:if="${p.esVigente}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Vigente</span>
+                            <span th:unless="${p.esVigente}" class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">No Vigente</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO PARÁMETRO NORMATIVO -->
+    <div id="modalNuevoParametro" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-850 border border-slate-700 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-700/60 flex items-center justify-between bg-slate-900/60">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4 text-blue-400"></i>
+                    <span>Nuevo Parámetro Normativo de Tasa</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevoParametro')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form method="post" th:action="@{/dashboard/tributaria/deudas/intereses/parametros}" th:object="${parametroForm}" class="p-4 space-y-3 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Código Formal:</label>
+                        <input type="text" th:field="*{codigo}" required placeholder="Ej: TIM-2026-MUN"
+                               class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Tipo de Interés:</label>
+                        <select th:field="*{tipoInteres}" required class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="TIM_MENSUAL">TIM Mensual (SUNAT/Municipal)</option>
+                            <option value="TIM_DIARIO">TIM Diaria</option>
+                            <option value="COMPENSATORIO">Interés Compensatorio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Denominación del Parámetro:</label>
+                    <input type="text" th:field="*{nombre}" required placeholder="Ej: Tasa de Interés Moratorio Mensual 2026"
+                           class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Tasa Nominal (%):</label>
+                        <input type="number" step="0.0001" min="0.0001" th:field="*{tasa}" required placeholder="0.9000"
+                               class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Unidad Temporal:</label>
+                        <select th:field="*{unidadTemporal}" required class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="MENSUAL">Mensual</option>
+                            <option value="DIARIA">Diaria</option>
+                            <option value="ANUAL">Anual</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Inicio de Vigencia:</label>
+                        <input type="date" th:field="*{fechaInicioVigencia}" required
+                               class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 font-medium mb-1">Fin de Vigencia (Opcional):</label>
+                        <input type="date" th:field="*{fechaFinVigencia}"
+                               class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 font-medium mb-1">Base Legal Normativa Obligatoria:</label>
+                    <textarea th:field="*{baseLegal}" required rows="2" placeholder="Resolución de Superintendencia / Ordenanza Municipal..."
+                              class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-700/40">
+                    <button type="button" onclick="cerrarModal('modalNuevoParametro')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold">Guardar Parámetro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Gestión de Modales -->
+<script>
+    function abrirModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+    }
+    function cerrarModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    }
+</script>
+</body>
+</html>

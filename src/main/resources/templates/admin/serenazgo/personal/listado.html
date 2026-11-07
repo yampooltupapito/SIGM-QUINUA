@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Padrón de Personal de Serenazgo | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional y Breadcrumb -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Seguridad Ciudadana</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-indigo-400 font-semibold">Personal de Serenazgo</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Padrón Oficial</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="users" class="w-6 h-6 text-indigo-400"></i>
+                <span>Padrón de Personal de Serenazgo</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Registro y administración del cuerpo operativo de serenazgo de la Municipalidad Distrital de Quinua.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <a th:href="@{/dashboard/serenazgo/personal/nuevo}"
+               sec:authorize="hasAuthority('SERENAZGO_PERSONAL_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all">
+                <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                Registrar Efectivo
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-3">
+        <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${mensajeExito}">Operación exitosa</span>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-octagon" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${mensajeError}">Error en la operación</span>
+    </div>
+
+    <!-- Tarjetas de Métricas Reales -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-slate-400">Total Registrados</span>
+            <div class="text-xl font-bold text-white mt-0.5" th:text="${estadisticas.totalRegistrados}">0</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-emerald-400 font-medium">Activos</span>
+            <div class="text-xl font-bold text-emerald-400 mt-0.5" th:text="${estadisticas.totalActivos}">0</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-amber-400 font-medium">Disponibles Hoy</span>
+            <div class="text-xl font-bold text-amber-300 mt-0.5" th:text="${estadisticas.totalDisponiblesHoy}">0</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-slate-400">Inactivos</span>
+            <div class="text-xl font-bold text-slate-300 mt-0.5" th:text="${estadisticas.totalInactivos}">0</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-rose-400">Suspendidos</span>
+            <div class="text-xl font-bold text-rose-400 mt-0.5" th:text="${estadisticas.totalSuspendidos}">0</div>
+        </div>
+        <div class="bg-card border border-theme rounded-xl p-3.5 text-center">
+            <span class="text-[11px] text-slate-500">Retirados</span>
+            <div class="text-xl font-bold text-slate-500 mt-0.5" th:text="${estadisticas.totalRetirados}">0</div>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+        <form th:action="@{/dashboard/serenazgo/personal}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div>
+                <label class="block text-slate-300 font-medium mb-1">Buscar por Código, Nombre o DNI</label>
+                <input type="text" name="textoBusqueda" th:value="${filtro.textoBusqueda}"
+                       placeholder="Ej: SER-000001, Carlos, 70123456"
+                       class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-slate-300 font-medium mb-1">Estado</label>
+                <select name="estado" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Todos los Estados --</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.descripcion}"
+                            th:selected="${filtro.estado == est}">Activo</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-slate-300 font-medium mb-1">Cargo Operativo</label>
+                <select name="cargoOperativoId" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Todos los Cargos --</option>
+                    <option th:each="c : ${cargos}" th:value="${c.id}" th:text="${c.nombre}"
+                            th:selected="${filtro.cargoOperativoId == c.id}">Sereno</option>
+                </select>
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-1.5">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/serenazgo/personal}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 px-3 rounded-lg transition-colors" title="Limpiar Filtros">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla del Padrón -->
+    <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[10px] border-b border-theme">
+                <tr>
+                    <th class="py-3 px-4">Código</th>
+                    <th class="py-3 px-4">Apellidos y Nombres</th>
+                    <th class="py-3 px-4">Doc. Identidad</th>
+                    <th class="py-3 px-4">Cargo Operativo</th>
+                    <th class="py-3 px-4">Oficina</th>
+                    <th class="py-3 px-4">Fecha Ingreso</th>
+                    <th class="py-3 px-4 text-center">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/40 font-medium">
+                <tr th:if="${#lists.isEmpty(pagina.content)}" class="text-center">
+                    <td colspan="8" class="py-10 text-slate-400">
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <i data-lucide="user-x" class="w-8 h-8 text-slate-500"></i>
+                            <span>No se encontraron efectivos registrados con los criterios seleccionados.</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:each="s : ${pagina.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-mono text-indigo-400 font-bold" th:text="${s.codigoInterno}">SER-000001</td>
+                    <td class="py-3 px-4 text-white font-semibold" th:text="${s.nombreCompleto}">Nombre Apellido</td>
+                    <td class="py-3 px-4 font-mono text-slate-300" th:text="${s.tipoDocumentoIdentidad + ' ' + s.numeroDocumentoEnmascarado}">DNI 70****12</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                              th:text="${s.nombreCargoOperativo}">Sereno</span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-400" th:text="${s.nombreOficina}">Seguridad Ciudadana</td>
+                    <td class="py-3 px-4 font-mono text-slate-300" th:text="${s.fechaIngreso}">2026-01-15</td>
+                    <td class="py-3 px-4 text-center">
+                        <span th:if="${s.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVO</span>
+                        <span th:if="${s.estado == 'INACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-300">INACTIVO</span>
+                        <span th:if="${s.estado == 'SUSPENDIDO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">SUSPENDIDO</span>
+                        <span th:if="${s.estado == 'RETIRADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 text-slate-500 border border-slate-700">RETIRADO</span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                        <a th:href="@{/dashboard/serenazgo/personal/{id}(id=${s.id})}"
+                           class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 transition-colors inline-block"
+                           title="Ver Ficha y Legajo">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/personal/{id}/editar(id=${s.id})}"
+                           sec:authorize="hasAuthority('SERENAZGO_PERSONAL_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                           class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors inline-block"
+                           title="Editar Datos">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </a>
+                        <a th:href="@{/dashboard/serenazgo/personal/{id}/ficha.pdf(id=${s.id})}"
+                           sec:authorize="hasAuthority('SERENAZGO_PERSONAL_FICHA_EXPORTAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                           class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 hover:text-rose-300 transition-colors inline-block"
+                           title="Descargar Ficha en PDF">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${pagina.totalPages > 1}" class="p-4 border-t border-theme flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${pagina.number + 1}">1</span> de
+                <span class="font-bold text-white" th:text="${pagina.totalPages}">1</span>
+                (<span th:text="${pagina.totalElements}">0</span> registros)
+            </div>
+            <div class="flex items-center space-x-1">
+                <a th:if="${pagina.hasPrevious()}"
+                   th:href="@{/dashboard/serenazgo/personal(page=${pagina.number - 1}, textoBusqueda=${filtro.textoBusqueda}, estado=${filtro.estado}, cargoOperativoId=${filtro.cargoOperativoId})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    Anterior
+                </a>
+                <a th:if="${pagina.hasNext()}"
+                   th:href="@{/dashboard/serenazgo/personal(page=${pagina.number + 1}, textoBusqueda=${filtro.textoBusqueda}, estado=${filtro.estado}, cargoOperativoId=${filtro.cargoOperativoId})}"
+                   class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

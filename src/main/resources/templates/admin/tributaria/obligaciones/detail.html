@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Obligación ' + ${obligacion.codigoObligacion} + ' — SIGM-QUINUA'">Ficha de Obligación Tributaria — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Notificación -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado de la Ficha -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/dashboard/tributaria/obligaciones}" class="hover:text-blue-400 transition-colors">Obligaciones</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-200" th:text="${obligacion.codigoObligacion}">OBL-000001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight" th:text="${obligacion.codigoObligacion}">
+                    OBL-PRED-2026-000001
+                </h1>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                      th:classappend="${obligacion.badgeClass}"
+                      th:text="${obligacion.estado.descripcion}">Registrada</span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                      th:classappend="${obligacion.exigibilidadBadgeClass}"
+                      th:text="${obligacion.estadoExigibilidad.descripcion}">No Exigible</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+                Contribuyente: <span class="text-white font-medium" th:text="${obligacion.contribuyenteNombre}">Juan Pérez</span> |
+                Documento: <span class="text-slate-300" th:text="${obligacion.contribuyenteDocumento}">DNI: 12345678</span>
+            </p>
+        </div>
+
+        <!-- Botones de Acción Administrativa -->
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{'/dashboard/tributaria/obligaciones/' + ${obligacion.id} + '/pdf'}" target="_blank"
+               class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5">
+                <i data-lucide="printer" class="w-4 h-4 text-rose-400"></i>
+                Imprimir Ficha
+            </a>
+
+            <!-- Validar Formalmente -->
+            <form th:if="${obligacion.estado.name() == 'REGISTRADA' or obligacion.estado.name() == 'PENDIENTE_VALIDACION'}"
+                  th:action="@{'/dashboard/tributaria/obligaciones/' + ${obligacion.id} + '/validar'}" method="post" class="inline">
+                <button type="submit"
+                        sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_VALIDAR') or hasRole('ADMIN')"
+                        onclick="return confirm('¿Confirma la validación formal de esta obligación tributaria?')"
+                        class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Validar Formalmente
+                </button>
+            </form>
+
+            <!-- Suspender -->
+            <button th:if="${obligacion.estado.name() != 'ANULADA' and obligacion.estado.name() != 'SUSPENDIDA'}"
+                    onclick="document.getElementById('modalSuspender').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_SUSPENDER') or hasRole('ADMIN')"
+                    class="px-3 py-1.5 bg-amber-600/20 text-amber-300 hover:bg-amber-600/30 text-xs font-semibold rounded-lg border border-amber-500/40 transition-colors flex items-center gap-1.5">
+                <i data-lucide="pause-circle" class="w-4 h-4"></i>
+                Suspender
+            </button>
+
+            <!-- Rectificar -->
+            <button th:if="${obligacion.estado.name() != 'ANULADA' and obligacion.estado.name() != 'RECTIFICADA'}"
+                    onclick="document.getElementById('modalRectificar').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_RECTIFICAR') or hasRole('ADMIN')"
+                    class="px-3 py-1.5 bg-sky-600/20 text-sky-300 hover:bg-sky-600/30 text-xs font-semibold rounded-lg border border-sky-500/40 transition-colors flex items-center gap-1.5">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                Rectificar
+            </button>
+
+            <!-- Anular -->
+            <button th:if="${obligacion.estado.name() != 'ANULADA'}"
+                    onclick="document.getElementById('modalAnular').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_ANULAR') or hasRole('ADMIN')"
+                    class="px-3 py-1.5 bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 text-xs font-semibold rounded-lg border border-rose-500/40 transition-colors flex items-center gap-1.5">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Anular
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <div class="border-b border-[#334155] flex space-x-6 text-xs font-medium">
+        <button onclick="cambiarTab('resumen')" id="tab-btn-resumen"
+                class="pb-3 border-b-2 border-blue-500 text-blue-400 font-bold transition-colors">
+            Resumen Financiero
+        </button>
+        <button onclick="cambiarTab('cuotas')" id="tab-btn-cuotas"
+                class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+            Cuotas y Vencimientos (<span th:text="${#lists.size(obligacion.cuotas)}">0</span>)
+        </button>
+        <button onclick="cambiarTab('movimientos')" id="tab-btn-movimientos"
+                class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+            Libro de Movimientos (<span th:text="${#lists.size(obligacion.movimientos)}">0</span>)
+        </button>
+        <button onclick="cambiarTab('historial')" id="tab-btn-historial"
+                class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+            Trazabilidad y Auditoría (<span th:text="${#lists.size(obligacion.historial)}">0</span>)
+        </button>
+    </div>
+
+    <!-- Contenido: Pestaña Resumen -->
+    <div id="tab-resumen" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Tarjeta 1: Importe y Saldos -->
+            <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i>
+                    Balance de la Obligación
+                </h3>
+                <div class="space-y-2 pt-1 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Importe Determinado:</span>
+                        <span class="font-mono font-medium text-white" th:text="'S/ ' + ${obligacion.importeDeterminado}">S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Ajustes Contables:</span>
+                        <span class="font-mono text-slate-300" th:text="'S/ ' + ${obligacion.importeAjustes}">S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Importe Pagado:</span>
+                        <span class="font-mono text-emerald-400" th:text="'S/ ' + ${obligacion.importePagado}">S/ 0.00</span>
+                    </div>
+                    <div class="pt-2 border-t border-[#334155] flex justify-between items-baseline">
+                        <span class="text-slate-300 font-bold">Saldo Deudor:</span>
+                        <span class="text-lg font-bold font-mono text-rose-400" th:text="'S/ ' + ${obligacion.saldo}">S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-[11px] pt-1">
+                        <span class="text-slate-500">Estado Financiero:</span>
+                        <span class="font-semibold" th:classappend="${obligacion.financieroBadgeClass}" th:text="${obligacion.estadoFinanciero.descripcion}">Pendiente</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: Datos de la Determinación -->
+            <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+                    Sustento Normativo y Técnico
+                </h3>
+                <div class="space-y-2 pt-1 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Tipo de Tributo:</span>
+                        <span class="font-medium text-white" th:text="${obligacion.tipoDeterminacion.descripcion}">Impuesto Predial</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Concepto Específico:</span>
+                        <span class="font-medium text-slate-200" th:text="${obligacion.conceptoNombre}">Impuesto Predial Anual</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Ejercicio / Período:</span>
+                        <span class="font-medium text-slate-200" th:text="${obligacion.periodoAnio}">2026</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Resolución de Aprobación:</span>
+                        <span class="font-mono text-blue-300" th:text="${obligacion.resolucionSustento != null ? obligacion.resolucionSustento : 'Trámite Ordinario'}">Resolución N° 045-2026-MDQ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 3: Predio y Fechas -->
+            <div class="p-5 rounded-xl bg-[#202c3d] border border-[#334155] space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="home" class="w-4 h-4 text-emerald-400"></i>
+                    Predio y Cronología
+                </h3>
+                <div class="space-y-2 pt-1 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Predio Tributario:</span>
+                        <span class="font-medium text-slate-200" th:text="${obligacion.predioCodigo != null ? obligacion.predioCodigo + ' - ' + obligacion.predioDireccion : 'Todos los predios del contribuyente'}">PR-000001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha de Determinación:</span>
+                        <span class="text-slate-300" th:text="${#temporals.format(obligacion.fechaDeterminacion, 'dd/MM/yyyy')}">01/01/2026</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Fecha de Registro en Sistema:</span>
+                        <span class="text-slate-300" th:text="${#temporals.format(obligacion.fechaRegistro, 'dd/MM/yyyy HH:mm')}">26/10/2026</span>
+                    </div>
+                    <div th:if="${obligacion.fechaValidacion != null}">
+                        <span class="text-slate-400 block text-[11px]">Validado formalmente por:</span>
+                        <span class="text-emerald-400" th:text="${obligacion.usuarioValidador} + ' (' + ${#temporals.format(obligacion.fechaValidacion, 'dd/MM/yyyy')} + ')'">admin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div th:if="${obligacion.observaciones != null and !obligacion.observaciones.isEmpty()}"
+             class="p-4 rounded-xl bg-[#202c3d] border border-[#334155] text-xs">
+            <span class="font-bold text-slate-300 uppercase tracking-wider block mb-1">Observaciones Generales:</span>
+            <p class="text-slate-400" th:text="${obligacion.observaciones}">Observaciones...</p>
+        </div>
+    </div>
+
+    <!-- Contenido: Pestaña Cuotas -->
+    <div id="tab-cuotas" class="hidden space-y-4">
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] text-slate-400 uppercase text-[11px]">
+                <tr>
+                    <th class="py-3 px-4">Cuota N°</th>
+                    <th class="py-3 px-4 text-right">Importe Asignado</th>
+                    <th class="py-3 px-4 text-right">Importe Pagado</th>
+                    <th class="py-3 px-4 text-right">Saldo Deudor</th>
+                    <th class="py-3 px-4">Fecha de Vencimiento</th>
+                    <th class="py-3 px-4 text-center">Estado</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60">
+                <tr th:each="c : ${obligacion.cuotas}" class="hover:bg-slate-800/40">
+                    <td class="py-3 px-4 font-bold text-white" th:text="'Cuota ' + ${c.numeroCuota}">Cuota 1</td>
+                    <td class="py-3 px-4 text-right font-mono text-slate-200" th:text="'S/ ' + ${c.importe}">S/ 0.00</td>
+                    <td class="py-3 px-4 text-right font-mono text-emerald-400" th:text="'S/ ' + ${c.importePagado}">S/ 0.00</td>
+                    <td class="py-3 px-4 text-right font-mono font-bold"
+                        th:classappend="${c.saldo.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-rose-400' : 'text-emerald-400'}"
+                        th:text="'S/ ' + ${c.saldo}">S/ 0.00</td>
+                    <td class="py-3 px-4 text-slate-300"
+                        th:text="${c.fechaVencimiento != null ? #temporals.format(c.fechaVencimiento, 'dd/MM/yyyy') : 'N/A'}">28/02/2026</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${c.badgeClass}"
+                              th:text="${c.estado.descripcion}">Pendiente</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contenido: Pestaña Movimientos -->
+    <div id="tab-movimientos" class="hidden space-y-4">
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#1e293b] text-slate-400 uppercase text-[11px]">
+                <tr>
+                    <th class="py-3 px-3.5">Secuencia</th>
+                    <th class="py-3 px-3.5">Fecha</th>
+                    <th class="py-3 px-3.5">Tipo de Movimiento</th>
+                    <th class="py-3 px-3.5">Naturaleza</th>
+                    <th class="py-3 px-3.5 text-right">Importe</th>
+                    <th class="py-3 px-3.5 text-right">Saldo Resultante</th>
+                    <th class="py-3 px-3.5">Descripción / Sustento</th>
+                    <th class="py-3 px-3.5">Responsable</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60">
+                <tr th:if="${#lists.isEmpty(obligacion.movimientos)}">
+                    <td colspan="8" class="py-8 text-center text-slate-500">No hay movimientos contables registrados para esta obligación.</td>
+                </tr>
+                <tr th:each="m : ${obligacion.movimientos}" class="hover:bg-slate-800/40">
+                    <td class="py-3 px-3.5 font-mono text-slate-400" th:text="'#' + ${m.numeroSecuencia}">#1</td>
+                    <td class="py-3 px-3.5" th:text="${#temporals.format(m.fechaOperacion, 'dd/MM/yyyy')}">26/10/2026</td>
+                    <td class="py-3 px-3.5 font-medium text-white" th:text="${m.tipoMovimiento.descripcion}">Cargo por Obligación</td>
+                    <td class="py-3 px-3.5 font-semibold" th:classappend="${m.naturalezaStyle}" th:text="${m.naturaleza.descripcion}">Débito</td>
+                    <td class="py-3 px-3.5 text-right font-mono font-medium text-slate-200" th:text="'S/ ' + ${m.importe}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-200" th:text="'S/ ' + ${m.saldoPosterior}">S/ 0.00</td>
+                    <td class="py-3 px-3.5 text-slate-400" th:text="${m.descripcion}">Cargo inicial</td>
+                    <td class="py-3 px-3.5 text-slate-500 text-[11px]" th:text="${m.usuarioResponsable}">admin</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contenido: Pestaña Historial -->
+    <div id="tab-historial" class="hidden space-y-4">
+        <div class="rounded-xl bg-[#202c3d] border border-[#334155] p-5">
+            <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#334155]">
+                <div th:each="h : ${obligacion.historial}" class="relative">
+                    <div class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-[#202c3d]"></div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-white" th:text="${h.accion.descripcion}">Generación Inicial</span>
+                        <span class="text-slate-500 text-[11px]" th:text="${#temporals.format(h.fechaRegistro, 'dd/MM/yyyy HH:mm')}">26/10/2026 12:00</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1" th:text="${h.motivo}">Detalle del evento...</p>
+                    <div class="flex items-center gap-4 text-[11px] text-slate-400 mt-1">
+                        <span>Usuario: <strong class="text-slate-300" th:text="${h.usuarioRegistro}">admin</strong></span>
+                        <span th:if="${h.estadoAnterior != null}">Transición: <strong class="text-amber-400" th:text="${h.estadoAnterior}">REGISTRADA</strong> → <strong class="text-emerald-400" th:text="${h.estadoNuevo}">VALIDADA</strong></span>
+                        <span th:if="${h.resolucionSustento != null}">Resolución: <strong class="text-slate-300" th:text="${h.resolucionSustento}">Res-01</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Suspender Obligación -->
+    <div id="modalSuspender" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#202c3d] border border-[#334155] rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="pause-circle" class="w-5 h-5 text-amber-400"></i>
+                Suspender Exigibilidad Legal
+            </h3>
+            <p class="text-xs text-slate-400">
+                La suspensión detiene la exigibilidad ordinaria por reclamo tributario o procedimiento contencioso (Art. 119 Código Tributario).
+            </p>
+            <form th:action="@{'/dashboard/tributaria/obligaciones/' + ${obligacion.id} + '/suspender'}" method="post" th:object="${accionRequest}" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo / Sustento de Suspensión *</label>
+                    <textarea th:field="*{motivo}" required rows="3"
+                              placeholder="Ejemplo: Reclamo tributario presentado mediante Expediente MPV-2026-0045 en trámite..."
+                              class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Documento / Resolución de Trámite</label>
+                    <input type="text" th:field="*{resolucionSustento}"
+                           placeholder="Ejemplo: Exp. N° 2026-0012-RENTAS"
+                           class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="pt-3 border-t border-[#334155] flex justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modalSuspender').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg">Confirmar Suspensión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Rectificar Obligación -->
+    <div id="modalRectificar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#202c3d] border border-[#334155] rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-sky-400"></i>
+                Rectificar Obligación Tributaria
+            </h3>
+            <p class="text-xs text-slate-400">
+                La rectificación sustituye la determinación anterior con una nueva determinación técnica aprobada, ajustando el saldo en cuenta corriente.
+            </p>
+            <form th:action="@{'/dashboard/tributaria/obligaciones/' + ${obligacion.id} + '/rectificar'}" method="post" th:object="${accionRequest}" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">UUID de la Nueva Determinación Aprobada *</label>
+                    <input type="text" th:field="*{nuevaDeterminacionId}" required
+                           placeholder="Copie el UUID de la determinación rectificada..."
+                           class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Técnico de la Rectificación *</label>
+                    <textarea th:field="*{motivo}" required rows="2"
+                              placeholder="Ejemplo: Declaración Jurada rectificatoria presentada por el contribuyente con inspección técnica..."
+                              class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resolución de Rectificación</label>
+                    <input type="text" th:field="*{resolucionSustento}"
+                           placeholder="Ejemplo: Resolución de Gerencia N° 089-2026-MDQ"
+                           class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                </div>
+                <div class="pt-3 border-t border-[#334155] flex justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modalRectificar').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg">Confirmar Rectificación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Anular Obligación -->
+    <div id="modalAnular" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-[#202c3d] border border-rose-500/30 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-rose-400 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                Anular Obligación Tributaria
+            </h3>
+            <p class="text-xs text-slate-400">
+                La anulación formal descargará el saldo pendiente de la cuenta corriente mediante un asiento de anulación autorizada. Esta acción es irrevocable.
+            </p>
+            <form th:action="@{'/dashboard/tributaria/obligaciones/' + ${obligacion.id} + '/anular'}" method="post" th:object="${accionRequest}" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Formal de Anulación *</label>
+                    <textarea th:field="*{motivo}" required rows="3"
+                              placeholder="Indique la causa legal de anulación (mínimo 10 caracteres)..."
+                              class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resolución de Anulación / Acto Administrativo *</label>
+                    <input type="text" th:field="*{resolucionSustento}" required
+                           placeholder="Ejemplo: Resolución de Alcaldía N° 012-2026-MDQ"
+                           class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500">
+                </div>
+                <div class="pt-3 border-t border-[#334155] flex justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modalAnular').classList.add('hidden')"
+                            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg">Confirmar Anulación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function cambiarTab(nombre) {
+        ['resumen', 'cuotas', 'movimientos', 'historial'].forEach(tab => {
+            const contenido = document.getElementById('tab-' + tab);
+            const boton = document.getElementById('tab-btn-' + tab);
+            if (tab === nombre) {
+                contenido.classList.remove('hidden');
+                boton.classList.add('border-blue-500', 'text-blue-400', 'font-bold');
+                boton.classList.remove('border-transparent', 'text-slate-400');
+            } else {
+                contenido.classList.add('hidden');
+                boton.classList.remove('border-blue-500', 'text-blue-400', 'font-bold');
+                boton.classList.add('border-transparent', 'text-slate-400');
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Cálculo del Impuesto Predial — Recaudación Tributaria | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${success}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${success}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${error}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${error}">Error en la operación</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium">Impuesto Predial</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="calculator" class="w-6 h-6 text-blue-500"></i>
+                <span>Cálculo del Impuesto Predial</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Valorización predial y determinación tributaria basada en parámetros normativos verificados.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Botón Exportar Excel -->
+            <a th:href="@{/dashboard/tributaria/impuesto-predial/exportar/excel(ejercicioFiscal=${filtro.ejercicioFiscal},estado=${filtro.estado},query=${filtro.query})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIAL_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700 shadow-sm"
+               title="Exportar determinaciones a Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Excel</span>
+            </a>
+
+            <!-- Botón Exportar PDF -->
+            <a th:href="@{/dashboard/tributaria/impuesto-predial/exportar/pdf(ejercicioFiscal=${filtro.ejercicioFiscal},estado=${filtro.estado},query=${filtro.query})}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIAL_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700 shadow-sm"
+               title="Exportar listado a PDF">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>PDF</span>
+            </a>
+
+            <!-- Botón Simular Impuesto Predial -->
+            <a th:href="@{/dashboard/tributaria/impuesto-predial/simular}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIAL_SIMULAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA', 'ROLE_ESPECIALISTA_TRIBUTARIO')"
+               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center space-x-1.5">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Simular impuesto predial</span>
+            </a>
+
+            <!-- Botón Nuevo Cálculo Preliminar -->
+            <a th:href="@{/dashboard/tributaria/impuesto-predial/nuevo}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIAL_CALCULAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA', 'ROLE_ESPECIALISTA_TRIBUTARIO')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md hover:shadow-blue-600/20 flex items-center space-x-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo cálculo preliminar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Estadísticos Reales -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Total Registros</span>
+                <i data-lucide="calculator" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-xl font-bold text-white" th:text="${stats['totalCalculos']}">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Determinaciones totales</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Simulaciones</span>
+                <i data-lucide="play" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <div class="text-xl font-bold text-amber-400" th:text="${stats['simulaciones']}">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Cálculos no vinculantes</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Preliminares</span>
+                <i data-lucide="file-edit" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-xl font-bold text-blue-400" th:text="${stats['preliminares']}">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">En elaboración técnica</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>En Revisión</span>
+                <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+            <div class="text-xl font-bold text-indigo-400" th:text="${stats['enRevision']}">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Control administrativo</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Aprobados</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-xl font-bold text-emerald-400" th:text="${stats['aprobados']}">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Listos para emisión</div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span>Impuesto Aprobado</span>
+                <i data-lucide="coins" class="w-4 h-4 text-emerald-300"></i>
+            </div>
+            <div class="text-lg font-bold text-emerald-300" th:text="'S/ ' + ${#numbers.formatDecimal(stats['montoAprobado'], 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1">Monto legal determinado</div>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+        <form th:action="@{/dashboard/tributaria/impuesto-predial}" method="get" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Búsqueda rápida</label>
+                <div class="relative">
+                    <input type="text" name="query" th:value="${filtro.query}"
+                           placeholder="Código, DNI, RUC o Nombre..."
+                           class="w-full bg-slate-900/80 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs rounded-lg pl-8 pr-3 py-2 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Ejercicio fiscal</label>
+                <input type="number" name="ejercicioFiscal" th:value="${filtro.ejercicioFiscal}"
+                       placeholder="Ej. 2026"
+                       class="w-full bg-slate-900/80 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-slate-900/80 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    <option value="">-- Todos los estados --</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.descripcion}"
+                            th:selected="${filtro.estado == est}"></option>
+                </select>
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center space-x-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/impuesto-predial}" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs font-semibold transition-colors" title="Limpiar filtros">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Resultados -->
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-700/80">
+                    <tr>
+                        <th class="py-3 px-4">Código</th>
+                        <th class="py-3 px-4">Contribuyente</th>
+                        <th class="py-3 px-3 text-center">Ejercicio</th>
+                        <th class="py-3 px-3 text-center">Predios</th>
+                        <th class="py-3 px-4 text-right">Base Imponible</th>
+                        <th class="py-3 px-4 text-right">Impuesto Calculado</th>
+                        <th class="py-3 px-3 text-center">Estado</th>
+                        <th class="py-3 px-3 text-center">Fecha</th>
+                        <th class="py-3 px-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    <tr th:if="${calculos.empty}">
+                        <td colspan="9" class="py-8 text-center text-slate-500">
+                            <i data-lucide="calculator" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+                            <p class="font-medium">No se encontraron determinaciones o simulaciones prediales.</p>
+                            <p class="text-[11px] text-slate-600 mt-1">Utilice el botón "Simular impuesto predial" o ajuste los filtros de búsqueda.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="c : ${calculos}" class="hover:bg-slate-700/30 transition-colors">
+                        <td class="py-3 px-4 font-mono font-medium text-blue-400">
+                            <a th:href="@{/dashboard/tributaria/impuesto-predial/calculos/{id}(id=${c.id})}"
+                               class="hover:underline flex items-center space-x-1">
+                                <span th:text="${c.codigoCalculo}">PRED-2026-0001</span>
+                                <span th:if="${c.numeroVersion > 1}" class="text-[10px] px-1 py-0.5 bg-blue-500/20 text-blue-300 rounded" th:text="'v' + ${c.numeroVersion}">v2</span>
+                            </a>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-medium text-slate-200" th:text="${c.contribuyenteNombre}">Juan Pérez Quispe</div>
+                            <div class="text-[11px] text-slate-500" th:text="${c.contribuyenteNumeroDocumento}">DNI 10293847</div>
+                        </td>
+                        <td class="py-3 px-3 text-center font-bold text-slate-300" th:text="${c.ejercicioFiscal}">2026</td>
+                        <td class="py-3 px-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-700/70 text-slate-300 border border-slate-600"
+                                  th:text="${c.cantidadPredios} + ' predio(s)'">1 predio(s)</span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-300"
+                            th:text="'S/ ' + ${#numbers.formatDecimal(c.baseImponible, 1, 'COMMA', 2, 'POINT')}">S/ 120,000.00</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-emerald-400"
+                            th:text="'S/ ' + ${#numbers.formatDecimal(c.importeCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 480.00</td>
+                        <td class="py-3 px-3 text-center">
+                            <span th:if="${c.estado.name() == 'SIMULACION'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                SIMULACIÓN
+                            </span>
+                            <span th:if="${c.estado.name() == 'PRELIMINAR'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                                PRELIMINAR
+                            </span>
+                            <span th:if="${c.estado.name() == 'EN_REVISION'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                                EN REVISIÓN
+                            </span>
+                            <span th:if="${c.estado.name() == 'OBSERVADO'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                OBSERVADO
+                            </span>
+                            <span th:if="${c.estado.name() == 'APROBADO'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                APROBADO
+                            </span>
+                            <span th:if="${c.estado.name() == 'ANULADO'}"
+                                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-400 border border-slate-500/30">
+                                ANULADO
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 text-center text-slate-400 text-[11px]"
+                            th:text="${#temporals.format(c.fechaCalculo, 'dd/MM/yyyy')}">26/10/2026</td>
+                        <td class="py-3 px-4 text-center">
+                            <div class="flex items-center justify-center space-x-1.5">
+                                <a th:href="@{/dashboard/tributaria/impuesto-predial/calculos/{id}(id=${c.id})}"
+                                   class="p-1.5 bg-slate-700/80 hover:bg-blue-600 hover:text-white text-slate-300 rounded transition-colors"
+                                   title="Ver Ficha y Desglose Completo">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                </a>
+                                <a th:href="@{/dashboard/tributaria/impuesto-predial/calculos/{id}/pdf(id=${c.id})}"
+                                   target="_blank"
+                                   class="p-1.5 bg-slate-700/80 hover:bg-rose-600 hover:text-white text-slate-300 rounded transition-colors"
+                                   title="Descargar Hoja de Liquidación PDF">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${calculos.totalPages > 1}" class="flex items-center justify-between px-4 py-3 border-t border-slate-700/60 bg-slate-900/60 text-xs text-slate-400">
+            <div>
+                Mostrando <span th:text="${calculos.numberOfElements}">0</span> de <span th:text="${calculos.totalElements}">0</span> determinaciones
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <a th:if="${calculos.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/impuesto-predial(page=${calculos.number - 1},size=${calculos.size},query=${filtro.query},ejercicioFiscal=${filtro.ejercicioFiscal},estado=${filtro.estado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Anterior</a>
+                <span class="px-2.5 py-1 text-slate-400" th:text="${calculos.number + 1} + ' / ' + ${calculos.totalPages}">1 / 1</span>
+                <a th:if="${calculos.hasNext()}"
+                   th:href="@{/dashboard/tributaria/impuesto-predial(page=${calculos.number + 1},size=${calculos.size},query=${filtro.query},ejercicioFiscal=${filtro.ejercicioFiscal},estado=${filtro.estado})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

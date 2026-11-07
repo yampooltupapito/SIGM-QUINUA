@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Información Institucional — Municipalidad Distrital de Quinua</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA DE SECCIÓN -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3 justify-center sm:justify-start">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Institucional</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Nuestra Institución</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
+                Conozca la misión, visión, organización y dependencias orgánicas de la Municipalidad Distrital de Quinua,
+                provincia de Huamanga, departamento de Ayacucho.
+            </p>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+
+        <!-- RESEÑA HISTÓRICA E IDENTIDAD -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-8 space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                        Cuna de la Libertad Americana
+                    </span>
+                    <h2 class="text-2xl font-bold text-slate-900 mt-2">
+                        Distrito Histórico de Quinua
+                    </h2>
+                    <p>
+                        El distrito de Quinua, ubicado en la provincia de Huamanga, departamento de Ayacucho, es un emblema de la independencia americana.
+                        En sus pampas se selló la libertad continental el 9 de diciembre de 1824 con la gloriosa Batalla de Ayacucho.
+                    </p>
+                    <p>
+                        Famosa mundialmente por su alfarería y cerámica tradicional, declarada Patrimonio Cultural de la Nación,
+                        Quinua alberga una comunidad trabajadora, solidaria y profundamente identificada con su legado histórico y cultural.
+                    </p>
+                    <p>
+                        La Municipalidad Distrital de Quinua ejerce el gobierno local con autonomía política, económica y administrativa,
+                        conforme a la Constitución Política del Perú y la Ley Orgánica de Municipalidades N° 27972.
+                    </p>
+                </div>
+                <div class="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-4 shadow-sm">
+                    <div class="w-28 h-28 rounded-2xl bg-white border border-slate-200 p-2 flex items-center justify-center mx-auto shadow-sm">
+                        <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial de la Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 uppercase">Municipalidad Distrital de Quinua</h3>
+                        <p class="text-xs text-blue-600 font-semibold mt-0.5">Gobierno Local Autónomo</p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-100 text-[11px] text-slate-600 space-y-1 text-left">
+                        <p class="flex justify-between"><strong>Provincia:</strong> <span>Huamanga</span></p>
+                        <p class="flex justify-between"><strong>Departamento:</strong> <span>Ayacucho</span></p>
+                        <p class="flex justify-between"><strong>Ubigeo:</strong> <span class="font-mono font-bold">050110</span></p>
+                        <p class="flex justify-between"><strong>Altitud:</strong> <span>3,396 m.s.n.m.</span></p>
+                        <p class="flex justify-between"><strong>Sede:</strong> <span>Plaza de Armas s/n</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MISIÓN Y VISIÓN -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <i data-lucide="compass" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Misión Institucional</h3>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed"
+                   th:text="${config != null && config['mision_institucional'] != null ? config['mision_institucional'] : 'Promover el desarrollo integral, sostenible y armónico del distrito de Quinua, brindando servicios públicos de calidad con transparencia, inclusión social y preservación de nuestro patrimonio histórico y cultural.'}">
+                    Promover el desarrollo integral, sostenible y armónico del distrito de Quinua.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="eye" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Visión Institucional</h3>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed"
+                   th:text="${config != null && config['vision_institucional'] != null ? config['vision_institucional'] : 'Ser un distrito modelo en la región Ayacucho, con una gestión moderna, eficiente y participativa que revaloriza su identidad histórica, turística y artesanal al servicio de todos los ciudadanos.'}">
+                    Ser un distrito modelo en la región Ayacucho, con una gestión moderna, eficiente y participativa.
+                </p>
+            </div>
+        </div>
+
+        <!-- DEPENDENCIAS Y OFICINAS MUNICIPALES (DINÁMICO DE BD) -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    Estructura Orgánica
+                </span>
+                <h2 class="text-xl font-bold text-slate-900 mt-2">
+                    Oficinas y Dependencias Municipales
+                </h2>
+                <p class="text-xs text-slate-600 mt-1">
+                    Unidades orgánicas activas responsables de la gestión pública en la Municipalidad Distrital de Quinua.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <th:block th:each="oficina : ${oficinas}">
+                    <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 hover:border-blue-300 transition-colors">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i data-lucide="building" class="w-4 h-4"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-mono text-slate-500 uppercase" th:text="${oficina.codigo}">COD</span>
+                                    <span th:if="${oficina.sigla != null}" class="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200" th:text="${oficina.sigla}">SIGLA</span>
+                                </div>
+                                <h3 class="text-xs font-bold text-slate-900 mt-1 leading-snug" th:text="${oficina.nombre}">Nombre de la Oficina</h3>
+                                <p class="text-[11px] text-slate-500 mt-1 line-clamp-2" th:text="${oficina.descripcion != null ? oficina.descripcion : 'Unidad Orgánica Municipal'}">
+                                    Descripción funcional de la oficina.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+
+                <div th:if="${oficinas == null || oficinas.isEmpty()}" class="col-span-3 text-center py-8 text-slate-500">
+                    <i data-lucide="building" class="w-8 h-8 mx-auto text-slate-400 mb-2"></i>
+                    <p class="text-xs">Información de oficinas pendiente de configuración administrativa.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALERÍA PATRIMONIAL Y TURÍSTICA DE QUINUA -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                        Patrimonio Histórico y Cultural
+                    </span>
+                    <h2 class="text-xl font-bold text-slate-900 mt-2">
+                        Postales y Atractivos de Nuestro Histórico Distrito
+                    </h2>
+                </div>
+                <span class="text-xs text-slate-500 font-medium">Ayacucho, Perú</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Foto 1: Obelisco -->
+                <div class="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:shadow-lg transition-all duration-300 hover:border-blue-300 flex flex-col">
+                    <div class="aspect-w-16 aspect-h-11 h-48 overflow-hidden bg-slate-200 relative">
+                        <img th:src="@{/images/obelisco-quinua.jpg}" alt="Obelisco de la Pampa de Ayacucho" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-900/80 text-white backdrop-blur-sm">Santuario Histórico</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Obelisco de la Pampa de Ayacucho</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Monumento conmemorativo de 44 metros erigido en honor a los vencedores de la Batalla de 1824.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Foto 2: Pueblo con Encanto -->
+                <div class="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:shadow-lg transition-all duration-300 hover:border-blue-300 flex flex-col">
+                    <div class="aspect-w-16 aspect-h-11 h-48 overflow-hidden bg-slate-200 relative">
+                        <img th:src="@{/images/quinua-pueblo-encanto.jpg}" alt="Quinua Pueblo con Encanto" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-600/90 text-white backdrop-blur-sm">MINCETUR Oficial</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Quinua: Pueblos con Encanto</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Reconocimiento nacional a la identidad artesanal, tradición alfarera y al calor de nuestra gente.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Foto 3: Plaza Colonial -->
+                <div class="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:shadow-lg transition-all duration-300 hover:border-blue-300 flex flex-col">
+                    <div class="aspect-w-16 aspect-h-11 h-48 overflow-hidden bg-slate-200 relative">
+                        <img th:src="@{/images/plaza-quinua-colonial.jpg}" alt="Plaza Principal y Pileta Colonial de Quinua" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-700/90 text-white backdrop-blur-sm">Centro Histórico</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Plaza Mayor y Pileta Colonial</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Casonas tradicionales de adobe y tejas, portales virreinales y entorno apacible de la Villa de Quinua.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Foto 4: Panorámica -->
+                <div class="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:shadow-lg transition-all duration-300 hover:border-blue-300 flex flex-col">
+                    <div class="aspect-w-16 aspect-h-11 h-48 overflow-hidden bg-slate-200 relative">
+                        <img th:src="@{/images/quinua-panoramica.jpg}" alt="Panorama del Distrito de Quinua" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-700/90 text-white backdrop-blur-sm">Valle Andino</span>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Paisaje y Comunidad de Quinua</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Vista aérea panorámica del distrito a 3,396 m.s.n.m., rodeado de montañas y campiña ayacuchana.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- UBICACIÓN Y SEDE CENTRAL -->
+        <section class="bg-slate-900 text-white rounded-2xl p-8 shadow-sm">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i data-lucide="map-pin" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                        Sede Institucional y Atención
+                    </h2>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Nuestra sede central atiende a los vecinos y administrados de manera presencial en la Plaza de Armas de Quinua.
+                    </p>
+                    <ul class="space-y-3 text-xs text-slate-300">
+                        <li class="flex items-center space-x-2">
+                            <i data-lucide="building" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                            <span th:text="${config != null && config['institucion_direccion'] != null ? config['institucion_direccion'] : 'Plaza de Armas s/n, Quinua, Huamanga, Ayacucho'}">Plaza de Armas s/n</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                            <span th:text="${config != null && config['institucion_horario'] != null ? config['institucion_horario'] : 'Lunes a Viernes: 08:00 a 13:00 y 14:00 a 17:00'}">Lunes a Viernes: 08:00 a 17:00</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                            <span th:text="${config != null && config['institucion_correo'] != null ? config['institucion_correo'] : 'mesadepartes@muniquinua.gob.pe'}">mesadepartes@muniquinua.gob.pe</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-slate-800/80 rounded-xl p-6 border border-slate-700 text-center space-y-3">
+                    <i data-lucide="navigation" class="w-10 h-10 text-blue-400 mx-auto"></i>
+                    <h3 class="text-sm font-bold text-white">¿Cómo llegar a Quinua?</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Desde la ciudad de Huamanga (Ayacucho), el acceso vehicular se realiza por la carretera asfaltada hacia el Santuario Histórico de la Pampa de Ayacucho (aproximadamente 37 km / 45 minutos de recorrido).
+                    </p>
+                    <a th:href="@{/contacto}" class="inline-flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors">
+                        Consultar Canales de Atención
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<aside th:fragment="sidebar" id="mainSidebar" aria-label="Menú lateral de módulos del sistema"
+       class="sidebar-expanded bg-sidebar border-r border-theme flex flex-col justify-between p-3.5 z-40 transition-all duration-300 flex-shrink-0 fixed lg:static inset-y-0 left-0 -translate-x-full lg:translate-x-0 h-full overflow-y-auto">
+    
+    <div class="space-y-6">
+        <!-- Identidad Institucional y Escudo Oficial de Quinua -->
+        <a th:href="@{/dashboard}"
+           class="flex items-center space-x-3 px-2 py-1 group focus:outline-none">
+            <div class="w-10 h-10 rounded-xl bg-white p-1 border border-slate-300 flex items-center justify-center shadow-md flex-shrink-0 group-hover:border-blue-400 transition-colors">
+                <img th:src="@{/images/logo-quinua.jpg}" alt="Logo Oficial Municipalidad Distrital de Quinua" class="w-full h-full object-contain">
+            </div>
+            <div class="sidebar-header-text overflow-hidden">
+                <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider leading-tight">SIGM-QUINUA</h2>
+                <p class="text-[10px] text-slate-400 font-medium leading-tight">Muni. Distrital de Quinua</p>
+                <span class="text-[9px] text-slate-500">Huamanga — Ayacucho</span>
+            </div>
+        </a>
+
+        <!-- ========================================================================= -->
+        <!-- MENÚ EXCLUSIVO PARA JEFE DE OFICINA (ROLE_JEFE_OFICINA)                   -->
+        <!-- ========================================================================= -->
+        <div sec:authorize="hasRole('JEFE_OFICINA') and !hasAnyRole('ADMIN', 'SUPERADMIN')" class="space-y-6">
+            <!-- Bloque: Oficina Asignada -->
+            <div th:if="${userProfile != null and userProfile.oficinaCodigo != null}"
+                 class="mx-2 px-3 py-2 rounded-xl bg-blue-950/60 border border-blue-800/50">
+                <span class="sidebar-text text-[9px] font-bold uppercase tracking-wider text-blue-400 block"
+                      th:text="${userProfile.oficinaCodigo}">OFI-OBRAS</span>
+                <p class="sidebar-text text-[11px] font-semibold text-slate-200 leading-snug truncate"
+                   th:text="${userProfile.oficina}"
+                   th:title="${userProfile.oficina}">Subgerencia de Desarrollo Urbano y Obras Públicas</p>
+            </div>
+
+            <!-- 1. INICIO -->
+            <div>
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Inicio</span>
+                <nav class="space-y-1" aria-label="Inicio Jefatura de Oficina">
+                    <a th:href="@{/bienvenida}"
+                       th:classappend="${moduloActivo == 'dashboard'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                       title="Mi Panel Principal de Oficina">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4 flex-shrink-0 text-blue-400"></i>
+                        <span class="sidebar-text">Mi Panel Principal</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/notificaciones}"
+                       th:classappend="${moduloActivo == 'notificaciones'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                       title="Notificaciones de Despacho">
+                        <i data-lucide="bell" class="w-4 h-4 flex-shrink-0 text-amber-400"></i>
+                        <span class="sidebar-text">Notificaciones</span>
+                        <span th:if="${noLeidas != null && noLeidas > 0}"
+                              class="sidebar-text ml-auto px-1.5 py-0.5 text-[9px] font-bold bg-rose-600 text-white rounded-full"
+                              th:text="${noLeidas}">1</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 2. GESTIÓN DE EXPEDIENTES -->
+            <div>
+                <div class="flex items-center justify-between px-3 mb-1.5">
+                    <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Gestión de Expedientes</span>
+                    <span class="sidebar-badge text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-bold">MPV</span>
+                </div>
+                <nav class="space-y-1" aria-label="Gestión de Expedientes de la Oficina">
+                    <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                       th:classappend="${moduloActivo == 'mesa-partes' and estadoSel == null} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                       title="Bandeja de Entrada de la Oficina">
+                        <i data-lucide="inbox" class="w-4 h-4 flex-shrink-0 text-blue-400"></i>
+                        <span class="sidebar-text">Bandeja de Entrada</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/mesa-partes/mis-expedientes}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                       title="Expedientes Asignados">
+                        <i data-lucide="user-check" class="w-4 h-4 flex-shrink-0 text-emerald-400"></i>
+                        <span class="sidebar-text">Expedientes Asignados</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_REVISION')}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                       title="Expedientes en Revisión">
+                        <i data-lucide="file-search" class="w-4 h-4 flex-shrink-0 text-indigo-400"></i>
+                        <span class="sidebar-text">Expedientes en Revisión</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/documentos}"
+                       th:classappend="${moduloActivo == 'documentos'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                       title="Gestión Documental de la Oficina">
+                        <i data-lucide="folder-archive" class="w-4 h-4 flex-shrink-0 text-cyan-400"></i>
+                        <span class="sidebar-text">Gestión Documental</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/mesa-partes/derivaciones}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                       title="Historial de Trámites y Derivaciones">
+                        <i data-lucide="history" class="w-4 h-4 flex-shrink-0 text-purple-400"></i>
+                        <span class="sidebar-text">Historial de Trámites</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 3. CUENTA -->
+            <div>
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Cuenta</span>
+                <nav class="space-y-1" aria-label="Opciones de cuenta">
+                    <a th:href="@{/dashboard/perfil}"
+                       th:classappend="${moduloActivo == 'perfil'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                       title="Mi Perfil Institucional">
+                        <i data-lucide="user" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Mi Perfil</span>
+                    </a>
+
+                    <a th:href="@{/dashboard/perfil(tab='seguridad')}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                       title="Cambiar Contraseña">
+                        <i data-lucide="key-round" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Cambiar Contraseña</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- MENÚ EXCLUSIVO PARA CIUDADANO (ROLE_CIUDADANO)                            -->
+        <!-- ========================================================================= -->
+        <div sec:authorize="hasRole('CIUDADANO') and !hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'OPERADOR', 'MESA_PARTES', 'SERENO', 'CAJERO')" class="space-y-6">
+            <div>
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Inicio</span>
+                <nav class="space-y-1" aria-label="Navegación Ciudadana">
+                    <a th:href="@{/bienvenida}"
+                       th:classappend="${moduloActivo == 'dashboard'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4 flex-shrink-0 text-blue-400"></i>
+                        <span class="sidebar-text">Mi Panel Ciudadano</span>
+                    </a>
+                    <a th:href="@{/}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="globe" class="w-4 h-4 flex-shrink-0 text-emerald-400"></i>
+                        <span class="sidebar-text">Inicio del Portal Ciudadano</span>
+                    </a>
+                    <a th:href="@{/dashboard/notificaciones}"
+                       th:classappend="${moduloActivo == 'notificaciones'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors">
+                        <i data-lucide="bell" class="w-4 h-4 flex-shrink-0 text-amber-400"></i>
+                        <span class="sidebar-text">Notificaciones</span>
+                        <span th:if="${noLeidas != null && noLeidas > 0}"
+                              class="sidebar-text ml-auto px-1.5 py-0.5 text-[9px] font-bold bg-rose-600 text-white rounded-full"
+                              th:text="${noLeidas}">1</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Mis Trámites</span>
+                <nav class="space-y-1" aria-label="Trámites Ciudadanos">
+                    <a th:href="@{/mesa-partes/nueva-solicitud}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="file-plus" class="w-4 h-4 flex-shrink-0 text-emerald-400"></i>
+                        <span class="sidebar-text">Registro de Expedientes</span>
+                    </a>
+                    <a th:href="@{/mesa-partes/mis-solicitudes}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="folder-open" class="w-4 h-4 flex-shrink-0 text-blue-400"></i>
+                        <span class="sidebar-text">Consulta de Trámites</span>
+                    </a>
+                    <a th:href="@{/mesa-partes/seguimiento}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="search" class="w-4 h-4 flex-shrink-0 text-cyan-400"></i>
+                        <span class="sidebar-text">Seguimiento de Trámite</span>
+                    </a>
+                    <a th:href="@{/mesa-partes/mis-solicitudes}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="file-check-2" class="w-4 h-4 flex-shrink-0 text-purple-400"></i>
+                        <span class="sidebar-text">Documentos y Constancias</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Cuenta</span>
+                <nav class="space-y-1" aria-label="Cuenta Ciudadana">
+                    <a th:href="@{/dashboard/perfil}"
+                       th:classappend="${moduloActivo == 'perfil'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors">
+                        <i data-lucide="user" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Mi Perfil</span>
+                    </a>
+                    <a th:href="@{/dashboard/perfil(tab='seguridad')}"
+                       class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                        <i data-lucide="key-round" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Cambiar Contraseña</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- MENÚ PARA SUPERADMIN, ADMIN Y OPERADORES DE MÓDULO                        -->
+        <!-- ========================================================================= -->
+        <div sec:authorize="hasAnyRole('ADMIN', 'SUPERADMIN', 'OPERADOR', 'MESA_PARTES', 'SERENO', 'CAJERO') or hasAuthority('ADMINISTRACION_MANAGE')" class="space-y-6">
+        <!-- Panel Principal (Dashboard) -->
+        <div>
+            <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Inicio</span>
+            <nav class="space-y-1" aria-label="Navegación de inicio">
+                <a th:href="@{/admin/dashboard}"
+                   th:classappend="${moduloActivo == 'dashboard'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Panel de Control y Bienvenida">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Panel Principal</span>
+                </a>
+
+                <a th:href="@{/dashboard/notificaciones}"
+                   th:classappend="${moduloActivo == 'notificaciones'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Centro de Notificaciones y Alertas">
+                    <i data-lucide="bell" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Notificaciones</span>
+                    <span th:if="${noLeidas != null && noLeidas > 0}"
+                          class="sidebar-text ml-auto px-1.5 py-0.5 text-[9px] font-bold bg-rose-600 text-white rounded-full"
+                          th:text="${noLeidas}">1</span>
+                </a>
+
+                <a th:href="@{/dashboard/documentos}"
+                   th:classappend="${moduloActivo == 'documentos'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Gestión Documental Centralizada y Archivos Seguros">
+                    <i data-lucide="folder-archive" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Gestión Documental</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Administración Integral (Filtrado por rol SUPERADMIN o permisos específicos de ADMIN) -->
+        <div sec:authorize="hasAnyAuthority('ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'USUARIOS_READ', 'USUARIOS_MANAGE', 'ROLES_READ', 'ROLES_MANAGE', 'PERMISOS_READ', 'OFICINAS_READ', 'CARGOS_READ', 'ACTORES_READ', 'AUDITORIA_READ')">
+            <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Administración</span>
+            <nav class="space-y-1" aria-label="Navegación de administración">
+                <a th:href="@{/admin/usuarios}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'USUARIOS_READ', 'USUARIOS_MANAGE')"
+                   th:classappend="${moduloActivo == 'usuarios'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Usuarios y Cuentas">
+                    <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Usuarios y Cuentas</span>
+                </a>
+
+                <a th:href="@{/admin/roles}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'ROLES_READ', 'ROLES_MANAGE')"
+                   th:classappend="${moduloActivo == 'roles'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Roles Dinámicos">
+                    <i data-lucide="shield-alert" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Roles Institucionales</span>
+                </a>
+
+                <a th:href="@{/admin/permisos}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'PERMISOS_READ', 'ROLES_MANAGE')"
+                   th:classappend="${moduloActivo == 'permisos'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Matriz de Permisos">
+                    <i data-lucide="grid" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Matriz de Permisos</span>
+                </a>
+
+                <a th:href="@{/admin/oficinas}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'OFICINAS_READ')"
+                   th:classappend="${moduloActivo == 'oficinas'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Oficinas y Dependencias">
+                    <i data-lucide="building" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Oficinas Municipales</span>
+                </a>
+
+                <a th:href="@{/admin/cargos}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'CARGOS_READ')"
+                   th:classappend="${moduloActivo == 'cargos'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Cargos">
+                    <i data-lucide="badge-check" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Cargos Municipales</span>
+                </a>
+
+                <a th:href="@{/admin/actores}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'ACTORES_READ')"
+                   th:classappend="${moduloActivo == 'actores'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Actores">
+                    <i data-lucide="user-check" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Tipos de Actores</span>
+                </a>
+
+                <a th:href="@{/admin/auditoria}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'AUDITORIA_READ')"
+                   th:classappend="${moduloActivo == 'auditoria'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Auditoría">
+                    <i data-lucide="history" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Auditoría Integral</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Portal Ciudadano y Contenidos -->
+        <div sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ADMINISTRACION_MANAGE', 'PORTAL_MANAGE')">
+            <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Portal Ciudadano</span>
+            <nav class="space-y-1" aria-label="Administración de contenidos del portal">
+                <a th:href="@{/admin/portal/noticias}"
+                   th:classappend="${moduloActivo == 'portal-noticias'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Noticias y Comunicados">
+                    <i data-lucide="newspaper" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Noticias y Avisos</span>
+                </a>
+
+                <a th:href="@{/admin/portal/faq}"
+                   th:classappend="${moduloActivo == 'portal-faq'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Preguntas Frecuentes">
+                    <i data-lucide="help-circle" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Preguntas Frecuentes</span>
+                </a>
+
+                <a th:href="@{/admin/portal/contactos}"
+                   th:classappend="${moduloActivo == 'portal-contactos'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Bandeja de Consultas Ciudadanas">
+                    <i data-lucide="inbox" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Consultas Vecinales</span>
+                </a>
+
+                <a th:href="@{/admin/portal/servicios}"
+                   th:classappend="${moduloActivo == 'portal-servicios'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Catálogo de Servicios Visibles">
+                    <i data-lucide="layout-grid" class="w-4 h-4 flex-shrink-0"></i>
+                    <span class="sidebar-text">Servicios Visibles</span>
+                </a>
+
+                <a th:href="@{/}" target="_blank" rel="noopener noreferrer"
+                   class="sidebar-icon-center flex items-center justify-between px-3 py-2 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/20 text-xs transition-colors mt-2"
+                   title="Ver Portal Ciudadano Público">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="external-link" class="w-4 h-4 flex-shrink-0"></i>
+                        <span class="sidebar-text font-medium">Ver Portal Público</span>
+                    </div>
+                    <span class="sidebar-badge text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300">Web</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Los 4 Servicios Municipales Oficiales (Menú Acordeón + Lista Desplegable Organizada) -->
+        <div>
+            <div class="flex items-center justify-between px-3 mb-2">
+                <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Servicios Municipales</span>
+                <span class="sidebar-badge text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-bold">4 Módulos</span>
+            </div>
+
+            <nav class="space-y-1.5" aria-label="Navegación de los 4 servicios municipales">
+                <!-- =========================================================================
+                     1. MESA DE PARTES VIRTUAL (MPV)
+                     ========================================================================= -->
+                <div sec:authorize="hasAuthority('MESAPARTES_EXPEDIENTE_VER_OFICINA') or hasAuthority('MESAPARTES_EXPEDIENTE_VER_TODOS') or hasAnyRole('ADMIN', 'SUPERADMIN', 'MESA_PARTES')"
+                     class="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden transition-all"
+                     th:classappend="${moduloActivo == 'mesa-partes'} ? 'border-blue-500/40 bg-slate-900/80 shadow-sm' : ''">
+                    <!-- Cabecera desplegable del servicio -->
+                    <div class="flex items-center justify-between px-2.5 py-2 transition-colors"
+                         th:classappend="${moduloActivo == 'mesa-partes'} ? 'bg-blue-600/15 text-blue-300' : 'text-slate-200 hover:bg-slate-800/60'">
+                        <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                           class="sidebar-icon-center flex items-center space-x-2.5 flex-1 min-w-0"
+                           title="Ir a Bandeja General de Mesa de Partes">
+                            <div class="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="inbox" class="w-3.5 h-3.5 text-blue-400"></i>
+                            </div>
+                            <div class="sidebar-text truncate">
+                                <span class="text-xs font-semibold block leading-tight">Mesa de Partes</span>
+                                <span class="text-[10px] text-slate-400 block leading-tight">Trámite Documentario</span>
+                            </div>
+                        </a>
+                        <button type="button"
+                                onclick="window.toggleSidebarServiceMenu('submenu-mpv', this)"
+                                th:attr="aria-expanded=${moduloActivo == 'mesa-partes' ? 'true' : 'false'}"
+                                class="sidebar-badge flex items-center space-x-1 px-1.5 py-1 rounded-md hover:bg-slate-700/60 text-slate-300 transition-colors"
+                                title="Mostrar / ocultar opciones de Mesa de Partes">
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">MPV</span>
+                            <i data-lucide="chevron-down"
+                               class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"
+                               th:classappend="${moduloActivo == 'mesa-partes'} ? 'rotate-180 text-blue-400' : ''"></i>
+                        </button>
+                    </div>
+
+                    <!-- Panel Desplegable de Mesa de Partes -->
+                    <div id="submenu-mpv"
+                         th:classappend="${moduloActivo == 'mesa-partes'} ? '' : 'hidden'"
+                         class="sidebar-submenu px-2.5 pb-2.5 pt-1.5 border-t border-slate-800/80 space-y-2.5 bg-slate-950/40">
+
+                        <!-- Selector desplegable rápido personalizado con iconos vectoriales Lucide -->
+                        <div class="relative sidebar-custom-dropdown" data-dropdown-module="mpv">
+                            <span class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 px-1">
+                                Ir rápido a vista o estado:
+                            </span>
+                            <button type="button"
+                                    onclick="window.toggleSidebarCustomDropdown('dropdown-list-mpv', this)"
+                                    class="sidebar-custom-dropdown-btn w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/90 border border-slate-700/80 hover:border-blue-500/50 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                                <span class="flex items-center space-x-2 min-w-0 truncate">
+                                    <i data-lucide="compass" class="sidebar-dropdown-active-icon w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                    <span class="sidebar-dropdown-active-label truncate font-medium">Seleccionar vista...</span>
+                                </span>
+                                <i data-lucide="chevron-down" class="sidebar-dropdown-chevron w-3.5 h-3.5 text-slate-400 flex-shrink-0 ml-1.5 transition-transform duration-150"></i>
+                            </button>
+
+                            <!-- Lista de opciones con iconos vectoriales profesionales -->
+                            <div id="dropdown-list-mpv"
+                                 class="sidebar-custom-dropdown-menu hidden mt-1 w-full bg-slate-900 border border-slate-700/90 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-800/80 z-30">
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Bandejas Operativas</span>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja}" data-icon="layers" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Bandeja General</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/mis-expedientes}" data-icon="user-check" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Mis Expedientes Asignados</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/atencion}" data-icon="file-spreadsheet" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                        <span class="truncate">Bandeja de Atención</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Circulación y Despacho</span>
+                                    <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}" data-icon="corner-right-down" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="corner-right-down" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Derivaciones Recibidas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/derivaciones}" data-icon="send" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="send" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                        <span class="truncate">Derivaciones Enviadas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/propuestas}" data-icon="clipboard-check" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Revisión de Propuestas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/panel-oficina}" data-icon="building-2" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="building-2" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Panel de Oficina</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Filtrar Bandeja por Estado</span>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='PRESENTADO')}" data-icon="clock" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Nuevos (Presentados)</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='RECIBIDO')}" data-icon="check-circle-2" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Recibidos en Oficina</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_REVISION')}" data-icon="search" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="search" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">En Revisión Técnica</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='OBSERVADO')}" data-icon="alert-triangle" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                        <span class="truncate">Observados</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/bandeja(estado='EN_SUBSANACION')}" data-icon="refresh-cw" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Subsanados / Por Revisar</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Gestión y Configuración</span>
+                                    <a th:href="@{/dashboard/mesa-partes/reportes}" data-icon="bar-chart-3" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Reportes y Estadísticas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mesa-partes/configuracion}"
+                                       sec:authorize="hasAuthority('MESAPARTES_CONFIG_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                                       data-icon="settings"
+                                       class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-blue-600/20 hover:text-blue-300 transition-colors">
+                                        <i data-lucide="settings" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Trámites y Requisitos TUPA</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grupo 1: Bandejas Principales -->
+                        <div class="space-y-0.5">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">1. Bandejas de Trabajo</span>
+                            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Bandeja General</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/mis-expedientes}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Mis Expedientes Asignados</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/atencion}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                <span class="truncate">Bandeja de Atención</span>
+                            </a>
+                        </div>
+
+                        <!-- Grupo 2: Derivaciones y Oficina -->
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">2. Derivaciones y Despacho</span>
+                            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="corner-right-down" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Derivaciones Recibidas</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/derivaciones}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="send" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                <span class="truncate">Derivaciones Enviadas</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/propuestas}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Revisión de Propuestas</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/panel-oficina}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="building-2" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Panel de Oficina</span>
+                            </a>
+                        </div>
+
+                        <!-- Grupo 3: Administración del Módulo -->
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">3. Gestión y Catálogo TUPA</span>
+                            <a th:href="@{/dashboard/mesa-partes/reportes}"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Reportes y Estadísticas</span>
+                            </a>
+                            <a th:href="@{/dashboard/mesa-partes/configuracion}"
+                               sec:authorize="hasAuthority('MESAPARTES_CONFIG_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="settings" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Trámites y Requisitos TUPA</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     2. MERCADOS MUNICIPALES (MKT)
+                     ========================================================================= -->
+                <div sec:authorize="hasAuthority('MERCADOS_MODULO_ACCEDER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                     class="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden transition-all"
+                     th:classappend="${moduloActivo == 'mercados'} ? 'border-blue-500/40 bg-slate-900/80 shadow-sm' : ''">
+                    <div class="flex items-center justify-between px-2.5 py-2 transition-colors"
+                         th:classappend="${moduloActivo == 'mercados'} ? 'bg-blue-600/15 text-blue-300' : 'text-slate-200 hover:bg-slate-800/60'">
+                        <a th:href="@{/dashboard/mercados}"
+                           class="sidebar-icon-center flex items-center space-x-2.5 flex-1 min-w-0"
+                           title="Ir a Gestión de Mercados Municipales">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            </div>
+                            <div class="sidebar-text truncate">
+                                <span class="text-xs font-semibold block leading-tight">Mercados Municipales</span>
+                                <span class="text-[10px] text-slate-400 block leading-tight">Puestos y Comerciantes</span>
+                            </div>
+                        </a>
+                        <button type="button"
+                                onclick="window.toggleSidebarServiceMenu('submenu-mkt', this)"
+                                th:attr="aria-expanded=${moduloActivo == 'mercados' ? 'true' : 'false'}"
+                                class="sidebar-badge flex items-center space-x-1 px-1.5 py-1 rounded-md hover:bg-slate-700/60 text-slate-300 transition-colors"
+                                title="Mostrar / ocultar opciones de Mercados Municipales">
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">MKT</span>
+                            <i data-lucide="chevron-down"
+                               class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"
+                               th:classappend="${moduloActivo == 'mercados'} ? 'rotate-180 text-emerald-400' : ''"></i>
+                        </button>
+                    </div>
+
+                    <div id="submenu-mkt"
+                         th:classappend="${moduloActivo == 'mercados'} ? '' : 'hidden'"
+                         class="sidebar-submenu px-2.5 pb-2.5 pt-1.5 border-t border-slate-800/80 space-y-2.5 bg-slate-950/40">
+
+                        <!-- Selector desplegable rápido personalizado con iconos vectoriales Lucide -->
+                        <div class="relative sidebar-custom-dropdown" data-dropdown-module="mkt">
+                            <span class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 px-1">
+                                Ir rápido a sección:
+                            </span>
+                            <button type="button"
+                                    onclick="window.toggleSidebarCustomDropdown('dropdown-list-mkt', this)"
+                                    class="sidebar-custom-dropdown-btn w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/90 border border-slate-700/80 hover:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors">
+                                <span class="flex items-center space-x-2 min-w-0 truncate">
+                                    <i data-lucide="compass" class="sidebar-dropdown-active-icon w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                    <span class="sidebar-dropdown-active-label truncate font-medium">Seleccionar vista...</span>
+                                </span>
+                                <i data-lucide="chevron-down" class="sidebar-dropdown-chevron w-3.5 h-3.5 text-slate-400 flex-shrink-0 ml-1.5 transition-transform duration-150"></i>
+                            </button>
+                            <div id="dropdown-list-mkt"
+                                 class="sidebar-custom-dropdown-menu hidden mt-1 w-full bg-slate-900 border border-slate-700/90 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-800/80 z-30">
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Padrón y Mercados</span>
+                                    <a th:href="@{/dashboard/mercados}" data-icon="layout-dashboard" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Panel Principal</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/listado}" data-icon="store" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="store" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Listado de Mercados</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/comerciantes}" data-icon="users" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="users" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                        <span class="truncate">Comerciantes Empadronados</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/planos}" data-icon="map" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="map" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Planos Interactivos</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Ocupación y Contratos</span>
+                                    <a th:href="@{/dashboard/mercados/asignaciones}" data-icon="key" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Asignaciones y Ocupación</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/contratos}" data-icon="file-text" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Contratos de Ocupación</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/autorizaciones}" data-icon="badge-check" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="badge-check" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Autorizaciones Comerciales</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/gestiones-ocupacion/dashboard}" data-icon="refresh-cw" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Renovaciones y Traspasos</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/documentos/vencimientos}" data-icon="calendar-clock" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                        <span class="truncate">Control de Vencimientos</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Fiscalización y Finanzas</span>
+                                    <a th:href="@{/dashboard/mercados/finanzas}" data-icon="wallet" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Finanzas y Cobranzas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/inspecciones}" data-icon="clipboard-list" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Inspecciones y Fiscalización</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/incidencias}" data-icon="alert-triangle" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                        <span class="truncate">Incidencias y Reclamos</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/mercados/reportes}" data-icon="bar-chart-2" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors">
+                                        <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Reportes y Estadísticas</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-0.5">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">1. Padrón y Recintos</span>
+                            <a th:href="@{/dashboard/mercados}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Panel Principal</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/listado}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="store" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Listado de Mercados</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/comerciantes}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                <span class="truncate">Comerciantes Empadronados</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/planos}"
+                               sec:authorize="hasAuthority('MERCADOS_PLANO_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'OPERADOR')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="map" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Planos Interactivos</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">2. Puestos y Contratos</span>
+                            <a th:href="@{/dashboard/mercados/asignaciones}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Asignaciones y Ocupación</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/contratos}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Contratos de Ocupación</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/autorizaciones}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="badge-check" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Autorizaciones Comerciales</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/gestiones-ocupacion/dashboard}"
+                               sec:authorize="hasAnyAuthority('MERCADOS_RENOVACION_VER', 'MERCADOS_CAMBIO_TITULAR_VER', 'MERCADOS_TRANSFERENCIA_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Renovaciones y Traspasos</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/documentos/vencimientos}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                <span class="truncate">Control de Vencimientos</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">3. Finanzas y Control</span>
+                            <a th:href="@{/dashboard/mercados/finanzas}"
+                               sec:authorize="hasAuthority('MERCADOS_FINANZAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Finanzas y Cobranzas</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/inspecciones}"
+                               sec:authorize="hasAuthority('MERCADOS_INSPECCION_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Inspecciones y Fiscalización</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/incidencias}"
+                               sec:authorize="hasAuthority('MERCADOS_INCIDENCIA_VER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                <span class="truncate">Incidencias y Reclamos</span>
+                            </a>
+                            <a th:href="@{/dashboard/mercados/reportes}"
+                               sec:authorize="hasAuthority('MERCADOS_REPORTES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'OPERADOR')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Reportes y Estadísticas</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     3. SEGURIDAD CIUDADANA Y SERENAZGO (M3)
+                     ========================================================================= -->
+                <div sec:authorize="hasAnyAuthority('SERENAZGO_MODULO_ACCEDER', 'SERENAZGO_INCIDENCIAS_VER', 'SERENAZGO_UNIDADES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'SERENO')"
+                     class="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden transition-all"
+                     th:classappend="${moduloActivo == 'serenazgo'} ? 'border-indigo-500/40 bg-slate-900/80 shadow-sm' : ''">
+                    <div class="flex items-center justify-between px-2.5 py-2 transition-colors"
+                         th:classappend="${moduloActivo == 'serenazgo'} ? 'bg-indigo-600/15 text-indigo-300' : 'text-slate-200 hover:bg-slate-800/60'">
+                        <a th:href="@{/dashboard/serenazgo}"
+                           class="sidebar-icon-center flex items-center space-x-2.5 flex-1 min-w-0"
+                           title="Ir a Seguridad Ciudadana y Serenazgo">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="shield" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            </div>
+                            <div class="sidebar-text truncate">
+                                <span class="text-xs font-semibold block leading-tight">Seguridad Ciudadana</span>
+                                <span class="text-[10px] text-slate-400 block leading-tight">Serenazgo y Patrullaje</span>
+                            </div>
+                        </a>
+                        <button type="button"
+                                onclick="window.toggleSidebarServiceMenu('submenu-m3', this)"
+                                th:attr="aria-expanded=${moduloActivo == 'serenazgo' ? 'true' : 'false'}"
+                                class="sidebar-badge flex items-center space-x-1 px-1.5 py-1 rounded-md hover:bg-slate-700/60 text-slate-300 transition-colors"
+                                title="Mostrar / ocultar opciones de Seguridad Ciudadana">
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">M3</span>
+                            <i data-lucide="chevron-down"
+                               class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"
+                               th:classappend="${moduloActivo == 'serenazgo'} ? 'rotate-180 text-indigo-400' : ''"></i>
+                        </button>
+                    </div>
+
+                    <div id="submenu-m3"
+                         th:classappend="${moduloActivo == 'serenazgo'} ? '' : 'hidden'"
+                         class="sidebar-submenu px-2.5 pb-2.5 pt-1.5 border-t border-slate-800/80 space-y-2.5 bg-slate-950/40">
+
+                        <!-- Selector desplegable rápido personalizado con iconos vectoriales Lucide -->
+                        <div class="relative sidebar-custom-dropdown" data-dropdown-module="m3">
+                            <span class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 px-1">
+                                Ir rápido a sección:
+                            </span>
+                            <button type="button"
+                                    onclick="window.toggleSidebarCustomDropdown('dropdown-list-m3', this)"
+                                    class="sidebar-custom-dropdown-btn w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500/50 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors">
+                                <span class="flex items-center space-x-2 min-w-0 truncate">
+                                    <i data-lucide="compass" class="sidebar-dropdown-active-icon w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                    <span class="sidebar-dropdown-active-label truncate font-medium">Seleccionar vista...</span>
+                                </span>
+                                <i data-lucide="chevron-down" class="sidebar-dropdown-chevron w-3.5 h-3.5 text-slate-400 flex-shrink-0 ml-1.5 transition-transform duration-150"></i>
+                            </button>
+                            <div id="dropdown-list-m3"
+                                 class="sidebar-custom-dropdown-menu hidden mt-1 w-full bg-slate-900 border border-slate-700/90 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-800/80 z-30">
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Operaciones y Emergencias</span>
+                                    <a th:href="@{/dashboard/serenazgo}" data-icon="layout-dashboard" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Panel de Control</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/alertas}" data-icon="bell-ring" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                        <span class="truncate">Alertas Ciudadanas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/incidencias}" data-icon="alert-octagon" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Incidencias de Seguridad</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/atenciones}" data-icon="radio" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                        <span class="truncate">Atenciones y Despacho</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/intervenciones}" data-icon="shield-alert" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Intervenciones</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/mapa}" data-icon="map-pin" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Mapa Geográfico</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Patrullaje y Recursos</span>
+                                    <a th:href="@{/dashboard/serenazgo/patrullajes}" data-icon="route" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="route" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Patrullajes y Recorridos</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/programacion}" data-icon="calendar" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Turnos y Programación</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/sectores}" data-icon="compass" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Sectores y Zonas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/personal}" data-icon="users" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Personal de Serenazgo</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/unidades}" data-icon="car" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="car" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Unidades Móviles</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/equipamiento}" data-icon="wrench" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="wrench" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                        <span class="truncate">Equipamiento Operativo</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Supervisión y Evidencias</span>
+                                    <a th:href="@{/dashboard/serenazgo/documentos}" data-icon="camera" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="camera" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                        <span class="truncate">Evidencias y Documentos</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/supervision}" data-icon="eye" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Centro de Supervisión</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/serenazgo/estadisticas}" data-icon="bar-chart-3" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors">
+                                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Estadísticas y Reportes</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-0.5">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">1. Operaciones y Despacho</span>
+                            <a th:href="@{/dashboard/serenazgo}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Panel de Control</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/alertas}"
+                               sec:authorize="hasAuthority('SERENAZGO_ALERTAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_SERENAZGO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                <span class="truncate">Alertas Ciudadanas</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/incidencias}"
+                               sec:authorize="hasAuthority('SERENAZGO_INCIDENCIAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Incidencias de Seguridad</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/atenciones}"
+                               sec:authorize="hasAuthority('SERENAZGO_ATENCIONES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_SERENAZGO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="radio" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                <span class="truncate">Atenciones y Despacho</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/intervenciones}"
+                               sec:authorize="hasAuthority('SERENAZGO_INTERVENCIONES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_CENTRAL')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Intervenciones</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/mapa}"
+                               sec:authorize="hasAuthority('SERENAZGO_MAPA_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_CENTRAL', 'OPERADOR_CC')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Mapa Geográfico</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">2. Patrullaje y Recursos</span>
+                            <a th:href="@{/dashboard/serenazgo/patrullajes}"
+                               sec:authorize="hasAuthority('SERENAZGO_PATRULLAJES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_CENTRAL')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="route" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Patrullajes y Recorridos</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/programacion}"
+                               sec:authorize="hasAuthority('SERENAZGO_PROGRAMACION_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Turnos y Programación</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/sectores}"
+                               sec:authorize="hasAuthority('SERENAZGO_SECTORES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Sectores y Zonas</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/personal}"
+                               sec:authorize="hasAuthority('SERENAZGO_PERSONAL_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Personal de Serenazgo</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/unidades}"
+                               sec:authorize="hasAuthority('SERENAZGO_UNIDADES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="car" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Unidades Móviles</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/equipamiento}"
+                               sec:authorize="hasAuthority('SERENAZGO_EQUIPAMIENTO_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                <span class="truncate">Equipamiento Operativo</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">3. Control y Estadísticas</span>
+                            <a th:href="@{/dashboard/serenazgo/documentos}"
+                               sec:authorize="hasAuthority('SERENAZGO_DOCUMENTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SERENO', 'SUPERVISOR_SERENAZGO', 'OPERADOR_CENTRAL', 'OPERADOR_CC')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="camera" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                <span class="truncate">Evidencias y Documentos</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/supervision}"
+                               sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO', 'OPERADOR_CENTRAL')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Centro de Supervisión</span>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/estadisticas}"
+                               sec:authorize="hasAuthority('SERENAZGO_ESTADISTICAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Estadísticas y Reportes</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     4. RECAUDACIÓN TRIBUTARIA MUNICIPAL (M4)
+                     ========================================================================= -->
+                <div sec:authorize="hasAnyAuthority('TRIBUTARIA_MODULO_VER', 'TRIBUTARIA_ARBITRIOS_VER', 'TRIBUTARIA_CAJA_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')"
+                     class="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden transition-all"
+                     th:classappend="${moduloActivo == 'tributaria'} ? 'border-amber-500/40 bg-slate-900/80 shadow-sm' : ''">
+                    <div class="flex items-center justify-between px-2.5 py-2 transition-colors"
+                         th:classappend="${moduloActivo == 'tributaria'} ? 'bg-amber-600/15 text-amber-300' : 'text-slate-200 hover:bg-slate-800/60'">
+                        <a th:href="@{/dashboard/tributaria}"
+                           class="sidebar-icon-center flex items-center space-x-2.5 flex-1 min-w-0"
+                           title="Ir a Recaudación y Administración Tributaria">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="receipt" class="w-3.5 h-3.5 text-amber-400"></i>
+                            </div>
+                            <div class="sidebar-text truncate">
+                                <span class="text-xs font-semibold block leading-tight">Recaudación Tributaria</span>
+                                <span class="text-[10px] text-slate-400 block leading-tight">Predial, Arbitrios y Caja</span>
+                            </div>
+                        </a>
+                        <button type="button"
+                                onclick="window.toggleSidebarServiceMenu('submenu-m4', this)"
+                                th:attr="aria-expanded=${moduloActivo == 'tributaria' ? 'true' : 'false'}"
+                                class="sidebar-badge flex items-center space-x-1 px-1.5 py-1 rounded-md hover:bg-slate-700/60 text-slate-300 transition-colors"
+                                title="Mostrar / ocultar opciones de Recaudación Tributaria">
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">M4</span>
+                            <i data-lucide="chevron-down"
+                               class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"
+                               th:classappend="${moduloActivo == 'tributaria'} ? 'rotate-180 text-amber-400' : ''"></i>
+                        </button>
+                    </div>
+
+                    <div id="submenu-m4"
+                         th:classappend="${moduloActivo == 'tributaria'} ? '' : 'hidden'"
+                         class="sidebar-submenu px-2.5 pb-2.5 pt-1.5 border-t border-slate-800/80 space-y-2.5 bg-slate-950/40">
+
+                        <!-- Selector desplegable rápido personalizado con iconos vectoriales Lucide -->
+                        <div class="relative sidebar-custom-dropdown" data-dropdown-module="m4">
+                            <span class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 px-1">
+                                Ir rápido a sección:
+                            </span>
+                            <button type="button"
+                                    onclick="window.toggleSidebarCustomDropdown('dropdown-list-m4', this)"
+                                    class="sidebar-custom-dropdown-btn w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800/90 border border-slate-700/80 hover:border-amber-500/50 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors">
+                                <span class="flex items-center space-x-2 min-w-0 truncate">
+                                    <i data-lucide="compass" class="sidebar-dropdown-active-icon w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                    <span class="sidebar-dropdown-active-label truncate font-medium">Seleccionar vista...</span>
+                                </span>
+                                <i data-lucide="chevron-down" class="sidebar-dropdown-chevron w-3.5 h-3.5 text-slate-400 flex-shrink-0 ml-1.5 transition-transform duration-150"></i>
+                            </button>
+                            <div id="dropdown-list-m4"
+                                 class="sidebar-custom-dropdown-menu hidden mt-1 w-full bg-slate-900 border border-slate-700/90 rounded-lg shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-800/80 z-30">
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Padrón y Determinación</span>
+                                    <a th:href="@{/dashboard/tributaria}" data-icon="layout-dashboard" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Panel de Control</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/contribuyentes}" data-icon="users" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Contribuyentes</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/predios}" data-icon="home" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="home" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Predios Tributarios</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/impuesto-predial}" data-icon="landmark" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="landmark" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Impuesto Predial</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/arbitrios}" data-icon="trees" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="trees" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Arbitrios Municipales</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/obligaciones}" data-icon="file-spreadsheet" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                        <span class="truncate">Obligaciones Tributarias</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/cuentas-corrientes}" data-icon="book-open" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Cuentas Corrientes</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Caja y Cobranza</span>
+                                    <a th:href="@{/dashboard/tributaria/cajas}" data-icon="vault" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="vault" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                        <span class="truncate">Caja Municipal</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/pagos}" data-icon="credit-card" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                        <span class="truncate">Pagos Tributarios</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/documentos}" data-icon="file-check-2" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Recibos y Constancias</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/conciliaciones}" data-icon="scale" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="scale" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                        <span class="truncate">Conciliaciones</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/deudas}" data-icon="alert-circle" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                        <span class="truncate">Gestión de Deudas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/fraccionamientos}" data-icon="calendar-range" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                        <span class="truncate">Fraccionamientos y Convenios</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/notificaciones}" data-icon="mail-warning" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="mail-warning" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                        <span class="truncate">Notificaciones Tributarias</span>
+                                    </a>
+                                </div>
+                                <div class="p-1 space-y-0.5">
+                                    <span class="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Catálogos y Reportes</span>
+                                    <a th:href="@{/dashboard/tributaria/conceptos}" data-icon="tags" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="tags" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                        <span class="truncate">Conceptos y Tasas</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/periodos}" data-icon="calendar-days" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                        <span class="truncate">Períodos Fiscales</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/normas}" data-icon="gavel" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="gavel" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                        <span class="truncate">Normativa Tributaria</span>
+                                    </a>
+                                    <a th:href="@{/dashboard/tributaria/reportes}" data-icon="pie-chart" class="sidebar-dropdown-option flex items-center space-x-2 px-2 py-1.5 rounded-md text-[11px] text-slate-200 hover:bg-amber-600/20 hover:text-amber-300 transition-colors">
+                                        <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                        <span class="truncate">Reportes y Estadísticas</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-0.5">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">1. Padrón y Tributos</span>
+                            <a th:href="@{/dashboard/tributaria}" class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Panel de Control</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/contribuyentes}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CONTRIBUYENTES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Contribuyentes</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/predios}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_PREDIOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="home" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Predios Tributarios</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/impuesto-predial}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_PREDIAL_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'ESPECIALISTA_TRIBUTARIO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="landmark" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Impuesto Predial</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/arbitrios}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_ARBITRIOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'ESPECIALISTA_TRIBUTARIO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="trees" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Arbitrios Municipales</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/obligaciones}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_OBLIGACIONES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'ESPECIALISTA_TRIBUTARIO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+                                <span class="truncate">Obligaciones Tributarias</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/cuentas-corrientes}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CUENTA_CORRIENTE_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'ESPECIALISTA_TRIBUTARIO')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Cuentas Corrientes</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">2. Caja y Cobranza</span>
+                            <a th:href="@{/dashboard/tributaria/cajas}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CAJA_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="vault" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                                <span class="truncate">Caja Municipal</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/pagos}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_PAGOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                                <span class="truncate">Pagos Tributarios</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/documentos}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_DOCUMENTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA', 'TRIBUTACION')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Recibos y Constancias</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/conciliaciones}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CONCILIACION_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="scale" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate">Conciliaciones</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/deudas}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_DEUDAS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA', 'TRIBUTACION')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400 flex-shrink-0"></i>
+                                <span class="truncate">Gestión de Deudas</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/fraccionamientos}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_FRACCIONAMIENTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA', 'TRIBUTACION')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                                <span class="truncate">Fraccionamientos y Convenios</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/notificaciones}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_NOTIFICACIONES_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'JEFE_OFICINA', 'TRIBUTACION')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="mail-warning" class="w-3.5 h-3.5 text-purple-400 flex-shrink-0"></i>
+                                <span class="truncate">Notificaciones Tributarias</span>
+                            </a>
+                        </div>
+
+                        <div class="space-y-0.5 pt-1 border-t border-slate-800/60">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">3. Catálogos y Reportes</span>
+                            <a th:href="@{/dashboard/tributaria/conceptos}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CONCEPTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="tags" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                <span class="truncate">Conceptos y Tasas</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/periodos}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CONCEPTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                <span class="truncate">Períodos Fiscales</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/normas}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_CONCEPTOS_VER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="gavel" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                                <span class="truncate">Normativa Tributaria</span>
+                            </a>
+                            <a th:href="@{/dashboard/tributaria/reportes}"
+                               sec:authorize="hasAuthority('TRIBUTARIA_REPORTES_ACCEDER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'TRIBUTACION')"
+                               class="sidebar-sublink flex items-center space-x-2 px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white hover:bg-slate-800/70 transition-colors">
+                                <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0"></i>
+                                <span class="truncate">Reportes y Estadísticas</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Cuenta para Admin y Operadores -->
+        <div>
+            <span class="sidebar-text text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1.5">Cuenta</span>
+            <nav class="space-y-1" aria-label="Opciones de cuenta">
+                <a th:href="@{/dashboard/perfil}"
+                   th:classappend="${moduloActivo == 'perfil'} ? 'bg-blue-600/20 text-blue-400 border-blue-500/40 font-semibold shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/60'"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs transition-colors"
+                   title="Mi Perfil Institucional">
+                    <i data-lucide="user" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                    <span class="sidebar-text">Mi Perfil</span>
+                </a>
+                <a th:href="@{/dashboard/perfil(tab='seguridad')}"
+                   class="sidebar-icon-center flex items-center space-x-3 px-3 py-2 rounded-lg border border-transparent text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                   title="Cambiar Contraseña">
+                    <i data-lucide="key-round" class="w-4 h-4 flex-shrink-0 text-slate-400"></i>
+                    <span class="sidebar-text">Cambiar Contraseña</span>
+                </a>
+            </nav>
+        </div>
+        </div>
+    </div>
+
+    <!-- Acciones de Sesión y Footer del Sidebar -->
+    <div class="pt-4 mt-4 border-t border-theme space-y-3">
+        <a th:href="@{/logout}"
+           class="sidebar-icon-center w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/30 text-xs font-semibold transition-colors"
+           title="Cerrar Sesión Institucional">
+            <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0"></i>
+            <span class="sidebar-text">Cerrar Sesión</span>
+        </a>
+        <div class="text-center">
+            <p class="sidebar-text text-[10px] text-slate-400 font-semibold">SIGM-QUINUA v1.0.0</p>
+            <p class="sidebar-text text-[9px] text-slate-500">Municipalidad Distrital de Quinua — Huamanga</p>
+        </div>
+    </div>
+</aside>
+</body>
+</html>
+

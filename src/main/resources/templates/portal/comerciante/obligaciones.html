@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Obligaciones Económicas</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Mis Obligaciones Económicas</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Tarifas de mercado, canon de ocupación y servicios devengados según normativa municipal.
+            </p>
+        </div>
+        <a th:href="@{/portal/comerciante/estado-cuenta}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ver Estado de Cuenta
+        </a>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código</th>
+                        <th class="px-6 py-3.5">Concepto</th>
+                        <th class="px-6 py-3.5">Puesto</th>
+                        <th class="px-6 py-3.5">Período / Emisión</th>
+                        <th class="px-6 py-3.5">Vencimiento</th>
+                        <th class="px-6 py-3.5">Importe</th>
+                        <th class="px-6 py-3.5">Saldo</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="o : ${obligacionesPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${o.codigoObligacion}">OBL-2026-0001</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800" th:text="${o.conceptoNombre}">Tarifa Diaria de Mercado</td>
+                        <td class="px-6 py-4 font-mono" th:text="${o.puestoCodigo}">P-01</td>
+                        <td class="px-6 py-4 text-xs font-mono text-slate-500" th:text="${#temporals.format(o.fechaEmision, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td class="px-6 py-4 text-xs font-mono">
+                            <span th:text="${#temporals.format(o.fechaVencimiento, 'dd/MM/yyyy')}">31/01/2026</span>
+                            <span th:if="${o.vencida}" class="text-rose-600 font-bold block text-[10px]">VENCIDA</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono" th:text="${'S/ ' + o.montoOriginal}">S/ 50.00</td>
+                        <td class="px-6 py-4 font-mono font-bold"
+                            th:classappend="${o.saldoPendiente > 0 ? 'text-amber-700' : 'text-slate-800'}"
+                            th:text="${'S/ ' + o.saldoPendiente}">S/ 50.00</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${o.estado == 'PAGADO' ? 'bg-emerald-100 text-emerald-800' : (o.estado == 'VENCIDA' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')}"
+                                  th:text="${o.estadoLabel}">PENDIENTE</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${obligacionesPage.empty}">
+                        <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="receipt" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra obligaciones económicas generadas.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Información de Canales Institucionales de Pago -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-xs text-blue-950 space-y-2">
+        <h3 class="font-bold text-sm text-blue-900 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i> Medios Oficiales de Pago Habilitados
+        </h3>
+        <p>Los pagos deben realizarse directamente en:</p>
+        <ul class="list-disc list-inside space-y-1 text-blue-900">
+            <li><span class="font-semibold">Caja Central Municipal:</span> Palacio Municipal de Quinua, Plaza de Armas s/n (Lun a Vie 8:00 a 16:30).</li>
+            <li><span class="font-semibold">Caja de Administración del Mercado:</span> Módulo de recaudación en Mercado Central de Quinua.</li>
+            <li><span class="font-semibold">Depósito en Cuenta Corriente Banco de la Nación:</span> Presentar voucher en caja municipal para emisión de recibo oficial.</li>
+        </ul>
+        <p class="text-[11px] text-blue-800 mt-2 font-medium">Nota: Por seguridad del comerciante, la municipalidad no solicita depósitos a cuentas de personas particulares ni exige intermediarios.</p>
+    </div>
+
+</div>
+</body>
+</html>

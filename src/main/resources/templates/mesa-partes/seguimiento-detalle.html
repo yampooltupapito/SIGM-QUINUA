@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title th:text="'Expediente ' + ${expediente.numeroExpediente} + ' — Seguimiento Integral'">Seguimiento de Expediente — Mesa de Partes Virtual</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA INSTITUCIONAL -->
+    <section class="bg-gradient-to-b from-[#101827] to-slate-900 text-white py-10 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3" aria-label="Ruta de navegación">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/mesa-partes}" class="hover:text-white transition-colors">Mesa de Partes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/mesa-partes/mis-solicitudes}" class="hover:text-white transition-colors">Mis Solicitudes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold" th:text="${expediente.numeroExpediente}">MPV-2026-000001</span>
+            </nav>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Expediente Oficial</span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-extrabold text-white bg-blue-700 font-mono shadow-sm"
+                              th:text="${expediente.numeroExpediente}">MPV-2026-000001</span>
+                        <span th:if="${expediente.codigoSeguimiento != null}"
+                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-slate-200 bg-slate-800 border border-slate-700 font-mono">
+                            <i data-lucide="key" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span th:text="${expediente.codigoSeguimiento}">SEG-A1B2C3D4</span>
+                        </span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-white" th:text="${expediente.asunto}">
+                        Asunto del Expediente
+                    </h1>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <a th:href="@{/api/mesa-partes/mis-solicitudes/{id}/constancia(id=${expediente.expedienteId})}"
+                       target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-md shadow-blue-700/20 transition-all">
+                        <i data-lucide="file-down" class="w-4 h-4 mr-1.5"></i>
+                        Descargar Constancia PDF
+                    </a>
+                    <a th:href="@{/mesa-partes/mis-solicitudes}"
+                       class="inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i>
+                        Volver a la bandeja
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- RESUMEN DE ESTADO Y DATOS CLAVE -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- TARJETA DE ESTADO Y PLAZOS -->
+            <div class="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                    <div>
+                        <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Estado Administrativo Actual</span>
+                        <div class="mt-1 flex items-center gap-2.5">
+                            <span class="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-extrabold"
+                                  th:classappend="${expediente.estado.name() == 'OBSERVADO' or expediente.estado.name() == 'EN_SUBSANACION' ? 'bg-amber-100 text-amber-900 border border-amber-300' : (expediente.estado.name() == 'RESUELTO' or expediente.estado.name() == 'ARCHIVADO' or expediente.estado.name() == 'NOTIFICADO' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-blue-100 text-blue-900 border border-blue-300')}">
+                                <span class="w-2 h-2 rounded-full mr-2"
+                                      th:classappend="${expediente.estado.name() == 'OBSERVADO' or expediente.estado.name() == 'EN_SUBSANACION' ? 'bg-amber-500' : (expediente.estado.name() == 'RESUELTO' or expediente.estado.name() == 'ARCHIVADO' or expediente.estado.name() == 'NOTIFICADO' ? 'bg-emerald-500' : 'bg-blue-600')}"></span>
+                                <span th:text="${expediente.estadoDescripcionCiudadana}">En proceso</span>
+                            </span>
+                            <span class="text-xs text-slate-500 font-medium" th:text="${expediente.tipoTramite}">Trámite General</span>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN COPIAR CÓDIGO SEGUIMIENTO -->
+                    <div th:if="${expediente.codigoSeguimiento != null}" class="flex items-center gap-2">
+                        <button type="button"
+                                th:data-codigo="${expediente.codigoSeguimiento}"
+                                onclick="copiarCodigoSeguimiento(this.dataset.codigo)"
+                                id="btnCopiarCodigo"
+                                class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 mr-1.5 text-slate-500"></i>
+                            <span id="txtBtnCopiar">Copiar Código de Seguimiento</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FECHAS CLAVE -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Presentación</span>
+                        <span class="font-bold text-slate-800" th:text="${#temporals.format(expediente.fechaPresentacion, 'dd/MM/yyyy HH:mm')}">15/10/2026 10:00</span>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Recepción</span>
+                        <span class="font-bold text-slate-800" th:text="${expediente.fechaRecepcion != null ? #temporals.format(expediente.fechaRecepcion, 'dd/MM/yyyy HH:mm') : 'Pendiente'}">15/10/2026 11:00</span>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Oficina a Cargo</span>
+                        <span class="font-bold text-slate-800 truncate block" th:title="${expediente.oficinaResponsable}" th:text="${expediente.oficinaResponsable != null ? expediente.oficinaResponsable : 'Mesa de Partes General'}">Subgerencia</span>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Plazo Legal</span>
+                        <span th:if="${expediente.diasRestantes != null}" class="font-bold"
+                              th:classappend="${expediente.diasRestantes <= 2 ? 'text-rose-600' : 'text-slate-800'}"
+                              th:text="${expediente.diasRestantes > 0 ? (expediente.diasRestantes + ' días hábiles') : 'Plazo cumplido'}">15 días</span>
+                        <span th:if="${expediente.diasRestantes == null}" class="font-semibold text-slate-500">Según TUPA</span>
+                    </div>
+                </div>
+
+                <!-- DESCRIPCIÓN DEL PETITORIO -->
+                <div class="text-xs space-y-1">
+                    <span class="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Detalle del Petitorio</span>
+                    <p class="text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 leading-relaxed" th:text="${expediente.descripcion}">
+                        Descripción fundamentada de la solicitud presentada.
+                    </p>
+                </div>
+            </div>
+
+            <!-- TARJETA DEL TITULAR Y ACCESOS RÁPIDOS -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-5">
+                <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                    <div class="w-9 h-9 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-900">Datos del Administrado</h2>
+                        <span class="text-[11px] text-slate-400">Titular del Trámite</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Nombres y Apellidos</span>
+                        <span class="font-bold text-slate-800" th:text="${expediente.solicitanteNombre}">Juan Pérez Quispe</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Documento de Identidad</span>
+                        <span class="font-mono font-bold text-slate-800" th:text="${expediente.solicitanteDocumento}">DNI 12345678</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Casilla / Correo Registrado</span>
+                        <span class="text-slate-700" th:text="${expediente.solicitanteCorreo}">correo@ejemplo.com</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 space-y-2">
+                    <a th:href="@{/mesa-partes/seguimiento(codigo=${expediente.codigoSeguimiento})}" target="_blank"
+                       class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <i data-lucide="globe" class="w-3.5 h-3.5 mr-2 text-slate-500"></i>
+                        Ver Ficha Pública de Seguimiento
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BARRA DE PROGRESO DE 6 ETAPAS -->
+        <section class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="git-pull-request" class="w-5 h-5 text-blue-700"></i>
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900">Avance del Procedimiento</h2>
+                </div>
+                <span class="text-xs font-semibold text-slate-500">
+                    Etapa <span class="font-bold text-blue-700" th:text="${expediente.etapaProgreso}">2</span> de 6
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <th:block th:each="etapa : ${expediente.etapasProgreso}">
+                    <div class="p-3.5 rounded-2xl border transition-all text-xs flex flex-col justify-between"
+                         th:classappend="${etapa.estado == 'COMPLETADO' ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950' : (etapa.estado == 'EN_CURSO' ? 'bg-blue-50 border-blue-300 text-blue-950 ring-2 ring-blue-500/20 font-bold' : (etapa.estado == 'ALTERNATIVO' ? 'bg-amber-50 border-amber-300 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-400'))}">
+                        
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                  th:classappend="${etapa.estado == 'COMPLETADO' ? 'bg-emerald-200/80 text-emerald-900' : (etapa.estado == 'EN_CURSO' ? 'bg-blue-600 text-white' : (etapa.estado == 'ALTERNATIVO' ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-600'))}"
+                                  th:text="${etapa.numeroEtapa}">1</span>
+                            
+                            <span th:if="${etapa.estado == 'COMPLETADO'}">
+                                <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                            </span>
+                            <span th:if="${etapa.estado == 'EN_CURSO'}">
+                                <i data-lucide="loader-2" class="w-4 h-4 text-blue-700 animate-spin"></i>
+                            </span>
+                            <span th:if="${etapa.estado == 'ALTERNATIVO'}">
+                                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
+                            </span>
+                        </div>
+
+                        <div>
+                            <p class="font-bold text-xs" th:text="${etapa.nombre}">Presentado</p>
+                            <p class="text-[11px] mt-1 leading-tight"
+                               th:classappend="${etapa.estado == 'EN_CURSO' ? 'text-blue-800' : 'text-slate-500'}"
+                               th:text="${etapa.descripcion}">Descripción</p>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </section>
+
+        <!-- SECCIÓN DE OBSERVACIONES CIUDADANAS (SI EXISTEN) -->
+        <section th:if="${expediente.observaciones != null and !expediente.observaciones.isEmpty()}"
+                 class="bg-white rounded-3xl border border-amber-200 shadow-sm p-6 sm:p-7 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-amber-100">
+                <div class="flex items-center space-x-2 text-amber-900 font-bold text-sm sm:text-base">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
+                    <h2>Observaciones Formales Notificadas</h2>
+                </div>
+                <span class="text-xs font-semibold text-amber-800 bg-amber-100 px-3 py-1 rounded-full"
+                      th:text="${expediente.observaciones.size()} + ' requerimiento(s)'">1 requerimiento</span>
+            </div>
+
+            <div class="space-y-3">
+                <th:block th:each="obs : ${expediente.observaciones}">
+                    <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 text-xs text-amber-950 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <span class="font-bold text-xs text-amber-900" th:text="${obs.requisitoNombre != null ? obs.requisitoNombre : 'Requisito Observado'}">Requisito Observado</span>
+                                <span class="text-[11px] text-amber-700 block mt-0.5" th:text="'Notificado: ' + ${#temporals.format(obs.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold"
+                                      th:classappend="${obs.estado == 'PENDIENTE' ? 'bg-amber-200 text-amber-950' : 'bg-emerald-100 text-emerald-900'}"
+                                      th:text="${obs.estado}">PENDIENTE</span>
+                                <span th:if="${obs.diasRestantes != null and obs.estado == 'PENDIENTE'}"
+                                      class="text-[11px] font-bold text-rose-700">
+                                    Vence en <span th:text="${obs.diasRestantes}">2</span> días
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-800 bg-white p-3 rounded-xl border border-amber-100 leading-relaxed" th:text="${obs.descripcion}">
+                            Detalle de la subsanación requerida.
+                        </p>
+
+                        <div th:if="${obs.permiteSubsanar and obs.estado == 'PENDIENTE'}" class="pt-1 flex justify-end">
+                            <a th:href="@{/mesa-partes/subsanar/{uuid}(uuid=${expediente.uuid})}"
+                               class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 shadow-sm transition-colors">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1.5"></i>
+                                Subsanar este requerimiento
+                            </a>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </section>
+
+        <!-- SECCIÓN DE SUBSANACIONES PRESENTADAS (SI EXISTEN) -->
+        <section th:if="${expediente.subsanaciones != null and !expediente.subsanaciones.isEmpty()}"
+                 class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-4">
+            <div class="flex items-center space-x-2 text-slate-900 font-bold text-sm sm:text-base pb-3 border-b border-slate-100">
+                <i data-lucide="check-check" class="w-5 h-5 text-emerald-600"></i>
+                <h2>Subsanaciones Presentadas por el Administrado</h2>
+            </div>
+            <div class="space-y-3">
+                <th:block th:each="sub : ${expediente.subsanaciones}">
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800" th:text="'Subsanación N° ' + ${sub.id}">Subsanación N° 1</span>
+                            <span class="text-slate-500 font-medium" th:text="${#temporals.format(sub.fechaSubsanacion, 'dd/MM/yyyy HH:mm')}">16/10/2026 15:00</span>
+                        </div>
+                        <p class="text-slate-700 leading-relaxed" th:text="${sub.respuestaCiudadana}">Respuesta ciudadana presentada.</p>
+                        <div class="pt-1 flex items-center justify-between text-[11px] text-slate-500">
+                            <span th:text="${sub.totalDocumentos} + ' archivo(s) complementario(s) adjuntos'">Archivos</span>
+                            <span class="font-bold text-blue-700" th:text="'Estado: ' + ${sub.estado}">RECEPCIONADA</span>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </section>
+
+        <!-- DOCUMENTOS OFICIALES DISPONIBLES PARA DESCARGA -->
+        <section class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2 text-slate-900 font-bold text-sm sm:text-base">
+                    <i data-lucide="files" class="w-5 h-5 text-blue-700"></i>
+                    <h2>Documentos Oficiales Disponibles</h2>
+                </div>
+                <span class="text-xs text-slate-500">Descarga autorizada bajo verificación de identidad</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                            <th class="px-4 py-3">Documento</th>
+                            <th class="px-4 py-3">Tipo</th>
+                            <th class="px-4 py-3">Emisión</th>
+                            <th class="px-4 py-3">Integridad (SHA-256)</th>
+                            <th class="px-4 py-3 text-right">Descarga</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <th:block th:if="${expediente.documentosDisponibles == null or expediente.documentosDisponibles.isEmpty()}">
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-400">
+                                    <i data-lucide="file-question" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    <p class="font-bold text-slate-600">No hay documentos finales emitidos aún</p>
+                                    <p class="text-[11px]">La constancia de presentación se encuentra disponible en la cabecera superior.</p>
+                                </td>
+                            </tr>
+                        </th:block>
+                        <th:block th:each="doc : ${expediente.documentosDisponibles}">
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-4 py-3 font-semibold text-slate-900">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="file-text" class="w-4 h-4 text-blue-600 flex-shrink-0"></i>
+                                        <span class="truncate max-w-xs" th:text="${doc.nombreArchivo}">documento.pdf</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-slate-600" th:text="${doc.tipoDocumento}">CONSTANCIA</td>
+                                <td class="px-4 py-3 text-slate-600" th:text="${#temporals.format(doc.fechaEmision, 'dd/MM/yyyy HH:mm')}">15/10/2026</td>
+                                <td class="px-4 py-3 text-slate-400 font-mono text-[10px]">
+                                    <span th:if="${doc.hashSha256 != null}" th:title="${doc.hashSha256}"
+                                          th:text="${#strings.substring(doc.hashSha256, 0, 16)} + '...'">hash...</span>
+                                    <span th:if="${doc.hashSha256 == null}">-</span>
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <a th:href="@{/api/mesa-partes/mis-solicitudes/{id}/documentos/{docId}/descargar(id=${expediente.expedienteId}, docId=${doc.id})}"
+                                       class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
+                                        <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i>
+                                        Descargar
+                                    </a>
+                                </td>
+                            </tr>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- LÍNEA DE TIEMPO CIUDADANA TRANSPARENTE -->
+        <section class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-2 text-slate-900 font-bold text-sm sm:text-base">
+                    <i data-lucide="history" class="w-5 h-5 text-blue-700"></i>
+                    <h2>Historial Comunicable del Trámite</h2>
+                </div>
+                <span class="text-xs text-slate-500">Eventos de conocimiento público para el administrado</span>
+            </div>
+
+            <!-- TIMELINE -->
+            <div class="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                <th:block th:each="ev, iter : ${expediente.lineaTiempo}">
+                    <div class="relative group">
+                        <!-- NODO DEL TIMELINE -->
+                        <div class="absolute -left-6 sm:-left-8 top-1 w-6 h-6 rounded-full bg-white border-2 border-blue-600 flex items-center justify-center shadow-sm">
+                            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                        </div>
+
+                        <!-- CONTENIDO DEL EVENTO -->
+                        <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 hover:border-blue-300 transition-colors space-y-1.5">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                <h3 class="text-xs sm:text-sm font-bold text-slate-900" th:text="${ev.titulo}">Solicitud Presentada Formalmente</h3>
+                                <time class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                    <span th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">15/10/2026 10:00</span>
+                                </time>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed" th:text="${ev.descripcion}">Descripción del movimiento.</p>
+                            <div th:if="${ev.oficina != null}" class="pt-1 flex items-center text-[11px] font-medium text-slate-500">
+                                <i data-lucide="building-2" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                                <span th:text="'Oficina: ' + ${ev.oficina}">Oficina Municipal</span>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        function copiarCodigoSeguimiento(codigo) {
+            if (!codigo) return;
+            navigator.clipboard.writeText(codigo).then(function() {
+                const txt = document.getElementById("txtBtnCopiar");
+                if (txt) {
+                    txt.textContent = "¡Copiado!";
+                    setTimeout(() => {
+                        txt.textContent = "Copiar Código de Seguimiento";
+                    }, 2500);
+                }
+            }).catch(function(err) {
+                console.error("Error al copiar código: ", err);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

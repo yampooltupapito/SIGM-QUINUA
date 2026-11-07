@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Ficha: ' + ${contribuyente.codigoContribuyente} + ' — Recaudación Tributaria | SIGM-QUINUA'">Ficha de Contribuyente</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${successMessage}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${successMessage}">Operación exitosa</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <div th:if="${errorMessage}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Error</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado de la Ficha -->
+    <div class="bg-card border border-theme rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div class="flex items-start space-x-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 flex-shrink-0">
+                    <i th:if="${contribuyente.tipoContribuyente.name() == 'PERSONA_NATURAL'}" data-lucide="user" class="w-7 h-7"></i>
+                    <i th:unless="${contribuyente.tipoContribuyente.name() == 'PERSONA_NATURAL'}" data-lucide="building-2" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="font-mono text-xs px-2.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg font-bold" th:text="${contribuyente.codigoContribuyente}">CT-000001</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
+                              th:classappend="${contribuyente.badgeClass}"
+                              th:text="${contribuyente.estadoDesc}">Activo</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border"
+                              th:classappend="${contribuyente.estadoVerificacionBadgeClass}"
+                              th:text="${contribuyente.estadoVerificacionDesc}">Validado por Formato</span>
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight" th:text="${contribuyente.nombreRazonSocial}">QUISPE FLORES, JUAN CARLOS</h1>
+                    <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
+                        <span><strong class="text-slate-300" th:text="${contribuyente.tipoDocumento}">DNI</strong>: <span class="font-mono text-slate-200" th:text="${contribuyente.numeroDocumentoEnmascarado}">41****89</span></span>
+                        <span>•</span>
+                        <span th:text="${contribuyente.tipoContribuyenteDesc}">Persona Natural</span>
+                        <span>•</span>
+                        <span>Registrado: <span th:text="${contribuyente.fechaRegistro}">2026-03-15</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openModal('modalEstado')"
+                        sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_CAMBIAR_ESTADO', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-xs font-semibold transition-colors border border-slate-700 flex items-center space-x-1.5">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Cambiar Estado</span>
+                </button>
+
+                <a th:href="@{/dashboard/tributaria/contribuyentes/{id}/editar(id=${contribuyente.id})}"
+                   sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    <span>Editar Ficha</span>
+                </a>
+
+                <a th:href="@{/dashboard/tributaria/contribuyentes}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors border border-slate-700">
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="border-b border-theme flex space-x-6 overflow-x-auto text-xs font-semibold">
+        <button type="button" onclick="switchTab('tab-general')" id="btn-tab-general" class="pb-3 text-blue-400 border-b-2 border-blue-500 flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Información General</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-domicilios')" id="btn-tab-domicilios" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            <span>Domicilios (<span th:text="${contribuyente.domicilios.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-contactos')" id="btn-tab-contactos" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="phone-call" class="w-4 h-4"></i>
+            <span>Contactos (<span th:text="${contribuyente.contactos.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-representantes')" id="btn-tab-representantes" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="briefcase" class="w-4 h-4"></i>
+            <span>Representantes (<span th:text="${contribuyente.representantes.size()}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-predios')" id="btn-tab-predios" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>Predios Vinculados (<span th:text="${prediosVinculados != null ? prediosVinculados.size() : 0}">0</span>)</span>
+        </button>
+        <button type="button" onclick="switchTab('tab-historial')" id="btn-tab-historial" class="pb-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center space-x-1.5 transition-colors">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Historial y Auditoría</span>
+        </button>
+    </div>
+
+    <!-- Contenido de Pestañas -->
+
+    <!-- Pestaña 1: Información General -->
+    <div id="tab-general" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Datos de Identidad -->
+            <div class="bg-card border border-theme rounded-xl p-5 space-y-4">
+                <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i>
+                    <span>Datos de Filiación y Registro</span>
+                </div>
+                <dl class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400">Código Contribuyente</dt>
+                        <dd class="font-mono font-bold text-blue-400 text-sm mt-0.5" th:text="${contribuyente.codigoContribuyente}">CT-000001</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Tipo de Documento</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.tipoDocumento}">DNI</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Número de Documento</dt>
+                        <dd class="font-mono text-slate-200 font-semibold mt-0.5" th:text="${contribuyente.numeroDocumentoEnmascarado}">41****89</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Tipo de Contribuyente</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.tipoContribuyenteDesc}">Persona Natural</dd>
+                    </div>
+                    <div th:if="${contribuyente.nombreComercial != null}" class="col-span-2">
+                        <dt class="text-slate-400">Nombre Comercial</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.nombreComercial}">-</dd>
+                    </div>
+                    <div class="col-span-2">
+                        <dt class="text-slate-400">Oficina Emisora</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.oficinaRegistroNombre != null ? contribuyente.oficinaRegistroNombre : 'Oficina General de Administración Tributaria'}">Rentas</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Contactos y Preferencias -->
+            <div class="bg-card border border-theme rounded-xl p-5 space-y-4">
+                <div class="flex items-center space-x-2 text-sm font-semibold text-white border-b border-theme pb-2">
+                    <i data-lucide="bell" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Canales y Notificación</span>
+                </div>
+                <dl class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <dt class="text-slate-400">Teléfono Principal</dt>
+                        <dd class="font-mono text-slate-200 font-medium mt-0.5" th:text="${contribuyente.telefonoEnmascarado != null ? contribuyente.telefonoEnmascarado : 'No registrado'}">96****56</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-400">Correo Electrónico</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.correoEnmascarado != null ? contribuyente.correoEnmascarado : 'No registrado'}">c***@correo.com</dd>
+                    </div>
+                    <div class="col-span-2">
+                        <dt class="text-slate-400">Canal Preferente de Notificación</dt>
+                        <dd class="text-blue-400 font-medium mt-0.5" th:text="${contribuyente.medioContactoPreferidoDesc}">Correo Electrónico</dd>
+                    </div>
+                    <div class="col-span-2">
+                        <dt class="text-slate-400">Domicilio Fiscal Registrado</dt>
+                        <dd class="text-slate-200 font-medium mt-0.5" th:text="${contribuyente.domicilioFiscal != null ? contribuyente.domicilioFiscal : 'Sin domicilio fiscal registrado'}">Jr. Sucre S/N</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Domicilios -->
+    <div id="tab-domicilios" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                <i data-lucide="map-pin" class="w-4 h-4 text-blue-400"></i>
+                <span>Domicilios Fiscales, Declarados y Rurales</span>
+            </h3>
+            <button type="button" onclick="openModal('modalDomicilio')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_GESTIONAR_DOMICILIOS', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Agregar Domicilio</span>
+            </button>
+        </div>
+
+        <div th:if="${contribuyente.domicilios.isEmpty()}" class="bg-card border border-theme rounded-xl p-8 text-center text-slate-400 text-xs">
+            <i data-lucide="map-pin-off" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <span>No se han registrado domicilios adicionales para este contribuyente.</span>
+        </div>
+
+        <div th:unless="${contribuyente.domicilios.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div th:each="dom : ${contribuyente.domicilios}" class="bg-card border border-theme rounded-xl p-4 shadow-sm space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white" th:text="${dom.tipoDomicilioDesc}">Domicilio Fiscal</span>
+                    <div class="flex items-center space-x-1.5">
+                        <span th:if="${dom.esFiscal}" class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">FISCAL</span>
+                        <span th:if="${dom.esNotificacion}" class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">NOTIFICACIÓN</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-200" th:text="${dom.direccionCompleta}">Jr. Sucre 145 - Quinua, Huamanga, Ayacucho</p>
+                <div th:if="${dom.referencia != null}" class="text-[11px] text-slate-400">
+                    <span class="font-medium text-slate-500">Ref:</span> <span th:text="${dom.referencia}">Frente al museo</span>
+                </div>
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Reg: <span th:text="${dom.fechaRegistro}">2026-03-15</span></span>
+                    <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/domicilios/{domId}/eliminar(id=${contribuyente.id},domId=${dom.id})}" method="POST"
+                          onsubmit="return confirm('¿Dar de baja este domicilio?')">
+                        <button type="submit" class="text-rose-400 hover:text-rose-300 font-medium">Dar de baja</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 3: Contactos -->
+    <div id="tab-contactos" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                <i data-lucide="phone-call" class="w-4 h-4 text-emerald-400"></i>
+                <span>Canales de Contacto Directo</span>
+            </h3>
+            <button type="button" onclick="openModal('modalContacto')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_GESTIONAR_CONTACTOS', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Agregar Canal</span>
+            </button>
+        </div>
+
+        <div th:if="${contribuyente.contactos.isEmpty()}" class="bg-card border border-theme rounded-xl p-8 text-center text-slate-400 text-xs">
+            <i data-lucide="phone-off" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <span>No se han registrado medios de contacto adicionales.</span>
+        </div>
+
+        <div th:unless="${contribuyente.contactos.isEmpty()}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="cont : ${contribuyente.contactos}" class="bg-card border border-theme rounded-xl p-4 shadow-sm space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300" th:text="${cont.tipoContactoDesc}">Celular</span>
+                    <span th:if="${cont.esPrincipal}" class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">PRINCIPAL</span>
+                </div>
+                <div class="font-mono text-sm font-bold text-white" th:text="${cont.valorEnmascarado}">96****56</div>
+                <div class="text-[11px] text-slate-400" th:text="${cont.descripcion}">Contacto personal</div>
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                    <span class="text-slate-500">Notificación: <strong th:class="${cont.autorizadoNotificacion ? 'text-emerald-400' : 'text-slate-500'}" th:text="${cont.autorizadoNotificacion ? 'Autorizada' : 'No'}">Sí</strong></span>
+                    <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/contactos/{contId}/eliminar(id=${contribuyente.id},contId=${cont.id})}" method="POST"
+                          onsubmit="return confirm('¿Desactivar este canal de contacto?')">
+                        <button type="submit" class="text-rose-400 hover:text-rose-300">Desactivar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 4: Representantes -->
+    <div id="tab-representantes" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                <i data-lucide="briefcase" class="w-4 h-4 text-indigo-400"></i>
+                <span>Representantes Legales y Apoderados</span>
+            </h3>
+            <button type="button" onclick="openModal('modalRepresentante')"
+                    sec:authorize="hasAnyAuthority('TRIBUTARIA_CONTRIBUYENTES_GESTIONAR_REPRESENTANTES', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Registrar Apoderado</span>
+            </button>
+        </div>
+
+        <div th:if="${contribuyente.representantes.isEmpty()}" class="bg-card border border-theme rounded-xl p-8 text-center text-slate-400 text-xs">
+            <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+            <span>No se han registrado apoderados ni representantes legales en el padrón.</span>
+        </div>
+
+        <div th:unless="${contribuyente.representantes.isEmpty()}" class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-theme text-[11px] uppercase">
+                    <tr>
+                        <th class="py-3 px-4">Representante</th>
+                        <th class="py-3 px-4">Documento</th>
+                        <th class="py-3 px-4">Cargo / Tipo</th>
+                        <th class="py-3 px-4">Partida Registral</th>
+                        <th class="py-3 px-4">Vigencia</th>
+                        <th class="py-3 px-4">Estado</th>
+                        <th class="py-3 px-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    <tr th:each="r : ${contribuyente.representantes}">
+                        <td class="py-3 px-4 font-semibold text-white" th:text="${r.nombresApellidos}">CARLOS MENDOZA</td>
+                        <td class="py-3 px-4"><span th:text="${r.tipoDocumento}">DNI</span> <span class="font-mono text-slate-400" th:text="${r.numeroDocumentoEnmascarado}">41****89</span></td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${r.tipoRepresentacionDesc}">Gerente General</td>
+                        <td class="py-3 px-4 font-mono text-slate-400" th:text="${r.partidaRegistral != null ? r.partidaRegistral : 'N/A'}">1102345</td>
+                        <td class="py-3 px-4 text-slate-400">Desde <span th:text="${r.fechaInicio}">2025-01-01</span></td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                  th:classappend="${r.badgeClass}"
+                                  th:text="${r.estadoDesc}">Activo</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/representantes/{repId}/eliminar(id=${contribuyente.id},repId=${r.id})}" method="POST"
+                                  onsubmit="return confirm('¿Revocar este poder de representación legal?')">
+                                <button type="submit" class="text-rose-400 hover:text-rose-300 text-xs font-semibold">Revocar</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pestaña 5: Predios Vinculados -->
+    <div id="tab-predios" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-bold text-white">Predios Municipales Vinculados al Contribuyente</h3>
+                <p class="text-xs text-slate-400">Padrón de inmuebles urbanos y rurales con titularidad, posesión o copropiedad registrada.</p>
+            </div>
+            <a th:href="@{/dashboard/tributaria/predios/nuevo}"
+               sec:authorize="hasAnyAuthority('TRIBUTARIA_PREDIOS_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERADMIN')"
+               class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-md shadow-blue-600/20">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Registrar Nuevo Predio</span>
+            </a>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl shadow-sm overflow-hidden">
+            <div th:if="${prediosVinculados == null or prediosVinculados.isEmpty()}" class="p-10 text-center text-slate-400">
+                <i data-lucide="home" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
+                <p class="text-sm font-medium">No se registran predios vinculados para este contribuyente.</p>
+                <p class="text-xs text-slate-500 mt-1">Los predios pueden vincularse desde la ficha individual de cada predio en el Padrón Municipal.</p>
+                <div class="pt-3">
+                    <a th:href="@{/dashboard/tributaria/predios}" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 inline-flex items-center space-x-1.5">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Ir al Padrón de Predios</span>
+                    </a>
+                </div>
+            </div>
+
+            <div th:unless="${prediosVinculados == null or prediosVinculados.isEmpty()}" class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-900/60 text-slate-400 border-b border-theme text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Código Predial</th>
+                            <th class="px-4 py-3">Cód. Catastral</th>
+                            <th class="px-4 py-3">Dirección / Ubicación</th>
+                            <th class="px-4 py-3">Tipo Relación</th>
+                            <th class="px-4 py-3">% Participación</th>
+                            <th class="px-4 py-3">Estado Relación</th>
+                            <th class="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-theme">
+                        <tr th:each="p : ${prediosVinculados}" class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-blue-400">
+                                <a th:href="@{/dashboard/tributaria/predios/{id}(id=${p.predioId})}" class="hover:underline flex items-center space-x-1">
+                                    <span th:text="${p.codigoPredio}">PR-000001</span>
+                                </a>
+                            </td>
+                            <td class="px-4 py-3 font-mono text-slate-300" th:text="${p.codigoCatastral != null ? p.codigoCatastral : '-'}">05011001001</td>
+                            <td class="px-4 py-3 text-slate-200" th:text="${p.direccionPredio}">Jr. Sucre N° 120, Quinua</td>
+                            <td class="px-4 py-3 text-slate-300" th:text="${p.tipoRelacion.name()}">TITULAR_DECLARADO</td>
+                            <td class="px-4 py-3 font-mono font-bold text-emerald-400" th:text="${p.porcentajePropiedad != null ? #numbers.formatDecimal(p.porcentajePropiedad, 1, 2) + '%' : '100.00%'}">100.00%</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                                      th:classappend="${p.activo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}"
+                                      th:text="${p.activo ? 'ACTIVO' : 'CESADO'}">ACTIVO</span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <a th:href="@{/dashboard/tributaria/predios/{id}(id=${p.predioId})}"
+                                   class="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-blue-400 rounded transition-colors inline-block"
+                                   title="Ver Ficha Predial">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 6: Historial de Estados y Auditoría -->
+    <div id="tab-historial" class="hidden space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+            <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+            <span>Historial de Transiciones y Modificaciones Administrativas</span>
+        </h3>
+
+        <div th:if="${contribuyente.historialEstados.isEmpty()}" class="bg-card border border-theme rounded-xl p-8 text-center text-slate-400 text-xs">
+            No se registran cambios de estado para este contribuyente.
+        </div>
+
+        <div th:unless="${contribuyente.historialEstados.isEmpty()}" class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+            <div th:each="h : ${contribuyente.historialEstados}" class="relative">
+                <div class="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-slate-900"></div>
+                <div class="bg-card border border-theme rounded-xl p-4 shadow-sm space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              th:classappend="${h.nuevoEstadoBadgeClass}"
+                              th:text="${h.nuevoEstadoDesc}">Activo</span>
+                        <span class="text-[11px] text-slate-500" th:text="${#temporals.format(h.fechaRegistro, 'dd/MM/yyyy HH:mm')}">2026-03-15 10:30</span>
+                    </div>
+                    <p class="text-xs text-slate-200" th:text="${h.motivo}">Alta de registro</p>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800/80">
+                        <span>Registrado por: <strong class="text-slate-400" th:text="${h.usuarioRegistro}">ADMIN</strong></span>
+                        <span th:if="${h.resolucionSustento != null}">Resolución: <strong class="text-slate-400" th:text="${h.resolucionSustento}">R.A. 012-2026</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales de Acción -->
+
+    <!-- Modal 1: Cambiar Estado -->
+    <div id="modalEstado" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                    <span>Cambiar Estado del Contribuyente</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalEstado')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/estado(id=${contribuyente.id})}" th:object="${estadoRequest}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nuevo Estado <span class="text-rose-400">*</span></label>
+                    <select th:field="*{nuevoEstado}" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="e : ${estadosContribuyente}" th:value="${e}" th:text="${e.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Motivo Justificatorio <span class="text-rose-400">*</span></label>
+                    <textarea th:field="*{motivo}" required rows="3" placeholder="Indicar el sustento administrativo o fáctico..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Resolución / Documento de Sustento</label>
+                    <input type="text" th:field="*{resolucionSustento}" placeholder="Ej: R.A. N° 045-2026-MDQ"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalEstado')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold">Confirmar Cambio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Agregar Domicilio -->
+    <div id="modalDomicilio" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-blue-400"></i>
+                    <span>Registrar Domicilio para Notificaciones</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalDomicilio')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/domicilios(id=${contribuyente.id})}" th:object="${domRequest}" method="POST" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Tipo de Domicilio</label>
+                        <select th:field="*{tipoDomicilio}" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                            <option th:each="td : ${tiposDomicilio}" th:value="${td}" th:text="${td.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Comunidad / C.P. (Quinua)</label>
+                        <input type="text" th:field="*{comunidadCentroPoblado}" placeholder="Ej: Suso, Huayllapampa..."
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Tipo de Vía</label>
+                        <input type="text" th:field="*{tipoVia}" placeholder="Jr. / Av. / Calle"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Nombre de la Vía</label>
+                        <input type="text" th:field="*{nombreVia}" placeholder="Nombre de la calle"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Número / Mz. Lt.</label>
+                        <input type="text" th:field="*{numeroMunicipal}" placeholder="N° o Mz/Lt"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Interior / Dpto.</label>
+                        <input type="text" th:field="*{interior}" placeholder="Int 2"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-300 mb-1">Referencia</label>
+                    <input type="text" th:field="*{referencia}" placeholder="Puntos de referencia para notificaciones"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                </div>
+
+                <div class="flex items-center space-x-4 pt-1">
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{esFiscal}" class="rounded bg-slate-900 border-theme text-blue-600 focus:ring-0">
+                        <span>Fijar como Domicilio Fiscal Principal</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{esNotificacion}" class="rounded bg-slate-900 border-theme text-blue-600 focus:ring-0">
+                        <span>Autorizado para Notificaciones</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalDomicilio')" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Guardar Domicilio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Agregar Contacto -->
+    <div id="modalContacto" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="phone" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Agregar Medio de Contacto</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalContacto')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/contactos(id=${contribuyente.id})}" th:object="${contRequest}" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Contacto <span class="text-rose-400">*</span></label>
+                    <select th:field="*{tipoContacto}" required class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                        <option th:each="tc : ${tiposContacto}" th:value="${tc}" th:text="${tc.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Valor (Número / Correo) <span class="text-rose-400">*</span></label>
+                    <input type="text" th:field="*{valor}" required placeholder="Ej: 966123456 o contribuyente@quinua.gob.pe"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Descripción / Nota</label>
+                    <input type="text" th:field="*{descripcion}" placeholder="Ej: Celular personal, WhatsApp, Oficina contable"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                </div>
+
+                <div class="flex items-center space-x-4 pt-1">
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{esPrincipal}" class="rounded bg-slate-900 border-theme text-blue-600">
+                        <span>Canal Principal</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" th:field="*{autorizadoNotificacion}" class="rounded bg-slate-900 border-theme text-blue-600">
+                        <span>Acepta Notificaciones</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalContacto')" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Guardar Canal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Agregar Representante -->
+    <div id="modalRepresentante" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-card border border-theme rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-theme pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="briefcase" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Registrar Apoderado / Representante</span>
+                </h3>
+                <button type="button" onclick="closeModal('modalRepresentante')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/tributaria/contribuyentes/{id}/representantes(id=${contribuyente.id})}" th:object="${repRequest}" method="POST" class="space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Doc</label>
+                        <select th:field="*{tipoDocumento}" class="w-full px-2 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                            <option value="DNI">DNI</option>
+                            <option value="CE">CE</option>
+                            <option value="PASAPORTE">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Número</label>
+                        <input type="text" th:field="*{numeroDocumento}" required placeholder="Número documento"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 font-mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-300 mb-1">Nombres y Apellidos Completos</label>
+                    <input type="text" th:field="*{nombresApellidos}" required placeholder="Nombres del representante"
+                           class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 uppercase">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-300 mb-1">Tipo de Representación</label>
+                    <select th:field="*{tipoRepresentacion}" class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                        <option th:each="tr : ${tiposRepresentacion}" th:value="${tr}" th:text="${tr.descripcion}"></option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Partida Registral</label>
+                        <input type="text" th:field="*{partidaRegistral}" placeholder="N° Partida SUNARP"
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">Fecha de Inicio</label>
+                        <input type="date" th:field="*{fechaInicio}" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-theme rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="closeModal('modalRepresentante')" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold">Guardar Apoderado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts de Gestión de Pestañas y Modales -->
+<script layout:fragment="scripts">
+    function switchTab(tabId) {
+        const tabs = ['tab-general', 'tab-domicilios', 'tab-contactos', 'tab-representantes', 'tab-predios', 'tab-historial'];
+        tabs.forEach(t => {
+            const el = document.getElementById(t);
+            const btn = document.getElementById('btn-' + t);
+            if (el && btn) {
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    btn.classList.add('text-blue-400', 'border-blue-500');
+                    btn.classList.remove('text-slate-400', 'border-transparent');
+                } else {
+                    el.classList.add('hidden');
+                    btn.classList.remove('text-blue-400', 'border-blue-500');
+                    btn.classList.add('text-slate-400', 'border-transparent');
+                }
+            }
+        });
+    }
+
+    function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    }
+</script>
+</body>
+</html>

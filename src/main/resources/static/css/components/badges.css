@@ -1,0 +1,61 @@
+/* ==========================================================================
+   SIGM-QUINUA — BADGES DE ESTADO, TARJETAS KPI Y ESTADOS DE FEEDBACK
+   ========================================================================== */
+
+.sigm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.sigm-badge--success {
+    background-color: var(--sigm-success-bg);
+    color: #6ee7b7;
+    border-color: var(--sigm-success-border);
+}
+
+.sigm-badge--warning {
+    background-color: var(--sigm-warning-bg);
+    color: #fcd34d;
+    border-color: var(--sigm-warning-border);
+}
+
+.sigm-badge--danger {
+    background-color: var(--sigm-danger-bg);
+    color: #fda4af;
+    border-color: var(--sigm-danger-border);
+}
+
+.sigm-badge--info {
+    background-color: rgba(59, 130, 246, 0.16);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.34);
+}
+
+.sigm-badge--neutral {
+    background-color: rgba(51, 65, 85, 0.55);
+    color: #cbd5e1;
+    border-color: rgba(71, 85, 105, 0.6);
+}
+
+/* Tarjeta Estadística (KPI Card) */
+.sigm-kpi-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.125rem 1.25rem;
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+.sigm-kpi-card:hover {
+    border-color: #475569;
+}
+

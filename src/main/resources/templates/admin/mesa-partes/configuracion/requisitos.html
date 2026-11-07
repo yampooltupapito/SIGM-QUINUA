@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Requisitos Documentales — Configuración Mesa de Partes</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. ENCABEZADO -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-slate-700/60 p-6 shadow-xl">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider">MESA DE PARTES VIRTUAL</div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="check-square" class="w-6 h-6 text-blue-400"></i>
+                    <span>Requisitos Documentales por Procedimiento</span>
+                </h1>
+                <p class="text-xs text-slate-300 max-w-2xl">
+                    Administre los recaudos, formatos admitidos, límites de peso y reglas de obligatoriedad según TUPA institucional.
+                </p>
+            </div>
+            <button type="button" id="btnNuevoRequisito"
+                    class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg transition-all">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Requisito</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. TABS -->
+    <div th:replace="~{admin/mesa-partes/configuracion/tabs :: tabsNav('requisitos')}"></div>
+
+    <!-- 3. SELECTOR DE TRÁMITE -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] p-4 shadow-lg">
+        <form method="get" th:action="@{/dashboard/mesa-partes/configuracion/requisitos}" class="flex items-center space-x-3">
+            <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">Procedimiento:</label>
+            <select name="tramiteId" onchange="this.form.submit()"
+                    class="flex-1 max-w-xl px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                <option th:each="tr : ${tramites}" th:value="${tr.id}" th:text="${tr.codigo} + ' — ' + ${tr.nombre}"
+                        th:selected="${tr.id == tramiteSeleccionado}"></option>
+            </select>
+        </form>
+    </div>
+
+    <!-- 4. TABLA DE REQUISITOS -->
+    <div class="rounded-2xl bg-[#202c3d] border border-[#334155] overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 border-b border-slate-700/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <tr>
+                    <th class="px-4 py-3.5">Orden</th>
+                    <th class="px-4 py-3.5">Código</th>
+                    <th class="px-4 py-3.5">Nombre del Requisito</th>
+                    <th class="px-4 py-3.5">Obligatorio</th>
+                    <th class="px-4 py-3.5">Formatos Admitidos</th>
+                    <th class="px-4 py-3.5">Tamaño Máx.</th>
+                    <th class="px-4 py-3.5">Estado</th>
+                    <th class="px-4 py-3.5 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40">
+                <tr th:if="${requisitos.isEmpty()}">
+                    <td colspan="8" class="px-4 py-10 text-center text-slate-400">
+                        <i data-lucide="file-question" class="w-10 h-10 mx-auto mb-2 text-slate-500"></i>
+                        <p class="text-sm font-medium">Este trámite no tiene requisitos documentales registrados.</p>
+                    </td>
+                </tr>
+                <tr th:each="r : ${requisitos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="px-4 py-3 font-mono font-bold text-slate-300" th:text="${r.orden}">1</td>
+                    <td class="px-4 py-3 font-mono text-blue-400 font-semibold" th:text="${r.codigo}">REQ-01</td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-slate-100" th:text="${r.nombre}">Copia de DNI</div>
+                        <div class="text-[11px] text-slate-400 line-clamp-1" th:text="${r.descripcion != null ? r.descripcion : 'Sin descripción adicional'}"></div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span th:if="${r.obligatorio}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">OBLIGATORIO</span>
+                        <span th:unless="${r.obligatorio}" class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-300">OPCIONAL</span>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-[10px] text-slate-400" th:text="${r.formatosPermitidos}">PDF, JPG</td>
+                    <td class="px-4 py-3 font-mono text-slate-300" th:text="${r.tamanoMaximoMb} + ' MB'">15 MB</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span th:if="${r.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300">ACTIVO</span>
+                        <span th:unless="${r.estado == 'ACTIVO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-700 text-slate-400">INACTIVO</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            <button type="button" class="btnEditarRequisito p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700"
+                                    th:data-id="${r.id}" title="Editar">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button th:if="${r.estado == 'ACTIVO'}" type="button" class="btnToggleEstadoRequisito p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20"
+                                    th:data-id="${r.id}" data-estado="INACTIVO" title="Desactivar">
+                                <i data-lucide="eye-off" class="w-4 h-4"></i>
+                            </button>
+                            <button th:unless="${r.estado == 'ACTIVO'}" type="button" class="btnToggleEstadoRequisito p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/20"
+                                    th:data-id="${r.id}" data-estado="ACTIVO" title="Reactivar">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. MODAL NUEVO / EDITAR REQUISITO -->
+    <div id="modalRequisito" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-lg rounded-2xl bg-[#202c3d] border border-[#334155] p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h3 id="modalRequisitoTitulo" class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-400"></i>
+                    <span>Nuevo Requisito Documental</span>
+                </h3>
+                <button type="button" id="btnCerrarModalRequisito" class="p-1 rounded-lg text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formRequisito" class="space-y-3 text-xs">
+                <input type="hidden" id="requisitoId" name="id">
+                <input type="hidden" id="requisitoTramiteId" name="tipoTramiteId" th:value="${tramiteSeleccionado}">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Código (*)</label>
+                        <input type="text" id="requisitoCodigo" name="codigo" required maxlength="50" placeholder="Ej: REQ-01"
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Orden (*)</label>
+                        <input type="number" id="requisitoOrden" name="orden" min="1" value="1" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nombre del Requisito (*)</label>
+                    <input type="text" id="requisitoNombre" name="nombre" required maxlength="200" placeholder="Nombre visible"
+                           class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Descripción / Instrucción</label>
+                    <textarea id="requisitoDescripcion" name="descripcion" rows="2" placeholder="Indicaciones para el administrado..."
+                              class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Tamaño Máximo (MB) (*)</label>
+                        <input type="number" id="requisitoTamano" name="tamanoMaximoMb" min="1" max="50" value="15" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Formatos Admitidos</label>
+                        <input type="text" id="requisitoFormatos" name="formatosPermitidos" value="application/pdf,image/jpeg,image/png" required
+                               class="w-full px-3 py-2 bg-slate-900 border border-[#334155] rounded-xl text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="requisitoObligatorio" name="obligatorio" checked class="rounded border-slate-700 text-blue-600">
+                    <label for="requisitoObligatorio" class="text-slate-300">Requisito Obligatorio para Presentación</label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-700/60">
+                    <button type="button" id="btnCancelarRequisito" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 font-medium">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow">Guardar Requisito</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mesapartes/configuracion.js}"></script>
+</th:block>
+</body>
+</html>

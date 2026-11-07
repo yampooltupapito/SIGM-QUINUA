@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Asignaciones de Puestos</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Historial de Asignaciones</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Registro cronológico de asignaciones vigentes e históricas formalizadas por la Municipalidad de Quinua.
+        </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Asignación</th>
+                        <th class="px-6 py-3.5">Puesto / Mercado</th>
+                        <th class="px-6 py-3.5">Modalidad</th>
+                        <th class="px-6 py-3.5">Fecha Inicio</th>
+                        <th class="px-6 py-3.5">Fecha Fin</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="a : ${asignaciones}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${a.codigoAsignacion}">ASIG-2026-0001</td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-900 font-mono block" th:text="${a.puestoCodigo}">P-01</span>
+                            <span class="text-xs text-slate-500" th:text="${a.mercadoNombre}">Mercado Central</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-medium" th:text="${a.modalidad != null ? a.modalidad : 'DIRECTA'}">DIRECTA</td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${#temporals.format(a.fechaInicio, 'dd/MM/yyyy')}">01/01/2026</td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${a.fechaFin != null ? #temporals.format(a.fechaFin, 'dd/MM/yyyy') : 'Indeterminado'}">31/12/2026</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${a.estado == 'ACTIVA' ? 'bg-emerald-100 text-emerald-800' : (a.estado == 'FINALIZADA' ? 'bg-slate-100 text-slate-700' : 'bg-amber-100 text-amber-800')}"
+                                  th:text="${a.estado}">ACTIVA</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(asignaciones)}">
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="key-round" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra historial de asignaciones de puestos.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

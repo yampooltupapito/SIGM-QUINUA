@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Recibo de Pago ' + ${pago.codigoPago} + ' | SIGM-QUINUA'">Detalle de Pago | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/pagos}" class="hover:text-blue-400 transition-colors">Pagos</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${pago.codigoPago}">REC-2026-000001</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <span th:text="${pago.codigoPago}">REC-2026-000001</span>
+                <span th:if="${pago.estado.name() == 'CONFIRMADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CONFIRMADO</span>
+                <span th:if="${pago.estado.name() == 'CONCILIADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">CONCILIADO</span>
+                <span th:if="${pago.estado.name() == 'REVERSADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">REVERSADO</span>
+                <span th:if="${pago.estado.name() == 'ANULADO'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">ANULADO</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5" th:text="'Titular: ' + ${pago.comercianteNombre} + ' (' + ${pago.comercianteDocumento} + ')'">Titular: Juan Pérez</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/api/mercados/pagos/{id}/constancia(id=${pago.id})}" target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Descargar Recibo PDF
+            </a>
+            <button th:if="${pago.estado.name() == 'CONFIRMADO' or pago.estado.name() == 'CONCILIADO'}"
+                    onclick="abrirModalReverso()"
+                    sec:authorize="hasAuthority('MERCADOS_PAGO_REVERSAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors">
+                Reversar Pago
+            </button>
+        </div>
+    </div>
+
+    <!-- Ficha de Datos del Recibo -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Monto Recibido</span>
+                <span class="font-mono font-bold text-white text-base" th:text="'S/ ' + ${#numbers.formatDecimal(pago.montoRecibido, 1, 'COMMA', 2, 'POINT')}">S/ 100.00</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Total Aplicado a Deudas</span>
+                <span class="font-mono font-bold text-emerald-400 text-base" th:text="'S/ ' + ${#numbers.formatDecimal(pago.montoAplicado, 1, 'COMMA', 2, 'POINT')}">S/ 100.00</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Medio de Pago</span>
+                <span class="font-semibold text-slate-200" th:text="${pago.medioPagoDescripcion != null ? pago.medioPagoDescripcion : pago.medioPago}">Efectivo</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Fecha de Pago</span>
+                <span class="text-slate-300" th:text="${#temporals.format(pago.fechaPago, 'dd/MM/yyyy HH:mm')}">15/01/2026 10:30</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Caja Recaudadora</span>
+                <span class="text-slate-200 font-semibold" th:text="${pago.cajaCodigo}">CAJA-CENTRAL-01</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Operador Cajero</span>
+                <span class="text-slate-200 font-mono" th:text="${pago.cajeroUsername}">cajero</span>
+            </div>
+
+            <div class="bg-[#101827] p-3.5 rounded-xl border border-[#334155]/40 sm:col-span-2">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold block">Firma Hash SHA-256</span>
+                <span class="font-mono text-emerald-400 text-[10px] break-all" th:text="${pago.hashComprobante}">hash...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aplicación de Fondos -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Obligaciones Canceladas con este Pago
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-4 py-3">Código Obligación</th>
+                        <th class="px-4 py-3">Concepto</th>
+                        <th class="px-4 py-3">Cuota</th>
+                        <th class="px-4 py-3 text-right">Monto Cancelado</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40 font-medium">
+                    <tr th:each="a : ${pago.aplicaciones}" class="hover:bg-[#202c3d]/50 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-blue-400">
+                            <a th:href="@{/dashboard/mercados/obligaciones/{id}(id=${a.obligacionId})}" th:text="${a.codigoObligacion}" class="hover:underline">OBL-2026-000001</a>
+                        </td>
+                        <td class="px-4 py-3" th:text="${a.conceptoNombre}">Merced Conductiva</td>
+                        <td class="px-4 py-3" th:text="${a.numeroCuota != null ? 'Cuota ' + a.numeroCuota : 'Pago Total'}">Pago Total</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(a.montoAplicado, 1, 'COMMA', 2, 'POINT')}">S/ 50.00</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                  th:classappend="${a.estado == 'APLICADO' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}"
+                                  th:text="${a.estado}">APLICADO</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Reverso de Pago -->
+    <div id="modalReverso" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Confirmar Reverso de Pago
+            </h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Esta operación anulará las aplicaciones de pago, restableciendo el saldo deudor de las obligaciones y cuotas asociadas. Debe indicar motivo justificatorio.
+            </p>
+
+            <form id="formReverso" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Motivo Justificatorio *</label>
+                    <textarea id="motivoReverso" required rows="3" placeholder="Indicar razón del reverso (ej. error en caja, duplicidad de voucher)..."
+                              class="w-full bg-[#101827] text-white p-3 rounded-xl border border-[#334155] focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Documento de Sustento</label>
+                    <input type="text" id="documentoSustentoReverso" placeholder="N° de informe, memorando o resolución..."
+                           class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-rose-500">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="cerrarModalReverso()"
+                            class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow transition-colors">
+                        Confirmar Reverso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function abrirModalReverso() {
+    document.getElementById('modalReverso')?.classList.remove('hidden');
+}
+
+function cerrarModalReverso() {
+    document.getElementById('modalReverso')?.classList.add('hidden');
+}
+
+document.getElementById('formReverso')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pagoId = '[[${pago.id}]]';
+    const motivo = document.getElementById('motivoReverso')?.value;
+    const docSustento = document.getElementById('documentoSustentoReverso')?.value;
+
+    try {
+        const resp = await fetch(`/api/mercados/pagos/${pagoId}/reversar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo: motivo, documentoSustento: docSustento })
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || 'Error al reversar pago');
+        }
+
+        alert('Pago reversado exitosamente.');
+        window.location.reload();
+    } catch (err) {
+        alert(err.message);
+    }
+});
+</script>
+</body>
+</html>

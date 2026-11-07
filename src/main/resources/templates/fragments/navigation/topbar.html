@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<header th:fragment="topbar" class="h-16 bg-sidebar border-b border-theme px-4 lg:px-6 flex items-center justify-between sticky top-0 z-40 shadow-lg">
+    <!-- Izquierda: Toggle sidebar + Título y Breadcrumb -->
+    <div class="flex items-center space-x-3">
+        <button id="btnToggleSidebar" type="button" aria-label="Alternar menú lateral" aria-expanded="true" aria-controls="mainSidebar"
+                class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="hidden sm:block">
+            <nav aria-label="Ruta de navegación" class="flex items-center space-x-2 text-xs">
+                <a sec:authorize="hasRole('SUPERADMIN')" th:href="@{/admin/dashboard}" class="text-slate-400 hover:text-slate-200 transition-colors">SIGM-QUINUA</a>
+                <a sec:authorize="!hasRole('SUPERADMIN')" th:href="@{/bienvenida}" class="text-slate-400 hover:text-slate-200 transition-colors">SIGM-QUINUA</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500" aria-hidden="true"></i>
+                <span class="text-blue-400 font-semibold uppercase tracking-wider" th:text="${moduloActivo != null ? moduloActivo : 'Panel de Control'}">Dashboard</span>
+            </nav>
+            <p class="text-xs font-medium text-slate-400">Municipalidad Distrital de Quinua — Huamanga, Ayacucho</p>
+        </div>
+    </div>
+
+    <!-- Centro: Buscador Contextual Interactivo -->
+    <div class="hidden md:flex items-center flex-1 max-w-md mx-6">
+        <div class="relative w-full">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" aria-hidden="true"></i>
+            <input type="search" id="inputGlobalSearch" autocomplete="off"
+                   aria-label="Buscar módulo o servicio del sistema"
+                   placeholder="Buscar módulo, trámite o servicio... (Alt + /)"
+                   class="w-full pl-9 pr-12 py-1.5 bg-slate-900/80 border border-theme rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+            <kbd class="absolute right-2.5 top-2 px-1.5 py-0.5 text-[10px] text-slate-400 bg-slate-800 rounded border border-slate-700 pointer-events-none">Alt+/</kbd>
+        </div>
+    </div>
+
+    <!-- Derecha: Notificaciones + Perfil -->
+    <div class="flex items-center space-x-3">
+        <!-- Campana de Notificaciones -->
+        <div class="relative">
+            <button id="btnNotificaciones" type="button" aria-label="Ver notificaciones" aria-expanded="false" aria-controls="dropdownNotificaciones"
+                    class="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                <span id="badgeNotificaciones"
+                      th:classappend="${noLeidas != null && noLeidas > 0 ? '' : 'hidden'}"
+                      class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow"
+                      th:text="${noLeidas != null ? noLeidas : 0}">0</span>
+            </button>
+
+            <!-- Menú Desplegable de Notificaciones -->
+            <div id="dropdownNotificaciones" role="region" aria-label="Bandeja de notificaciones recientes"
+                 class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-card border border-theme rounded-xl shadow-2xl py-2 z-50 animate-fade-in">
+                <div class="px-4 py-2.5 border-b border-theme flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="bell-ring" class="w-4 h-4 text-blue-400"></i>
+                        <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Notificaciones</span>
+                    </div>
+                    <button type="button" onclick="marcarTodasNotificacionesLeidas()" class="text-[11px] text-blue-400 hover:text-blue-300 font-medium">
+                        Marcar leídas
+                    </button>
+                </div>
+
+                <div id="listaNotificaciones" class="max-h-72 overflow-y-auto divide-y divide-slate-700/50">
+                    <div th:if="${notificaciones == null || notificaciones.isEmpty()}" class="p-6 text-center text-slate-400">
+                        <i data-lucide="check-check" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
+                        <p class="text-xs">No tienes notificaciones pendientes</p>
+                    </div>
+                    <div th:each="n : ${notificaciones}" class="p-3 hover:bg-slate-800/60 transition-colors flex items-start space-x-3"
+                         th:classappend="${!n.leida ? 'bg-blue-950/20' : ''}">
+                        <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                             th:classappend="${n.tipo == 'ALERTA' ? 'bg-amber-400' : (n.tipo == 'ERROR' ? 'bg-rose-500' : 'bg-blue-500')}"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-semibold text-slate-200" th:text="${n.titulo}">Título</p>
+                            <p class="text-[11px] text-slate-400 line-clamp-2 mt-0.5" th:text="${n.mensaje}">Mensaje...</p>
+                            <span class="text-[10px] text-slate-500 mt-1 block" th:text="${n.fecha != null ? n.fecha : (n.tiempoTranscurrido != null ? n.tiempoTranscurrido : 'Hoy')}">Hoy</span>
+                        </div>
+                        <button type="button" th:onclick="'marcarNotificacionLeida(' + ${n.id} + ')'" title="Marcar como leída" aria-label="Marcar notificación como leída"
+                                class="text-slate-500 hover:text-blue-400 p-1">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2.5 border-t border-theme flex items-center justify-between bg-slate-900/40">
+                    <span class="text-[10px] text-slate-400 font-medium">Bandeja Oficial SIGM-QUINUA</span>
+                    <a th:href="@{/dashboard/notificaciones}" class="text-xs text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center space-x-1 transition-colors">
+                        <span>Ver todas</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menú Desplegable de Perfil -->
+        <div class="relative">
+            <button id="btnPerfil" type="button" aria-label="Abrir menú de usuario" aria-expanded="false" aria-controls="dropdownPerfil"
+                    class="flex items-center space-x-2.5 p-1.5 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <div th:if="${userProfile != null && userProfile.fotoUrl != null}" class="w-8 h-8 rounded-lg overflow-hidden border border-blue-500/60 shadow-sm flex-shrink-0">
+                    <img th:src="${userProfile.fotoUrl}" alt="Avatar de usuario" class="w-full h-full object-cover">
+                </div>
+                <div th:if="${userProfile == null || userProfile.fotoUrl == null}"
+                     class="w-8 h-8 rounded-lg bg-blue-700 border border-blue-500/60 flex items-center justify-center font-bold text-xs text-white shadow-sm flex-shrink-0"
+                     th:text="${userProfile != null ? userProfile.iniciales : 'MQ'}">MQ</div>
+                <div class="hidden xl:block text-left">
+                    <p class="text-xs font-semibold text-slate-200 leading-tight"
+                       th:text="${userProfile != null ? userProfile.nombreCompleto : 'Administrador'}">Administrador</p>
+                    <p class="text-[10px] text-slate-400 leading-tight"
+                       th:text="${userProfile != null ? userProfile.cargo : 'Gestión Municipal'}">Gestión Municipal</p>
+                </div>
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+            </button>
+
+            <!-- Dropdown de Perfil -->
+            <div id="dropdownPerfil" role="menu" aria-label="Opciones de cuenta de usuario"
+                 class="hidden absolute right-0 mt-2 w-64 bg-card border border-theme rounded-xl shadow-2xl py-2 z-50 animate-fade-in">
+                <div class="px-4 py-3 border-b border-theme">
+                    <p class="text-xs font-bold text-slate-100" th:text="${userProfile != null ? userProfile.nombreCompleto : 'Administrador'}">Administrador</p>
+                    <p class="text-[11px] text-slate-400 font-mono" th:text="${userProfile != null ? userProfile.username : 'admin'}">admin</p>
+                    <div class="mt-2 flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span class="text-[10px] text-emerald-400 font-medium" th:text="${userProfile != null ? userProfile.oficina : 'Sede Central Quinua'}">Oficina</span>
+                    </div>
+                </div>
+
+                <div class="py-1">
+                    <a th:href="@{/dashboard/perfil}" role="menuitem" class="px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center space-x-2.5 transition-colors">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                        <span>Mi Perfil Institucional</span>
+                    </a>
+                    <a th:href="@{/dashboard/perfil(tab='seguridad')}" role="menuitem" class="px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center space-x-2.5 transition-colors">
+                        <i data-lucide="key" class="w-4 h-4 text-slate-400"></i>
+                        <span>Cambiar Contraseña</span>
+                    </a>
+                    <a th:href="@{/dashboard/perfil(tab='actividad')}" role="menuitem" class="px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center space-x-2.5 transition-colors">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-slate-400"></i>
+                        <span>Registro de Actividad</span>
+                    </a>
+                </div>
+
+                <div class="border-t border-theme pt-1">
+                    <a th:href="@{/logout}" role="menuitem"
+                       class="w-full text-left px-4 py-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 flex items-center space-x-2.5 transition-colors font-semibold">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+</body>
+</html>
+

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Gestión de Usuarios y Accesos</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado de Sección -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                <span>Gestión de Usuarios y Cuentas</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Control de identidades, credenciales institucionales y permisos de acceso para SIGM-QUINUA.</p>
+        </div>
+        <div>
+            <button onclick="abrirModal('modalNuevoUsuario')" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40 transition-all">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Nuevo Usuario</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros y Búsqueda -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+        <form th:action="@{/admin/usuarios}" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar por username, documento o nombre</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" name="term" th:value="${term}" placeholder="Ej. jperez, 45892314, Juan Pérez..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Estado de Cuenta</label>
+                <select name="enabled" class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option value="true" th:selected="${param.enabled != null && param.enabled[0] == 'true'}">Activo</option>
+                    <option value="false" th:selected="${param.enabled != null && param.enabled[0] == 'false'}">Inactivo</option>
+                </select>
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/admin/usuarios}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700/60 uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-4 py-3">Usuario</th>
+                        <th class="px-4 py-3">Documento / Nombres</th>
+                        <th class="px-4 py-3">Correo Electrónico</th>
+                        <th class="px-4 py-3">Roles</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                    <tr th:if="${usuariosPage.content.empty}">
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                            <i data-lucide="user-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            <p>No se encontraron usuarios que coincidan con la búsqueda.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="u : ${usuariosPage.content}" class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center space-x-2.5">
+                                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-blue-400">
+                                    <span th:text="${#strings.substring(u.username,0,1).toUpperCase()}">U</span>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-slate-100 block" th:text="${u.username}">admin</span>
+                                    <span class="text-[10px] text-slate-400" th:text="'ID: ' + ${u.id}">ID: 1</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="font-medium text-slate-200 block" th:text="${u.personaNombre}">Juan Pérez Quispe</span>
+                            <span class="text-[10px] text-slate-400" th:text="${u.tipoDocumento} + ': ' + ${u.numeroDocumento}">DNI: 45892314</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-400" th:text="${u.correo != null ? u.correo : 'Sin correo'}">usuario@quinua.gob.pe</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span th:each="r : ${u.roles}"
+                                      th:text="${r}"
+                                      class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/50">
+                                    ROLE_ADMIN
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col space-y-1">
+                                <span th:if="${u.enabled}" class="inline-flex items-center space-x-1 text-emerald-400 text-[11px] font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Activo</span>
+                                </span>
+                                <span th:unless="${u.enabled}" class="inline-flex items-center space-x-1 text-slate-500 text-[11px] font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                    <span>Inactivo</span>
+                                </span>
+                                <span th:if="${u.accountLocked}" class="inline-flex items-center space-x-1 text-rose-400 text-[10px] font-semibold">
+                                    <i data-lucide="lock" class="w-3 h-3"></i>
+                                    <span>Bloqueado</span>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button th:data-id="${u.id}" onclick="verDetalle(this.dataset.id)" title="Ver detalle"
+                                        class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                                <button th:data-id="${u.id}" onclick="abrirEditarUsuario(this.dataset.id)" title="Editar datos"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button th:data-id="${u.id}" onclick="abrirGestionRoles(this.dataset.id)" title="Asignar roles"
+                                        class="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="shield" class="w-4 h-4"></i>
+                                </button>
+                                <button th:data-id="${u.id}" th:data-username="${u.username}" onclick="abrirResetPassword(this.dataset.id, this.dataset.username)" title="Resetear contraseña"
+                                        class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="key" class="w-4 h-4"></i>
+                                </button>
+                                <button th:if="${u.enabled}" th:data-id="${u.id}" onclick="cambiarEstadoUsuario(this.dataset.id, 'desactivar')" title="Desactivar cuenta"
+                                        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="user-x" class="w-4 h-4"></i>
+                                </button>
+                                <button th:unless="${u.enabled}" th:data-id="${u.id}" onclick="cambiarEstadoUsuario(this.dataset.id, 'activar')" title="Activar cuenta"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                                </button>
+                                <button th:if="${!u.accountLocked}" th:data-id="${u.id}" onclick="cambiarBloqueoUsuario(this.dataset.id, 'bloquear')" title="Bloquear cuenta"
+                                        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </button>
+                                <button th:if="${u.accountLocked}" th:data-id="${u.id}" onclick="cambiarBloqueoUsuario(this.dataset.id, 'desbloquear')" title="Desbloquear cuenta"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="unlock" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${usuariosPage.totalPages > 1}" class="px-4 py-3 bg-slate-800/60 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Mostrando <span th:text="${usuariosPage.numberOfElements}">10</span> de <span th:text="${usuariosPage.totalElements}">50</span> usuarios
+            </div>
+            <div class="flex items-center space-x-1">
+                <a th:if="${!usuariosPage.first}" th:href="@{/admin/usuarios(page=${usuariosPage.number - 1}, term=${term})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors">
+                    Anterior
+                </a>
+                <span class="px-3 py-1 font-semibold text-slate-200" th:text="'Página ' + (${usuariosPage.number} + 1) + ' de ' + ${usuariosPage.totalPages}">1 de 5</span>
+                <a th:if="${!usuariosPage.last}" th:href="@{/admin/usuarios(page=${usuariosPage.number + 1}, term=${term})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO USUARIO -->
+    <div id="modalNuevoUsuario" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-2xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-blue-500"></i>
+                    <span>Registrar Nuevo Usuario Institucional</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevoUsuario')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formNuevoUsuario" data-no-loading="true" onsubmit="guardarNuevoUsuario(event)" class="p-6 space-y-4 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre de Usuario (Username) *</label>
+                        <input type="text" id="nu_username" required maxlength="50" placeholder="ej. mquispe"
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Contraseña Inicial *</label>
+                        <input type="password" id="nu_password" required minlength="8" placeholder="Mínimo 8 caracteres"
+                               class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-700/60 pt-3">
+                    <h4 class="text-xs font-semibold text-blue-400 mb-3">Datos Personales y Documento</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Tipo Documento *</label>
+                            <select id="nu_tipoDocumento" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                                <option value="DNI">DNI</option>
+                                <option value="CE">Carné Extranjería</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Número de Documento *</label>
+                            <input type="text" id="nu_numeroDocumento" required maxlength="20" placeholder="8 dígitos para DNI"
+                                   class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombres *</label>
+                            <input type="text" id="nu_nombres" required maxlength="100" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Apellido Paterno *</label>
+                            <input type="text" id="nu_apellidoPaterno" required maxlength="100" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Apellido Materno</label>
+                            <input type="text" id="nu_apellidoMaterno" maxlength="100" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Correo Electrónico *</label>
+                            <input type="email" id="nu_correo" required maxlength="150" placeholder="correo@quinua.gob.pe"
+                                   class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Teléfono / Celular</label>
+                            <input type="text" id="nu_telefono" maxlength="20" placeholder="Ej. 966123456"
+                                   class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-700/60 pt-3">
+                    <h4 class="text-xs font-semibold text-blue-400 mb-2">Asignación de Roles Iniciales *</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label th:each="r : ${rolesDisponibles}" class="flex items-center space-x-2 p-2 bg-slate-900/60 rounded border border-slate-800 text-xs text-slate-300 cursor-pointer hover:bg-slate-800">
+                            <input type="checkbox" name="nu_roles" th:value="${r.id}" class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                            <span th:text="${r.nombre}">Administrador</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalNuevoUsuario')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" id="btnGuardarUsuario" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold shadow-md">Registrar Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR USUARIO -->
+    <div id="modalEditarUsuario" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-lg rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Editar Información de Usuario</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEditarUsuario')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formEditarUsuario" data-no-loading="true" onsubmit="guardarEdicionUsuario(event)" class="p-6 space-y-4">
+                <input type="hidden" id="eu_id">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Username (No editable)</label>
+                    <input type="text" id="eu_username" disabled class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 cursor-not-allowed">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombres *</label>
+                        <input type="text" id="eu_nombres" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Apellido Paterno *</label>
+                        <input type="text" id="eu_apellidoPaterno" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Apellido Materno</label>
+                    <input type="text" id="eu_apellidoMaterno" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Correo Electrónico *</label>
+                    <input type="email" id="eu_correo" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Teléfono</label>
+                        <input type="text" id="eu_telefono" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Dirección</label>
+                        <input type="text" id="eu_direccion" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalEditarUsuario')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" id="btnActualizarUsuario" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: GESTIONAR ROLES DE USUARIO -->
+    <div id="modalRolesUsuario" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Asignar Roles a <span id="mru_username" class="text-blue-400"></span></span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalRolesUsuario')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formRolesUsuario" data-no-loading="true" onsubmit="guardarRolesUsuario(event)" class="p-6 space-y-4">
+                <input type="hidden" id="mru_id">
+                <p class="text-xs text-slate-400">Seleccione los roles aplicables para este usuario. Se revocarán de inmediato las sesiones anteriores para aplicar los nuevos privilegios.</p>
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <label th:each="r : ${rolesDisponibles}" class="flex items-center space-x-3 p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 text-xs text-slate-200 cursor-pointer hover:bg-slate-800">
+                        <input type="checkbox" name="mru_roles" th:value="${r.id}" th:id="'rol_chk_' + ${r.id}" class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                        <div>
+                            <span class="font-semibold block" th:text="${r.nombre}">Administrador</span>
+                            <span class="text-[10px] text-slate-400" th:text="${r.codigo}">ROLE_ADMIN</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalRolesUsuario')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarRoles" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Actualizar Roles</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: RESET PASSWORD -->
+    <div id="modalResetPassword" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-sm rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="key" class="w-4 h-4 text-amber-500"></i>
+                    <span>Restablecer Contraseña</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalResetPassword')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formResetPassword" data-no-loading="true" onsubmit="ejecutarResetPassword(event)" class="p-6 space-y-4">
+                <input type="hidden" id="rp_id">
+                <p class="text-xs text-slate-400">Restableciendo contraseña para <span id="rp_username" class="font-semibold text-slate-200"></span>. Todas las sesiones activas serán invalidadas.</p>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nueva Contraseña *</label>
+                    <input type="password" id="rp_nuevaPassword" required minlength="8" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Confirmar Nueva Contraseña *</label>
+                    <input type="password" id="rp_confirmarPassword" required minlength="8" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalResetPassword')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnResetPassword" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Cambiar Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALLE DE USUARIO -->
+    <div id="modalDetalleUsuario" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-2xl rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+                    <span>Detalle Completo del Usuario</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalDetalleUsuario')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="detalleUsuarioContenido" class="p-6 space-y-4 overflow-y-auto text-xs">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="px-6 py-3 bg-slate-800/60 border-t border-slate-700/60 flex justify-end">
+                <button type="button" onclick="cerrarModal('modalDetalleUsuario')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- SCRIPT ESPECÍFICO DE GESTIÓN DE USUARIOS -->
+<th:block layout:fragment="scripts">
+<script>
+    async function guardarNuevoUsuario(e) {
+        e.preventDefault();
+        const rolBoxes = document.querySelectorAll('input[name="nu_roles"]:checked');
+        const rolIds = Array.from(rolBoxes).map(b => parseInt(b.value, 10));
+
+        if (rolIds.length === 0) {
+            mostrarToast("Debe asignar al menos un rol al usuario.", "error");
+            return;
+        }
+
+        const body = {
+            username: document.getElementById("nu_username").value.trim(),
+            password: document.getElementById("nu_password").value,
+            tipoDocumento: document.getElementById("nu_tipoDocumento").value,
+            numeroDocumento: document.getElementById("nu_numeroDocumento").value.trim(),
+            nombres: document.getElementById("nu_nombres").value.trim(),
+            apellidoPaterno: document.getElementById("nu_apellidoPaterno").value.trim(),
+            apellidoMaterno: document.getElementById("nu_apellidoMaterno").value.trim(),
+            correo: document.getElementById("nu_correo").value.trim(),
+            telefono: document.getElementById("nu_telefono").value.trim(),
+            rolIds: rolIds
+        };
+
+        const btn = document.getElementById("btnGuardarUsuario");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Registrando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/usuarios", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Usuario registrado exitosamente.", "success");
+            cerrarModal("modalNuevoUsuario");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Registrar Usuario";
+            }
+        }
+    }
+
+    async function abrirEditarUsuario(id) {
+        try {
+            const res = await fetchApi("/api/admin/usuarios/" + id);
+            const u = res.data;
+            document.getElementById("eu_id").value = u.id;
+            document.getElementById("eu_username").value = u.username || "";
+
+            let nombres = u.nombres || "";
+            let apellidoPaterno = u.apellidoPaterno || "";
+            let apellidoMaterno = u.apellidoMaterno || "";
+
+            if (!nombres && u.personaNombre) {
+                const parts = u.personaNombre.trim().split(/\s+/);
+                if (parts.length >= 3) {
+                    apellidoMaterno = parts[parts.length - 1];
+                    apellidoPaterno = parts[parts.length - 2];
+                    nombres = parts.slice(0, parts.length - 2).join(" ");
+                } else if (parts.length === 2) {
+                    nombres = parts[0];
+                    apellidoPaterno = parts[1];
+                    apellidoMaterno = "";
+                } else {
+                    nombres = parts[0] || "";
+                    apellidoPaterno = "SIN APELLIDO";
+                    apellidoMaterno = "";
+                }
+            }
+
+            document.getElementById("eu_nombres").value = nombres;
+            document.getElementById("eu_apellidoPaterno").value = apellidoPaterno;
+            document.getElementById("eu_apellidoMaterno").value = apellidoMaterno;
+            document.getElementById("eu_correo").value = u.correo || "";
+            document.getElementById("eu_telefono").value = u.telefono || "";
+            document.getElementById("eu_direccion").value = u.direccion || "";
+            abrirModal("modalEditarUsuario");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarEdicionUsuario(e) {
+        e.preventDefault();
+        const id = document.getElementById("eu_id").value;
+        const body = {
+            nombres: document.getElementById("eu_nombres").value.trim(),
+            apellidoPaterno: document.getElementById("eu_apellidoPaterno").value.trim() || "APELLIDO",
+            apellidoMaterno: document.getElementById("eu_apellidoMaterno").value.trim(),
+            correo: document.getElementById("eu_correo").value.trim(),
+            telefono: document.getElementById("eu_telefono").value.trim(),
+            direccion: document.getElementById("eu_direccion").value.trim()
+        };
+
+        const btn = document.getElementById("btnActualizarUsuario");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/usuarios/" + id, {
+                method: "PUT",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Usuario actualizado exitosamente.", "success");
+            cerrarModal("modalEditarUsuario");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Cambios";
+            }
+        }
+    }
+
+    async function abrirGestionRoles(id) {
+        try {
+            const res = await fetchApi("/api/admin/usuarios/" + id);
+            const u = res.data;
+            document.getElementById("mru_id").value = u.id;
+            document.getElementById("mru_username").innerText = u.username;
+
+            document.querySelectorAll('input[name="mru_roles"]').forEach(chk => {
+                chk.checked = false;
+            });
+
+            if (u.roles && Array.isArray(u.roles)) {
+                document.querySelectorAll('input[name="mru_roles"]').forEach(chk => {
+                    const labelEl = chk.closest("label").querySelector("span:last-child");
+                    const codigoRol = labelEl ? labelEl.innerText.trim() : "";
+                    if (u.roles.includes(codigoRol)) {
+                        chk.checked = true;
+                    }
+                });
+            }
+            abrirModal("modalRolesUsuario");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarRolesUsuario(e) {
+        e.preventDefault();
+        const id = document.getElementById("mru_id").value;
+        const rolBoxes = document.querySelectorAll('input[name="mru_roles"]:checked');
+        const rolIds = Array.from(rolBoxes).map(b => parseInt(b.value, 10));
+
+        if (rolIds.length === 0) {
+            mostrarToast("Debe seleccionar al menos un rol.", "error");
+            return;
+        }
+
+        const btn = document.getElementById("btnGuardarRoles");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Actualizando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/usuarios/" + id + "/roles", {
+                method: "PUT",
+                body: JSON.stringify(rolIds)
+            });
+            mostrarToast("Roles actualizados exitosamente.", "success");
+            cerrarModal("modalRolesUsuario");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Actualizar Roles";
+            }
+        }
+    }
+
+    function abrirResetPassword(id, username) {
+        document.getElementById("rp_id").value = id;
+        document.getElementById("rp_username").innerText = username || "";
+        document.getElementById("rp_nuevaPassword").value = "";
+        document.getElementById("rp_confirmarPassword").value = "";
+        abrirModal("modalResetPassword");
+        if (window.lucide) lucide.createIcons();
+    }
+
+    async function ejecutarResetPassword(e) {
+        e.preventDefault();
+        const id = document.getElementById("rp_id").value;
+        const p1 = document.getElementById("rp_nuevaPassword").value;
+        const p2 = document.getElementById("rp_confirmarPassword").value;
+
+        if (p1 !== p2) {
+            mostrarToast("Las contraseñas no coinciden.", "error");
+            return;
+        }
+
+        const btn = document.getElementById("btnResetPassword");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Cambiando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/usuarios/" + id + "/reset-password", {
+                method: "POST",
+                body: JSON.stringify({ nuevaPassword: p1, confirmarPassword: p2 })
+            });
+            mostrarToast("Contraseña restablecida correctamente.", "success");
+            cerrarModal("modalResetPassword");
+        } catch (err) {
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Cambiar Contraseña";
+            }
+        }
+    }
+
+    async function cambiarEstadoUsuario(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} la cuenta de este usuario?`)) return;
+        try {
+            await fetchApi(`/api/admin/usuarios/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Cuenta ${accion === "activar" ? "activada" : "desactivada"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function cambiarBloqueoUsuario(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} este usuario?`)) return;
+        try {
+            await fetchApi(`/api/admin/usuarios/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Cuenta ${accion === "bloquear" ? "bloqueada" : "desbloqueada"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    async function verDetalle(id) {
+        try {
+            const res = await fetchApi("/api/admin/usuarios/" + id);
+            const u = res.data;
+            const container = document.getElementById("detalleUsuarioContenido");
+
+            let asignacionesHtml = "";
+            if (u.asignacionesOficina && u.asignacionesOficina.length > 0) {
+                asignacionesHtml = u.asignacionesOficina.map(a => `
+                    <div class="p-3 bg-slate-900 rounded-lg border border-slate-800">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-semibold text-slate-200">${a.oficinaNombre}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] ${a.principal ? 'bg-blue-900/60 text-blue-300' : 'bg-slate-800 text-slate-400'}">${a.principal ? 'Oficina Principal' : 'Secundaria'}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400">
+                            <span>Cargo: <strong class="text-slate-300">${a.cargoNombre || 'Sin cargo'}</strong></span> |
+                            <span>Tipo Actor: <strong class="text-slate-300">${a.tipoActorNombre || 'Servidor Municipal'}</strong></span>
+                        </div>
+                    </div>
+                `).join("");
+            } else {
+                asignacionesHtml = `<p class="text-slate-500 italic">No registra asignaciones en oficinas municipales.</p>`;
+            }
+
+            const rolesList = Array.isArray(u.roles) ? u.roles : [];
+
+            container.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 pb-4 border-b border-slate-700/60">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Username</span>
+                        <span class="text-slate-100 font-bold text-sm">${u.username}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Estado de Cuenta</span>
+                        <span class="${u.enabled ? 'text-emerald-400' : 'text-rose-400'} font-semibold">${u.enabled ? 'Habilitada' : 'Deshabilitada'}</span>
+                        ${u.accountLocked ? '<span class="text-rose-400 font-bold ml-2">(Bloqueada)</span>' : ''}
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Persona Vinculada</span>
+                        <span class="text-slate-200 font-medium">${u.personaNombre || '-'}</span>
+                        <span class="text-slate-500 block text-[10px]">${u.tipoDocumento || 'DOC'}: ${u.numeroDocumento || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-semibold">Contacto</span>
+                        <span class="text-slate-200">${u.correo || 'Sin correo'}</span>
+                        <span class="text-slate-500 block text-[10px]">${u.telefono || 'Sin teléfono'}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold mb-2">Roles Asignados</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${rolesList.map(r => `<span class="px-2.5 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 text-xs font-semibold">${r}</span>`).join("")}
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold mb-2">Asignaciones en Estructura Orgánica</span>
+                    <div class="space-y-2">
+                        ${asignacionesHtml}
+                    </div>
+                </div>
+            `;
+
+            abrirModal("modalDetalleUsuario");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    window.guardarNuevoUsuario = guardarNuevoUsuario;
+    window.abrirEditarUsuario = abrirEditarUsuario;
+    window.guardarEdicionUsuario = guardarEdicionUsuario;
+    window.abrirGestionRoles = abrirGestionRoles;
+    window.guardarRolesUsuario = guardarRolesUsuario;
+    window.abrirResetPassword = abrirResetPassword;
+    window.ejecutarResetPassword = ejecutarResetPassword;
+    window.cambiarEstadoUsuario = cambiarEstadoUsuario;
+    window.cambiarBloqueoUsuario = cambiarBloqueoUsuario;
+    window.verDetalle = verDetalle;
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Nueva Intervención de Serenazgo | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between pb-2 border-b border-slate-700/60">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/intervenciones}" class="hover:text-slate-200 transition">Intervenciones</a>
+                <span>/</span>
+                <span class="text-blue-400 font-medium">Nueva Actuación</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="shield-plus" class="w-7 h-7 text-blue-500"></i>
+                Registro de Nueva Intervención
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Documentación administrativa de actuaciones disuasivas y preventivas del Serenazgo de Quinua.
+            </p>
+        </div>
+        <a th:href="@{/dashboard/serenazgo/intervenciones}"
+           class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver a la Bandeja</span>
+        </a>
+    </div>
+
+    <!-- Advertencia Institucional -->
+    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 text-amber-400"></i>
+        <span><strong>RESTRICCIÓN LEGAL:</strong> El personal de Serenazgo actúa en labores de auxilio, orientación, disuasión y prevención. No posee atribuciones de policía judicial ni facultades de detención penal o investigación. Redacte con estricta objetividad descriptiva.</span>
+    </div>
+
+    <!-- Error Flash -->
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+        <i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i>
+        <span th:text="${mensajeError}">Error de validación</span>
+    </div>
+
+    <form th:action="@{/dashboard/serenazgo/intervenciones}" th:object="${nuevaIntervencion}" method="post" class="space-y-6">
+
+        <!-- 1. Asociación con Incidencia y Orden de Atención -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="link" class="w-4 h-4 text-blue-400"></i>
+                1. Incidencia de Origen y Orden de Atención
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Selector Incidencia -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Incidencia Registrada <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{incidenciaId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Seleccionar incidencia registrada --</option>
+                        <option th:each="inc : ${incidencias}" th:value="${inc.id}"
+                                th:text="${inc.codigo + ' — ' + inc.titulo + ' (' + (inc.sector != null ? inc.sector.nombre : 'Sin sector') + ')'}"></option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('incidenciaId')}" th:errors="*{incidenciaId}" class="text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Selector Atención (Opcional) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Orden de Atención / Despacho (Opcional si es directa)
+                    </label>
+                    <select th:field="*{atencionId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Sin orden previa / Actuación directa en campo --</option>
+                        <option th:each="atn : ${atenciones}" th:value="${atn.id}"
+                                th:text="${atn.codigo + ' — ' + atn.incidencia.codigo + ' (' + atn.estado.descripcion + ')'}"></option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Si la actuación fue precedida por un despacho formal, selecciónelo para enlace y métricas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Clasificación, Horarios y Trazabilidad -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="tag" class="w-4 h-4 text-emerald-400"></i>
+                2. Clasificación y Tiempos de la Actuación
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Tipo Intervención -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Tipo de Intervención <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{tipoIntervencion}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option th:each="t : ${tipos}" th:value="${t.name()}" th:text="${t.etiqueta}"></option>
+                    </select>
+                </div>
+
+                <!-- Fecha Inicio -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Fecha y Hora Inicio de Actuación <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="datetime-local" th:field="*{fechaInicio}"
+                           class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    <p class="text-[11px] text-slate-500 mt-1">Si se omite, se tomará el instante actual.</p>
+                </div>
+
+                <!-- Fecha Fin -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Fecha y Hora Fin de Actuación
+                    </label>
+                    <input type="datetime-local" th:field="*{fechaFin}"
+                           class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    <p class="text-[11px] text-slate-500 mt-1">Opcional si la actuación aún continúa en desarrollo.</p>
+                </div>
+            </div>
+
+            <!-- Registro Retrospectivo -->
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-700 space-y-3">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="registroRetrospectivo" th:field="*{registroRetrospectivo}"
+                           class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                    <label for="registroRetrospectivo" class="text-xs font-semibold text-slate-300 cursor-pointer">
+                        ¿Es un registro retrospectivo posterior a la actuación de campo?
+                    </label>
+                </div>
+                <div id="boxMotivoRetrospectivo" class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-400">Motivo de registro posterior</label>
+                    <input type="text" th:field="*{motivoRegistroRetrospectivo}"
+                           placeholder="Ej: Zona sin cobertura de datos móviles en el sector rural de Quinua..."
+                           class="w-full px-3 py-1.5 text-xs rounded-lg bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Ubicación y Georreferenciación -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="map-pin" class="w-4 h-4 text-rose-400"></i>
+                3. Ubicación Geográfica en el Distrito de Quinua
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Sector de Patrullaje</label>
+                    <select th:field="*{sectorId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Sector no especificado --</option>
+                        <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.nombre + ' (' + sec.codigo + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Zona Operativa</label>
+                    <select th:field="*{zonaId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Zona no especificada --</option>
+                        <option th:each="zon : ${zonas}" th:value="${zon.id}" th:text="${zon.nombre}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Descripción del Lugar / Referencia Física de la Actuación
+                </label>
+                <input type="text" th:field="*{ubicacionDescripcion}"
+                       placeholder="Ej: Jr. Sucre cuadra 2, inmediaciones del Taller de Artesanía de Quinua..."
+                       class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Latitud WGS84 (Opcional)</label>
+                    <input type="number" step="any" th:field="*{latitud}" placeholder="-13.045000"
+                           class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Longitud WGS84 (Opcional)</label>
+                    <input type="number" step="any" th:field="*{longitud}" placeholder="-74.138000"
+                           class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Personal Responsable y Cuadrilla -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+                4. Sereno Responsable y Personal Participante
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Responsable -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Sereno Responsable de la Intervención <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{responsableId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Seleccionar efectivo responsable --</option>
+                        <option th:each="per : ${personalDisponible}" th:value="${per.id}"
+                                th:text="${per.nombreCompleto + ' (' + per.codigoInterno + ' — ' + per.cargo + ')'}"></option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('responsableId')}" th:errors="*{responsableId}" class="text-[11px] text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Unidad Móvil -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Unidad Móvil Empleada
+                    </label>
+                    <select th:field="*{unidadMovilId}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Sin unidad móvil (Patrullaje a pie / Modalidad pedestre) --</option>
+                        <option th:each="uni : ${unidadesDisponibles}" th:value="${uni.id}"
+                                th:text="${uni.codigo + ' — ' + uni.tipo + ' (' + uni.placa + ')'}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Efectivos adicionales -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Efectivos de Apoyo / Cuadrilla Participante
+                </label>
+                <div class="max-h-40 overflow-y-auto p-2.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2 text-xs">
+                    <label th:each="per : ${personalDisponible}" class="flex items-center gap-2 cursor-pointer hover:text-slate-100">
+                        <input type="checkbox" name="personalParticipanteIds" th:value="${per.id}" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span th:text="${per.nombreCompleto + ' (' + per.codigoInterno + ')'}">Juan Pérez</span>
+                    </label>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Marque los efectivos que acompañaron efectivamente la actuación.</p>
+            </div>
+        </div>
+
+        <!-- 5. Recursos y Equipamiento -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="radio" class="w-4 h-4 text-cyan-400"></i>
+                5. Equipamiento Operativo Utilizado
+            </h2>
+
+            <div class="max-h-36 overflow-y-auto p-2.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2 text-xs">
+                <div th:if="${#lists.isEmpty(equiposDisponibles)}" class="text-slate-500 italic">No hay equipamiento registrado.</div>
+                <label th:each="equipo : ${equiposDisponibles}" class="flex items-center gap-2 cursor-pointer hover:text-slate-100">
+                    <input type="checkbox" name="equipamientoIds" th:value="${equipo.id}" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                    <span th:text="${equipo.nombre + ' (' + (equipo.codigoPatrimonial ?: equipo.tipo) + ')'}">Radio VHF</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 6. Descripción Objetiva de Actuaciones -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+                6. Descripción Objetiva de los Hechos y Actuaciones
+            </h2>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Relato de Actuaciones Realizadas <span class="text-rose-400">*</span>
+                </label>
+                <textarea th:field="*{descripcionActuacion}" rows="5"
+                          placeholder="Describa objetivamente qué se observó en el lugar, qué medidas preventivas se tomaron, a quiénes se orientó pacíficamente y cuál fue la respuesta comunitaria. No atribuya culpabilidades penales..."
+                          class="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition leading-relaxed"></textarea>
+                <p th:if="${#fields.hasErrors('descripcionActuacion')}" th:errors="*{descripcionActuacion}" class="text-[11px] text-rose-400 mt-1"></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Resultado Administrativo -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Resultado Administrativo Obtenido <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{resultado}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option th:each="r : ${resultados}" th:value="${r.name()}" th:text="${r.etiqueta}"></option>
+                    </select>
+                </div>
+
+                <!-- Nivel Confidencialidad -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Nivel de Confidencialidad Institucional <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{nivelConfidencialidad}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <option th:each="c : ${confidencialidades}" th:value="${c.name()}" th:text="${c.etiqueta + ' — ' + c.descripcion}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Observaciones Internas</label>
+                <input type="text" th:field="*{observaciones}"
+                       placeholder="Anotaciones de uso exclusivo de la supervisión de Serenazgo..."
+                       class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+
+        <!-- 7. Opciones de Guardado -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="guardarComoBorrador" th:field="*{guardarComoBorrador}"
+                       class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                <label for="guardarComoBorrador" class="text-xs font-semibold text-slate-300 cursor-pointer">
+                    Guardar como BORRADOR (Permite continuar agregando actuaciones antes de enviar a supervisión)
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <a th:href="@{/dashboard/serenazgo/intervenciones}"
+                   class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-2 transition">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Registrar Intervención</span>
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+</body>
+</html>

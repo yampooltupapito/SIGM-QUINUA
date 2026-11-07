@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE ERROR STATE (Estado de error de carga o contingencia)
+     ========================================================================== -->
+<div th:fragment="errorState(titulo, mensaje, retryUrl)"
+     role="alert"
+     class="py-10 px-6 text-center bg-rose-950/20 rounded-xl border border-rose-500/30">
+    <div class="w-12 h-12 rounded-full bg-rose-500/15 border border-rose-500/30 flex items-center justify-center mx-auto mb-3 text-rose-400">
+        <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-sm font-bold text-rose-200" th:text="${!#strings.isEmpty(titulo) ? titulo : 'No se pudo completar la operación'}">Error</h3>
+    <p class="text-xs text-rose-300/80 mt-1 max-w-md mx-auto" th:text="${!#strings.isEmpty(mensaje) ? mensaje : 'Verifique los datos ingresados o intente nuevamente.'}">Detalle</p>
+    <div th:if="${!#strings.isEmpty(retryUrl)}" class="mt-4">
+        <a th:href="${retryUrl}" class="sigm-btn sigm-btn-secondary">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Reintentar</span>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
+

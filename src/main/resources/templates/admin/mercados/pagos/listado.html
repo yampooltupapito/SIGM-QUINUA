@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Pagos y Recaudaciones | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/finanzas}" class="hover:text-blue-400 transition-colors">Finanzas</a>
+                <span>/</span>
+                <span class="text-slate-200">Pagos</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Recaudación y Recibos de Caja de Mercados
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de ingresos dinerarios, emisión de constancias con código QR y reversos autorizados.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/pagos/nuevo}"
+               sec:authorize="hasAuthority('MERCADOS_PAGO_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Cobrar / Nuevo Pago
+            </a>
+            <a th:href="@{/api/mercados/finanzas/exportar/pagos/excel}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+            <a th:href="@{/api/mercados/finanzas/exportar/pagos/pdf}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] rounded-xl text-xs font-medium transition-colors">
+                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formFiltrosPagos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Buscar Recibo / Titular / Operación</label>
+                <input type="text" id="filtroQ" placeholder="REC-2026-..., DNI, Nombre"
+                       class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Medio de Pago</label>
+                <select id="filtroMedio" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Medios</option>
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="YAPE">Yape</option>
+                    <option value="PLIN">Plin</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="TRANSFERENCIA_BANCARIA">Transferencia Bancaria</option>
+                    <option value="DEPOSITO_BANCARIO">Depósito en Cuenta</option>
+                    <option value="TARJETA_DEBITO_CREDITO">Tarjeta Débito/Crédito</option>
+                    <option value="BILLETERA_DIGITAL">Billetera Digital</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select id="filtroEstado" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option value="CONFIRMADO">CONFIRMADO</option>
+                    <option value="CONCILIADO">CONCILIADO</option>
+                    <option value="REVERSADO">REVERSADO</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="button" onclick="cargarPagos(0)"
+                        class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors">
+                    Filtrar Pagos
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Pagos -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                    <tr>
+                        <th class="px-5 py-3.5">Código Recibo</th>
+                        <th class="px-5 py-3.5">Fecha y Hora</th>
+                        <th class="px-5 py-3.5">Comerciante Titular</th>
+                        <th class="px-5 py-3.5">Medio de Pago</th>
+                        <th class="px-5 py-3.5 text-right">Monto Recibido</th>
+                        <th class="px-5 py-3.5 text-right">Monto Aplicado</th>
+                        <th class="px-5 py-3.5">Caja / Cajero</th>
+                        <th class="px-5 py-3.5 text-center">Estado</th>
+                        <th class="px-5 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyPagos" class="divide-y divide-[#334155]/40 font-medium">
+                    <!-- Dinámico -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="paginacionPagos" class="flex justify-between items-center px-5 py-4 border-t border-[#334155]/60 text-xs text-slate-400">
+        </div>
+    </div>
+
+    <script th:src="@{/js/mercados/pagos-listado.js(v=2)}"></script>
+</div>
+</body>
+</html>

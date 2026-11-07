@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Bandeja de Inspecciones | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/inspecciones/dashboard}" class="hover:text-blue-400 transition-colors">Supervisión</a>
+                <span>/</span>
+                <span class="text-slate-200">Inspecciones</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Bandeja de Inspecciones y Supervisión
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control de expedientes de fiscalización, actas levantadas in situ y verificación de condiciones técnicas y sanitarias.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a th:href="@{/dashboard/mercados/inspecciones/programar}"
+               sec:authorize="hasAuthority('MERCADOS_INSPECCION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nueva Inspección
+            </a>
+            <a th:href="@{/dashboard/mercados/inspecciones/calendario}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Calendario
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-[#1e293b] p-5 rounded-2xl border border-[#202c3d] shadow-sm">
+        <form method="get" th:action="@{/dashboard/mercados/inspecciones}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Mercado</label>
+                <select name="mercadoId" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-indigo-500">
+                    <option value="">-- Todos los Mercados --</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${m.id == mercadoId}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Tipo Inspección</label>
+                <select name="tipo" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-indigo-500">
+                    <option value="">-- Todos los Tipos --</option>
+                    <option th:each="t : ${tiposInspeccion}" th:value="${t}" th:text="${t.descripcion}" th:selected="${t == tipoSeleccionado}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-indigo-500">
+                    <option value="">-- Todos los Estados --</option>
+                    <option th:each="e : ${estadosInspeccion}" th:value="${e}" th:text="${e.descripcion}" th:selected="${e == estadoSeleccionado}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Búsqueda rápida</label>
+                <input type="text" name="q" th:value="${q}" placeholder="Código, motivo..."
+                       class="w-full bg-[#101827] border border-[#334155] text-slate-200 text-xs rounded-xl px-3 py-2 focus:ring-1 focus:ring-indigo-500"/>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold py-2 px-3 rounded-xl transition-colors">
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mercados/inspecciones}" class="bg-[#101827] hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-[#334155] transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Inspecciones -->
+    <div class="bg-[#1e293b] rounded-2xl border border-[#202c3d] overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-[#101827]/80 text-slate-400 uppercase tracking-wider text-[11px] border-b border-[#334155]">
+                    <th class="py-3.5 px-4 font-semibold">Código</th>
+                    <th class="py-3.5 px-4 font-semibold">Tipo</th>
+                    <th class="py-3.5 px-4 font-semibold">Mercado / Alcance</th>
+                    <th class="py-3.5 px-4 font-semibold">Fecha Prog.</th>
+                    <th class="py-3.5 px-4 font-semibold">Inspector</th>
+                    <th class="py-3.5 px-4 font-semibold">Hallazgos</th>
+                    <th class="py-3.5 px-4 font-semibold">Estado</th>
+                    <th class="py-3.5 px-4 font-semibold text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/60 text-slate-300">
+                <tr th:if="${inspecciones.empty}">
+                    <td colspan="8" class="text-center py-10 text-slate-400">
+                        <svg class="w-12 h-12 mx-auto text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        No se encontraron inspecciones con los filtros seleccionados.
+                    </td>
+                </tr>
+                <tr th:each="i : ${inspecciones.content}" class="hover:bg-[#202c3d]/50 transition-colors">
+                    <td class="py-3.5 px-4 font-mono font-semibold text-indigo-400" th:text="${i.codigoInspeccion}">INS-MER-2026-000001</td>
+                    <td class="py-3.5 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                              th:text="${i.tipoInspeccionDescripcion}">Programada</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="font-medium text-white" th:text="${i.mercadoNombre}">Mercado Central</div>
+                        <div class="text-[11px] text-slate-400" th:text="${i.puestoCodigo != null ? 'Puesto: ' + i.puestoCodigo : 'Alcance: Todo el Mercado'}"></div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="text-slate-200" th:text="${i.fechaProgramada}">2026-10-20</div>
+                        <div class="text-[10px] text-slate-400" th:text="${i.horaProgramada != null ? i.horaProgramada : 'Hora flexible'}"></div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span th:text="${i.inspectorResponsableNombre != null ? i.inspectorResponsableNombre : 'No asignado'}"
+                              th:class="${i.inspectorResponsableNombre == null ? 'text-amber-400 italic' : 'text-slate-300'}"></span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span th:if="${i.totalHallazgos > 0}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                              th:text="${i.totalHallazgos + ' hallazgos'}"></span>
+                        <span th:if="${i.totalHallazgos == 0}" class="text-slate-500 text-[11px]">Sin hallazgos</span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span th:class="${'px-2 py-0.5 rounded-full text-[10px] font-semibold border ' +
+                                (i.estado != null and i.estado.name() == 'FINALIZADA' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                                (i.estado != null and (i.estado.name() == 'EN_PROCESO' or i.estado.name() == 'EN_EJECUCION') ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                                (i.estado != null and i.estado.name() == 'PENDIENTE_REVISION' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
+                                (i.estado != null and i.estado.name() == 'CANCELADA' ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'))))}"
+                              th:text="${i.estadoDescripcion != null ? i.estadoDescripcion : (i.estado != null ? i.estado.name() : '-')}"></span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-2">
+                        <a th:href="@{'/dashboard/mercados/inspecciones/' + ${i.id}}"
+                           class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Ver Detalle
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${inspecciones.totalPages > 1}" class="flex items-center justify-between px-6 py-4 bg-[#101827]/60 border-t border-[#334155] text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-white" th:text="${inspecciones.number + 1}">1</span> de <span class="font-bold text-white" th:text="${inspecciones.totalPages}">1</span>
+            </div>
+            <div class="flex gap-2">
+                <a th:if="${inspecciones.hasPrevious()}"
+                   th:href="@{/dashboard/mercados/inspecciones(page=${inspecciones.number - 1}, mercadoId=${mercadoId}, tipo=${tipoSeleccionado}, estado=${estadoSeleccionado}, q=${q})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Anterior</a>
+                <a th:if="${inspecciones.hasNext()}"
+                   th:href="@{/dashboard/mercados/inspecciones(page=${inspecciones.number + 1}, mercadoId=${mercadoId}, tipo=${tipoSeleccionado}, estado=${estadoSeleccionado}, q=${q})}"
+                   class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

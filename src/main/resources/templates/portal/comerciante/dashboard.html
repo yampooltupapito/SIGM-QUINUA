@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Panel Principal</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Tarjeta de Bienvenida y Contexto -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mb-2">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Vínculo Comercial Verificado
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" th:text="${dashboard.titularNombre}">Comerciante</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Código de Registro: <span class="font-mono font-semibold text-slate-800" th:text="${dashboard.codigoComerciante}">COM-00000</span>
+                <span class="mx-2">•</span>
+                Vínculo: <span class="font-semibold text-slate-700" th:text="${dashboard.tipoVinculo}">TITULAR</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Selector de Contexto si posee representaciones múltiples -->
+            <div th:if="${contextos != null and #lists.size(contextos) > 1}" class="relative">
+                <select id="selectContexto" onchange="cambiarContexto(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg px-3 py-2 font-medium focus:ring-blue-500 focus:border-blue-500">
+                    <option th:each="c : ${contextos}" th:value="${c.comercianteId}" th:text="${c.nombreComercialOTitular + ' (' + c.tipoVinculo + ')'}" th:selected="${c.activo}"></option>
+                </select>
+            </div>
+            <a th:href="@{/portal/comerciante/estado-cuenta/descargar}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> Estado de Cuenta PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerta de Deuda Pendiente si corresponde -->
+    <div th:if="${dashboard.totalDeudaPendiente > 0}" class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+        <div class="flex-1 text-xs sm:text-sm">
+            <p class="font-bold text-amber-900">Tiene obligaciones económicas pendientes de pago</p>
+            <p class="text-amber-800 mt-0.5">
+                Registra un saldo pendiente de <span class="font-bold">S/ <span th:text="${dashboard.totalDeudaPendiente}">0.00</span></span> en tarifas o servicios de mercado municipal.
+            </p>
+        </div>
+        <a th:href="@{/portal/comerciante/obligaciones}" class="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition-colors">
+            Ver Detalle
+        </a>
+    </div>
+
+    <!-- Indicadores Principales (KPI Cards) -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Puestos -->
+        <a th:href="@{/portal/comerciante/puestos}" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Mis Puestos</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <i data-lucide="store" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <span class="text-2xl font-bold text-slate-900" th:text="${dashboard.puestosAsignados}">0</span>
+                <span class="text-xs text-slate-500 block mt-0.5">vigentes en padrón</span>
+            </div>
+        </a>
+
+        <!-- Contratos -->
+        <a th:href="@{/portal/comerciante/contratos}" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Contratos</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <i data-lucide="file-signature" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <span class="text-2xl font-bold text-slate-900" th:text="${dashboard.contratosVigentes}">0</span>
+                <span class="text-xs text-slate-500 block mt-0.5">formalizados vigentes</span>
+            </div>
+        </a>
+
+        <!-- Autorizaciones -->
+        <a th:href="@{/portal/comerciante/autorizaciones}" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Autorizaciones</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <i data-lucide="badge-check" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <span class="text-2xl font-bold text-slate-900" th:text="${dashboard.autorizacionesVigentes}">0</span>
+                <span class="text-xs text-slate-500 block mt-0.5">licencias operativas</span>
+            </div>
+        </a>
+
+        <!-- Obligaciones Pendientes -->
+        <a th:href="@{/portal/comerciante/obligaciones}" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Obligaciones</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <span class="text-2xl font-bold text-slate-900" th:text="${dashboard.obligacionesPendientes}">0</span>
+                <span class="text-xs text-slate-500 block mt-0.5">pendientes de pago</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Segunda Fila de KPI -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Pagos -->
+        <a th:href="@{/portal/comerciante/pagos}" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>Total Pagos Realizados</span>
+                <i data-lucide="credit-card" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-xl font-bold text-slate-800 mt-2" th:text="${dashboard.pagosRealizados}">0</p>
+        </a>
+
+        <!-- Solicitudes -->
+        <a th:href="@{/portal/comerciante/solicitudes}" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>Solicitudes en Trámite</span>
+                <i data-lucide="send" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-xl font-bold text-slate-800 mt-2" th:text="${dashboard.solicitudesEnTramite}">0</p>
+        </a>
+
+        <!-- Inspecciones -->
+        <a th:href="@{/portal/comerciante/inspecciones}" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>Inspecciones Técnicas</span>
+                <i data-lucide="clipboard-check" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-xl font-bold text-slate-800 mt-2">Consultar</p>
+        </a>
+
+        <!-- Incidencias -->
+        <a th:href="@{/portal/comerciante/incidencias}" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>Incidencias Reportadas</span>
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-xl font-bold text-slate-800 mt-2">Consultar</p>
+        </a>
+    </div>
+
+    <!-- Accesos Rápidos para Autogestión -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4 text-blue-600"></i> Trámites y Gestiones Habilitadas
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a th:href="@{/portal/comerciante/solicitudes/nueva}" class="p-4 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition-all text-left block">
+                <i data-lucide="file-plus" class="w-5 h-5 text-blue-600 mb-2"></i>
+                <h3 class="text-sm font-semibold text-slate-900">Solicitar Renovación</h3>
+                <p class="text-xs text-slate-500 mt-1">Inicie trámite de renovación de contrato o autorización para su puesto asignado.</p>
+            </a>
+
+            <a th:href="@{/portal/comerciante/incidencias/nueva}" class="p-4 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition-all text-left block">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 mb-2"></i>
+                <h3 class="text-sm font-semibold text-slate-900">Reportar Incidencia</h3>
+                <p class="text-xs text-slate-500 mt-1">Comunique roturas, problemas de agua, alumbrado o seguridad en su mercado.</p>
+            </a>
+
+            <a th:href="@{/portal/comerciante/documentos}" class="p-4 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition-all text-left block">
+                <i data-lucide="folder-down" class="w-5 h-5 text-emerald-600 mb-2"></i>
+                <h3 class="text-sm font-semibold text-slate-900">Descargar Documentos</h3>
+                <p class="text-xs text-slate-500 mt-1">Descargue contratos, autorizaciones y recibos oficiales con código de seguridad.</p>
+            </a>
+
+            <a th:href="@{/portal/comerciante/plano}" class="p-4 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition-all text-left block">
+                <i data-lucide="map" class="w-5 h-5 text-indigo-600 mb-2"></i>
+                <h3 class="text-sm font-semibold text-slate-900">Plano del Mercado</h3>
+                <p class="text-xs text-slate-500 mt-1">Consulte el plano cartográfico oficial y la ubicación exacta de sus puestos.</p>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        function cambiarContexto(comercianteId) {
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+            fetch('/api/portal/comerciante/contextos/' + comercianteId + '/activar', {
+                method: 'POST',
+                headers: {
+                    [header]: token
+                }
+            }).then(res => {
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    alert('No se pudo cambiar el contexto comercial.');
+                }
+            }).catch(() => {
+                alert('Error de conexión.');
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

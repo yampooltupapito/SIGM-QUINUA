@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title='Solicitudes de Fraccionamiento | SIGM-QUINUA',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Solicitudes</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header y Acciones -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/fraccionamientos}" class="hover:underline">Fraccionamientos</a>
+                <span>&bull;</span>
+                <span>Solicitudes</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-100 tracking-tight">Solicitudes de Facilidades de Pago</h1>
+            <p class="text-xs text-slate-400 mt-1">Expedientes administrativos de fraccionamiento tributario en evaluación y trámite.</p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes/nueva}"
+               sec:authorize="hasAuthority('TRIBUTARIA_FRACCIONAMIENTOS_SOLICITAR') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_TRIBUTACION')"
+               class="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Registrar Solicitud</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+        <form method="get" th:action="@{/dashboard/tributaria/fraccionamientos/solicitudes}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Búsqueda General</label>
+                <div class="relative">
+                    <input type="text" name="search" th:value="${search}" placeholder="Código, DNI/RUC, Razón Social..."
+                           class="w-full bg-slate-900/60 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Estado de Solicitud</label>
+                <select name="estado" class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los estados --</option>
+                    <option th:each="est : ${estados}" th:value="${est}" th:text="${est.descripcion}" th:selected="${est == estadoSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Programa</label>
+                <select name="programaId" class="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los programas --</option>
+                    <option th:each="prog : ${programas}" th:value="${prog.id}" th:text="${prog.codigo + ' - ' + prog.nombre}" th:selected="${prog.id == programaIdSeleccionado}"></option>
+                </select>
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors" title="Limpiar">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Solicitudes -->
+    <div class="bg-[#202c3d] rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="text-[11px] uppercase bg-slate-800/80 text-slate-400 border-b border-slate-700/60">
+                    <tr>
+                        <th class="py-3 px-4">Código Solicitud</th>
+                        <th class="py-3 px-4">Contribuyente</th>
+                        <th class="py-3 px-4">Documento</th>
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4 text-center">Cuotas</th>
+                        <th class="py-3 px-4 text-right">Monto Deuda</th>
+                        <th class="py-3 px-4 text-right">Cuota Inicial</th>
+                        <th class="py-3 px-4 text-center">Estado</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    <tr th:each="sol : ${solicitudes.content}" class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 font-bold text-blue-400">
+                            <a th:href="@{'/dashboard/tributaria/fraccionamientos/solicitudes/' + ${sol.id}}"
+                               th:text="${sol.codigoSolicitud}" class="hover:underline"></a>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-200" th:text="${sol.contribuyenteNombre}"></td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${sol.contribuyenteDocumento}"></td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${#temporals.format(sol.fechaSolicitud, 'dd/MM/yyyy')}"></td>
+                        <td class="py-3 px-4 text-center font-semibold" th:text="${sol.numeroCuotasPropuestas}"></td>
+                        <td class="py-3 px-4 text-right font-medium text-slate-100" th:text="'S/ ' + ${#numbers.formatDecimal(sol.montoTotalDeuda, 1, 2)}"></td>
+                        <td class="py-3 px-4 text-right font-medium text-slate-300" th:text="'S/ ' + ${#numbers.formatDecimal(sol.montoCuotaInicial, 1, 2)}"></td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                                  th:classappend="${sol.estadoBadgeClass}"
+                                  th:text="${sol.estadoDescripcion}"></span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <a th:href="@{'/dashboard/tributaria/fraccionamientos/solicitudes/' + ${sol.id}}"
+                                   class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs rounded transition-colors"
+                                   title="Ver expediente">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                                <a th:if="${sol.convenioId != null}"
+                                   th:href="@{'/dashboard/tributaria/fraccionamientos/convenios/' + ${sol.convenioId}}"
+                                   class="px-2 py-1 bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400 text-xs rounded transition-colors"
+                                   title="Ver Convenio Aprobado">
+                                    <i data-lucide="award" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${solicitudes.totalElements == 0}">
+                        <td colspan="9" class="py-12 text-center text-slate-500">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                            <p class="text-xs">No se encontraron solicitudes con los criterios de búsqueda especificados.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${solicitudes.totalPages > 1}" class="flex items-center justify-between px-4 py-3 bg-slate-800/40 border-t border-slate-700/60 text-xs text-slate-400">
+            <div>
+                Mostrando <span th:text="${solicitudes.numberOfElements}"></span> de <span th:text="${solicitudes.totalElements}"></span> registros
+            </div>
+            <div class="flex space-x-1">
+                <a th:if="${solicitudes.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes(page=${solicitudes.number - 1}, search=${search}, estado=${estadoSeleccionado}, programaId=${programaIdSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-200">Anterior</a>
+                <span class="px-3 py-1 bg-blue-600 text-white rounded font-semibold" th:text="${solicitudes.number + 1}"></span>
+                <a th:if="${solicitudes.hasNext()}"
+                   th:href="@{/dashboard/tributaria/fraccionamientos/solicitudes(page=${solicitudes.number + 1}, search=${search}, estado=${estadoSeleccionado}, programaId=${programaIdSeleccionado})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-200">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide) { lucide.createIcons(); }
+        });
+    </script>
+</div>
+</body>
+</html>

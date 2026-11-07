@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Editor Gráfico de Plano - ' + ${mercado.nombre} + ' | SIGM-QUINUA'">Editor de Plano | SIGM-QUINUA</title>
+    <!-- Meta tags CSRF para fetch en JavaScript -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+    <style>
+        .grid-pattern {
+            background-color: #101827;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-4">
+
+    <!-- Configuración para el script JS -->
+    <div id="editorConfigData"
+         th:attr="data-mercado-id=${mercado.id},
+                  data-version-id=${versionEditable.id},
+                  data-ancho-base=${detalle.anchoBase},
+                  data-alto-base=${detalle.altoBase},
+                  data-version-lock=${versionEditable.version != null ? versionEditable.version : 0}"
+         class="hidden"></div>
+
+    <!-- JSON Inicial de Elementos -->
+    <script id="elementosInicialesJson" type="application/json">[]</script>
+    <!-- Inyección directa serializada en JavaScript -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.elementosBootstrap = /*[[${detalle.elementos}]]*/ [];
+        /*]]>*/
+    </script>
+
+    <!-- Barra Superior de Herramientas y Publicación -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mercados/planos/{id}(id=${mercado.id})}"
+               class="p-2 bg-[#101827] hover:bg-slate-800 text-slate-300 rounded-xl border border-slate-700 transition-colors"
+               title="Volver al visor">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-base font-bold text-white tracking-tight" th:text="${detalle.nombre} + ' - Editor'">Editor de Plano</h1>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-400 border border-amber-700/60 uppercase"
+                          th:text="'Borrador v' + ${versionEditable.numeroVersion}">Borrador v1</span>
+                </div>
+                <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
+                    <span>Lienzo: <strong class="text-slate-200" th:text="${detalle.anchoBase} + ' x ' + ${detalle.altoBase} + ' px'">1400x900</strong></span>
+                    <span>•</span>
+                    <span>Elementos: <strong id="totalElementosContador" class="text-slate-200">0</strong></span>
+                    <span>•</span>
+                    <span>Puestos: <strong id="totalPuestosContador" class="text-blue-400">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Descripción del Cambio y Botones de Acción -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+            <input type="text" id="descripcionCambiosInput"
+                   th:value="${versionEditable.descripcionCambios}"
+                   placeholder="Descripción breve de los cambios realizados..."
+                   class="bg-[#101827] border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 flex-1 lg:w-72">
+
+            <button type="button" id="btnGuardarBorrador" onclick="guardarBorradorPlano()"
+                    sec:authorize="hasAuthority('MERCADOS_PLANO_GUARDAR')"
+                    class="px-3.5 py-1.5 bg-[#202c3d] hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold shadow transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span>Guardar Borrador</span>
+            </button>
+
+            <button type="button" onclick="abrirModalPublicar()"
+                    sec:authorize="hasAuthority('MERCADOS_PLANO_PUBLICAR')"
+                    class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Publicar Plano</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Área de Trabajo Principal: Paleta de Herramientas + Lienzo + Panel de Propiedades -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <!-- Paleta Izquierda: Herramientas de Dibujo -->
+        <div class="lg:col-span-2 bg-[#1e293b] p-3.5 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col gap-3">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">Herramientas</span>
+
+            <button type="button" data-tool="SELECCIONAR" onclick="cambiarHerramienta('SELECCIONAR')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                <span>Seleccionar / Mover</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_PUESTO" onclick="cambiarHerramienta('AGREGAR_PUESTO')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3.5 h-3.5 rounded bg-emerald-500"></span>
+                <span>Puesto Comercial</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_SECTOR" onclick="cambiarHerramienta('AGREGAR_SECTOR')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3.5 h-3.5 rounded border border-dashed border-slate-400"></span>
+                <span>Sector / Zona</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_PABELLON" onclick="cambiarHerramienta('AGREGAR_PABELLON')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3.5 h-3.5 rounded border border-slate-400"></span>
+                <span>Pabellón</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_PASILLO" onclick="cambiarHerramienta('AGREGAR_PASILLO')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3.5 h-1.5 rounded bg-slate-600"></span>
+                <span>Pasillo / Tránsito</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_ACCESO" onclick="cambiarHerramienta('AGREGAR_ACCESO')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span>Acceso Principal</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_SALIDA" onclick="cambiarHerramienta('AGREGAR_SALIDA')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                <span>Salida Emergencia</span>
+            </button>
+
+            <button type="button" data-tool="AGREGAR_ETIQUETA" onclick="cambiarHerramienta('AGREGAR_ETIQUETA')"
+                    class="btn-herramienta w-full text-left px-3 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-slate-700/60">
+                <span class="text-xs font-bold text-slate-400">T</span>
+                <span>Etiqueta de Texto</span>
+            </button>
+
+            <!-- Opciones de Cuadrícula y Alineación -->
+            <div class="pt-3 border-t border-slate-800 space-y-2.5">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ajuste y Guías</span>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" id="checkAjusteCuadricula" checked onchange="snapGrid = this.checked;"
+                           class="rounded bg-[#101827] border-slate-700 text-blue-600 focus:ring-0">
+                    <span>Ajustar a Cuadrícula (20px)</span>
+                </label>
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <button type="button" onclick="alinearSeleccion('CENTRO_H')" title="Centrar horizontalmente"
+                            class="p-1.5 bg-[#101827] hover:bg-slate-800 text-slate-300 rounded-lg text-[10px] border border-slate-700 text-center">
+                        Centro H
+                    </button>
+                    <button type="button" onclick="alinearSeleccion('CENTRO_V')" title="Centrar verticalmente"
+                            class="p-1.5 bg-[#101827] hover:bg-slate-800 text-slate-300 rounded-lg text-[10px] border border-slate-700 text-center">
+                        Centro V
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Centro: Lienzo SVG Interactivo -->
+        <div class="lg:col-span-7 bg-[#101827] rounded-2xl border border-[#202c3d] shadow-2xl overflow-hidden relative grid-pattern"
+             style="height: calc(100vh - 280px); min-height: 580px;"
+             id="contenedorLienzoEditor">
+
+            <svg id="svgEditor"
+                 class="w-full h-full select-none"
+                 th:attr="viewBox='0 0 ' + ${detalle.anchoBase} + ' ' + ${detalle.altoBase}">
+
+                <!-- Fondo capturador de clics -->
+                <rect id="fondoCuadricula" width="100%" height="100%" fill="transparent"/>
+
+                <!-- Grupo transformable para Pan/Zoom -->
+                <g id="grupoEditor">
+                    <!-- Capa de Elementos Gráficos Renderizados por plano-editor.js -->
+                    <g id="capaElementosGraficos"></g>
+                </g>
+            </svg>
+
+            <!-- Controles flotantes de Zoom en editor -->
+            <div class="absolute bottom-4 left-4 bg-[#1e293b]/90 backdrop-blur p-1 rounded-xl border border-slate-700 flex items-center gap-1 shadow-lg">
+                <button type="button" onclick="zoomEditor = Math.min(4.0, zoomEditor + 0.2); actualizarTransformacionEditor();"
+                        class="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 text-xs">+</button>
+                <button type="button" onclick="zoomEditor = Math.max(0.2, zoomEditor - 0.2); actualizarTransformacionEditor();"
+                        class="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 text-xs">-</button>
+                <button type="button" onclick="zoomEditor = 1.0; panEditorX = 0; panEditorY = 0; actualizarTransformacionEditor();"
+                        class="px-2 py-1 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 text-[10px] font-bold">100%</button>
+            </div>
+        </div>
+
+        <!-- Paleta Derecha: Panel de Propiedades del Elemento Seleccionado -->
+        <div class="lg:col-span-3 bg-[#1e293b] p-4 rounded-2xl border border-[#202c3d] shadow-lg flex flex-col justify-between">
+            <div class="space-y-4">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">Propiedades del Elemento</span>
+
+                <!-- Sin Selección -->
+                <div id="panelSinSeleccion" class="text-center py-10 text-slate-400 text-xs">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                    Selecciona un elemento en el lienzo para ajustar sus propiedades o vincularlo a un puesto.
+                </div>
+
+                <!-- Formulario de Propiedades -->
+                <div id="panelPropiedadesElemento" class="space-y-3 hidden">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Posición X</label>
+                            <input type="number" id="propCoordX" onchange="aplicarCambioPropiedades()"
+                                   class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Posición Y</label>
+                            <input type="number" id="propCoordY" onchange="aplicarCambioPropiedades()"
+                                   class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Ancho (px)</label>
+                            <input type="number" id="propAncho" onchange="aplicarCambioPropiedades()"
+                                   class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Alto (px)</label>
+                            <input type="number" id="propAlto" onchange="aplicarCambioPropiedades()"
+                                   class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Rotación (°)</label>
+                        <input type="number" id="propRotacion" step="15" onchange="aplicarCambioPropiedades()"
+                               class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Código Visual</label>
+                        <input type="text" id="propCodigo" onchange="aplicarCambioPropiedades()"
+                               class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Etiqueta</label>
+                        <input type="text" id="propEtiqueta" onchange="aplicarCambioPropiedades()"
+                               class="w-full bg-[#101827] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                    </div>
+
+                    <!-- Vincular con Puesto Comercial Real -->
+                    <div id="contenedorVinculoPuesto" class="pt-2 border-t border-slate-800">
+                        <label class="block text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">Vincular a Puesto Real *</label>
+                        <select id="propVinculoPuesto" onchange="aplicarCambioPropiedades()"
+                                class="w-full bg-[#101827] border border-amber-600/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                            <option value="">-- Sin Vincular --</option>
+                            <option th:each="p : ${puestos}" th:value="${p.id}" th:text="${p.codigo} + ' (Puesto ' + ${p.numero} + ')'"></option>
+                        </select>
+                        <p class="text-[9px] text-slate-400 mt-1">El puesto debe existir en este mercado para obtener su estado dinámico.</p>
+                    </div>
+
+                    <button type="button" onclick="eliminarElementoSeleccionado()"
+                            class="w-full mt-3 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span>Eliminar Elemento</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ayuda rápida -->
+            <div class="pt-3 border-t border-slate-800 text-[10px] text-slate-400">
+                <p>Usa <strong>Guardar Borrador</strong> para registrar tus avances. No se publicará hasta que pulses <strong>Publicar Plano</strong>.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast de Notificación Flotante -->
+    <div id="toastNotificacion" class="hidden"></div>
+
+    <!-- Modal de Confirmación de Publicación -->
+    <div id="modalPublicarPlano" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#1e293b] border border-[#334155] rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Confirmar Publicación del Plano
+            </h3>
+            <p class="text-xs text-slate-300 mb-4">
+                Esta acción convertirá esta versión en la <strong>versión oficial vigente</strong> del mercado. Cualquier versión publicada anterior será archivada automáticamente.
+            </p>
+            <div class="mb-4">
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Resolución o Motivo de Publicación</label>
+                <textarea id="observacionesPublicacion" rows="3" placeholder="Ej. Aprobado según inspección técnica y distribución de pabellones 2026..."
+                          class="w-full bg-[#101827] border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            <div class="flex items-center justify-end gap-2.5">
+                <button type="button" onclick="cerrarModalPublicar()"
+                        class="px-4 py-2 bg-[#202c3d] hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarPublicar" onclick="ejecutarPublicacionPlano()"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition-colors">
+                    Confirmar y Publicar
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts del Editor -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/plano-editor.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Inicializar elementos en el editor desde Thymeleaf
+        if (window.elementosBootstrap && window.elementosBootstrap.length > 0) {
+            elementosEditor = window.elementosBootstrap;
+            renderizarElementosEnLienzo();
+        }
+        /*]]>*/
+    </script>
+</th:block>
+
+</body>
+</html>

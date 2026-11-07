@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Generar Obligación Tributaria Individual — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Mensajes de Notificación -->
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado -->
+    <div>
+        <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+            <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <a th:href="@{/dashboard/tributaria/obligaciones}" class="hover:text-blue-400 transition-colors">Obligaciones</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <span class="text-slate-200">Generar Individual</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-6 h-6 text-blue-500"></i>
+            Generación de Obligación Tributaria Individual
+        </h1>
+        <p class="text-xs md:text-sm text-slate-400 mt-0.5">
+            Transformación de una determinación técnica aprobada en cargo de cuenta corriente y obligación registrada.
+        </p>
+    </div>
+
+    <!-- Aviso de Legalidad -->
+    <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs flex items-start space-x-3">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <span class="font-bold text-blue-200 uppercase tracking-wider block mb-1">Principio de Legalidad Tributaria:</span>
+            Solo determinaciones técnicas en estado <strong>APROBADO</strong> (Impuesto Predial o Arbitrios Municipales) con resolución o sustento formal pueden dar origen a una obligación tributaria. El registro afectará la cuenta corriente del contribuyente pero requerirá validación para su exigibilidad legal coactiva.
+        </div>
+    </div>
+
+    <!-- Formulario de Generación -->
+    <div class="p-6 rounded-xl bg-[#202c3d] border border-[#334155] shadow-sm">
+        <form th:action="@{/dashboard/tributaria/obligaciones/generar}" method="post" th:object="${request}" class="space-y-5">
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Tipo de Determinación Tributaria *</label>
+                <select th:field="*{tipoDeterminacion}" class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option th:each="tipo : ${tiposDeterminacion}"
+                            th:value="${tipo}"
+                            th:text="${tipo.descripcion}">Impuesto Predial</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Seleccione si la obligación proviene del motor de Impuesto Predial o de Arbitrios Municipales.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Identificador de la Determinación Aprobada (UUID) *</label>
+                <input type="text" th:field="*{determinacionId}" required
+                       placeholder="Ejemplo: c4d8a1e2-b5f3-4c91-a201-9876543210ab"
+                       class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+                <p class="text-[11px] text-slate-500 mt-1">Copie el UUID de la determinación aprobada desde el módulo de Impuesto Predial o Arbitrios.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Fraccionamiento en Cuotas *</label>
+                <select th:field="*{cuotas}" class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="1">1 Cuota — Pago Anual / Al Contado</option>
+                    <option value="4" selected>4 Cuotas — Trimestrales (Conforme a Ley de Tributación Municipal)</option>
+                    <option value="12">12 Cuotas — Mensuales (Para arbitrios con cronograma mensual)</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">El importe total se prorrateará entre el número de cuotas garantizando exactitud decimal.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Observaciones / Nota Administrativa</label>
+                <textarea th:field="*{observaciones}" rows="3"
+                          placeholder="Ingrese referencias adicionales de la emisión o antecedentes tributarios..."
+                          class="w-full px-3 py-2 bg-[#101827] border border-[#334155] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+
+            <div class="pt-4 border-t border-[#334155] flex items-center justify-end space-x-3">
+                <a th:href="@{/dashboard/tributaria/obligaciones}"
+                   class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition-all flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Confirmar y Registrar Obligación
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

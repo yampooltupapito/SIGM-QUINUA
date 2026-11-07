@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Derivaciones de Expedientes — SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Acciones -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">Mesa de Partes</span>
+                <span class="text-slate-500 text-xs">/</span>
+                <span class="text-xs text-slate-400">Circulación Interna</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 mt-1 flex items-center gap-2">
+                <i data-lucide="send" class="w-6 h-6 text-blue-500"></i>
+                Derivaciones de Expedientes
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">Control institucional de transferencias y remisión de expedientes entre unidades orgánicas.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/dashboard/mesa-partes/derivaciones/recibidas}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors">
+                <i data-lucide="inbox" class="w-4 h-4"></i>
+                Derivaciones Recibidas
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Volver a Bandeja General
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Reales -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Enviadas</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-100" th:text="${stats.derivacionesEnviadas}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Total remitidas</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Pendientes</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-amber-300" th:text="${stats.derivacionesPendientes}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Por aceptar en destino</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Recibidas</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-emerald-300" th:text="${stats.derivacionesRecibidas}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Aceptadas en destino</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Rechazadas</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-400">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-rose-400" th:text="${stats.derivacionesRechazadas}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Improcedentes</span>
+        </div>
+
+        <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase text-slate-400">Devueltas</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-purple-400" th:text="${stats.derivacionesDevueltas}">0</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Retornadas al origen</span>
+        </div>
+    </div>
+
+    <!-- Filtros de Derivaciones -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl p-4 shadow-sm">
+        <form th:action="@{/dashboard/mesa-partes/derivaciones}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Estado de Derivación</label>
+                <select name="estado" class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los estados</option>
+                    <option th:each="est : ${estados}" th:value="${est.name()}" th:text="${est.name()}" th:selected="${est == estadoSel}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Filtrar por Oficina</label>
+                <select name="oficinaId" class="w-full bg-[#101827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <option value="">Todas las oficinas</option>
+                    <option th:each="of : ${oficinas}" th:value="${of.id}" th:text="${of.codigo + ' - ' + of.nombre}" th:selected="${of.id == oficinaIdSel}"></option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    Filtrar
+                </button>
+                <a th:href="@{/dashboard/mesa-partes/derivaciones}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Derivaciones -->
+    <div class="bg-[#202c3d] border border-slate-700/70 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-700/70 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Historial de Transferencias Inter-oficinas</span>
+            <span class="text-xs text-slate-400" th:text="${derivaciones.totalElements + ' derivaciones registradas'}">0</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-700/60 font-semibold">
+                <tr>
+                    <th class="py-3 px-4">Expediente</th>
+                    <th class="py-3 px-4">Origen</th>
+                    <th class="py-3 px-4">Destino</th>
+                    <th class="py-3 px-4">Motivo / Indicaciones</th>
+                    <th class="py-3 px-4">Fecha Envío</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${derivaciones.empty}">
+                    <td colspan="7" class="py-8 text-center text-slate-500">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        No se encontraron transferencias con los criterios seleccionados.
+                    </td>
+                </tr>
+                <tr th:each="d : ${derivaciones.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${d.expedienteId})}"
+                           class="font-mono font-bold text-blue-400 hover:underline" th:text="${d.numeroExpediente}">MPV-2026-00001</a>
+                        <p class="text-[11px] text-slate-400 truncate max-w-xs" th:text="${d.asunto}">Asunto</p>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="text-slate-200 font-medium" th:text="${d.oficinaOrigenNombre}">Origen</span>
+                        <p class="text-[10px] text-slate-500" th:text="${'Por: ' + d.usuarioDerivadorNombre}">Remitente</p>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="text-slate-200 font-medium" th:text="${d.oficinaDestinoNombre}">Destino</span>
+                        <p class="text-[10px] text-slate-500" th:if="${d.usuarioReceptorNombre != null}" th:text="${'Recibido por: ' + d.usuarioReceptorNombre}">Receptor</p>
+                    </td>
+                    <td class="py-3 px-4 max-w-xs">
+                        <p class="text-slate-300 truncate" th:text="${d.motivo}">Motivo</p>
+                        <p th:if="${d.indicaciones != null}" class="text-[10px] text-slate-500 truncate" th:text="${'Indicación: ' + d.indicaciones}"></p>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap text-slate-400" th:text="${#temporals.format(d.fechaDerivacion, 'dd/MM/yyyy HH:mm')}">
+                        01/01/2026 10:00
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                        <span th:if="${d.estado.name() == 'PENDIENTE'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">PENDIENTE</span>
+                        <span th:if="${d.estado.name() == 'RECIBIDA'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">RECIBIDA</span>
+                        <span th:if="${d.estado.name() == 'RECHAZADA'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">RECHAZADA</span>
+                        <span th:if="${d.estado.name() == 'DEVUELTA'}" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">DEVUELTA</span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}/seguimiento(id=${d.expedienteId})}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors"
+                           title="Ver Trazabilidad y Recorrido">
+                            <i data-lucide="git-commit" class="w-3.5 h-3.5 text-blue-400"></i>
+                            Seguimiento
+                        </a>
+                        <a th:href="@{/dashboard/mesa-partes/expedientes/{id}(id=${d.expedienteId})}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-colors"
+                           title="Ver Ficha del Expediente">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            Detalle
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${derivaciones.totalPages > 1}" class="px-4 py-3 border-t border-slate-700/70 flex items-center justify-between text-xs text-slate-400">
+            <span>Página <strong th:text="${derivaciones.number + 1}">1</strong> de <strong th:text="${derivaciones.totalPages}">1</strong></span>
+            <div class="flex items-center gap-1">
+                <a th:if="${derivaciones.hasPrevious()}"
+                   th:href="@{/dashboard/mesa-partes/derivaciones(page=${derivaciones.number - 1}, estado=${estadoSel}, oficinaId=${oficinaIdSel})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Anterior</a>
+                <a th:if="${derivaciones.hasNext()}"
+                   th:href="@{/dashboard/mesa-partes/derivaciones(page=${derivaciones.number + 1}, estado=${estadoSel}, oficinaId=${oficinaIdSel})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

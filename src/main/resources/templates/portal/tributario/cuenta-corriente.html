@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/tributario/layout-tributario}">
+<head>
+    <title>Estado de Cuenta Corriente | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Cuenta Corriente Tributaria</h2>
+                    <p class="text-xs text-slate-500">Historial contable de determinaciones (cargos) y pagos / compensaciones (abonos)</p>
+                </div>
+                <div>
+                    <a th:href="@{/portal/tributario/cuenta-corriente/pdf}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors">
+                        <i data-lucide="download" class="w-4 h-4"></i> Descargar Estado de Cuenta (PDF)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen de Saldos de la Cuenta -->
+            <div th:if="${cuenta != null}" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">N° de Cuenta</span>
+                    <span class="text-base font-bold text-slate-800 font-mono mt-1 block" th:text="${cuenta.codigoCuenta}">CTA-0001</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Determinaciones</span>
+                    <span class="text-base font-bold text-slate-700 mt-1 block" th:text="'S/ ' + ${#numbers.formatDecimal(cuenta.totalCargos != null ? cuenta.totalCargos : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Pagado / Abonos</span>
+                    <span class="text-base font-bold text-emerald-600 mt-1 block" th:text="'S/ ' + ${#numbers.formatDecimal(cuenta.totalAbonos != null ? cuenta.totalAbonos : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Saldo Pendiente Global</span>
+                    <span class="text-lg font-black mt-1 block"
+                          th:classappend="${cuenta.saldoActual != null and cuenta.saldoActual > 0} ? 'text-amber-600' : 'text-emerald-600'"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(cuenta.saldoActual != null ? cuenta.saldoActual : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</span>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed text-[11px]">
+                    <strong>Aviso de Validez:</strong> Este estado de cuenta digital es de carácter exclusivamente <strong>informativo</strong> y refleja los saldos procesados en el sistema al momento de la consulta. Conforme a las normas municipales, <strong>no reemplaza</strong> el Certificado de No Adeudo Tributario emitido formalmente por la Oficina de Rentas.
+                </div>
+            </div>
+
+            <!-- Libro de Movimientos -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Libro Cronológico de Movimientos</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Secuencia / Fecha</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4">Concepto / Glosa</th>
+                                <th class="py-3 px-4">Referencia</th>
+                                <th class="py-3 px-4 text-right">Cargo (S/)</th>
+                                <th class="py-3 px-4 text-right">Abono (S/)</th>
+                                <th class="py-3 px-4 text-right">Saldo Posterior (S/)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr th:if="${movimientosPage == null || movimientosPage.empty}">
+                                <td colspan="7" class="text-center py-10 text-slate-400">
+                                    <i data-lucide="clipboard-list" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    No se registran movimientos contables en su cuenta corriente.
+                                </td>
+                            </tr>
+                            <tr th:each="mov : ${movimientosPage}" class="hover:bg-slate-50/70 transition-colors">
+                                <td class="py-3 px-4">
+                                    <span class="font-mono text-slate-400 text-[11px] block" th:text="'#' + ${mov.numeroSecuencia}">#1</span>
+                                    <span class="font-medium text-slate-800" th:text="${#temporals.format(mov.fechaMovimiento, 'dd/MM/yyyy HH:mm')}">28/02/2026 10:00</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span th:if="${mov.tipoMovimiento == 'CARGO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">CARGO</span>
+                                    <span th:if="${mov.tipoMovimiento == 'ABONO'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">ABONO</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="font-semibold text-slate-800 block" th:text="${mov.conceptoNombre != null ? mov.conceptoNombre : 'Operación General'}">Impuesto Predial</span>
+                                    <span class="text-slate-500 text-[11px]" th:text="${mov.glosa}">Emisión de cuota</span>
+                                </td>
+                                <td class="py-3 px-4 font-mono text-[11px] text-slate-600" th:text="${mov.referenciaOperacion != null ? mov.referenciaOperacion : '—'}">REC-001</td>
+                                <td class="py-3 px-4 text-right font-medium text-amber-600" th:text="${mov.montoCargo != null && mov.montoCargo > 0 ? 'S/ ' + #numbers.formatDecimal(mov.montoCargo, 1, 'POINT', 2, 'POINT') : '—'}">—</td>
+                                <td class="py-3 px-4 text-right font-bold text-emerald-600" th:text="${mov.montoAbono != null && mov.montoAbono > 0 ? 'S/ ' + #numbers.formatDecimal(mov.montoAbono, 1, 'POINT', 2, 'POINT') : '—'}">—</td>
+                                <td class="py-3 px-4 text-right font-black text-slate-800" th:text="'S/ ' + ${#numbers.formatDecimal(mov.saldoPosterior != null ? mov.saldoPosterior : 0, 1, 'POINT', 2, 'POINT')}">S/ 0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div th:if="${movimientosPage != null && movimientosPage.totalPages > 1}" class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                    <div>Página <span class="font-bold text-slate-800" th:text="${movimientosPage.number + 1}">1</span> de <span class="font-bold text-slate-800" th:text="${movimientosPage.totalPages}">1</span></div>
+                    <div class="flex gap-1">
+                        <a th:if="${movimientosPage.hasPrevious()}" th:href="@{/portal/tributario/cuenta-corriente(page=${movimientosPage.number - 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Anterior</a>
+                        <a th:if="${movimientosPage.hasNext()}" th:href="@{/portal/tributario/cuenta-corriente(page=${movimientosPage.number + 1})}" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 font-medium">Siguiente</a>
+                    </div>
+                </div>
+            </div>
+</div>
+</body>
+</html>

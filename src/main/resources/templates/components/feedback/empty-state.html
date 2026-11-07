@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE EMPTY STATE (Estado vacío para tablas y bandejas)
+     ========================================================================== -->
+<div th:fragment="emptyState(icono, titulo, mensaje)"
+     class="py-12 px-6 text-center bg-card/50 rounded-xl border border-dashed border-theme">
+    <div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-slate-400">
+        <i th:attr="data-lucide=${!#strings.isEmpty(icono) ? icono : 'inbox'}" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-sm font-bold text-slate-200" th:text="${!#strings.isEmpty(titulo) ? titulo : 'No se encontraron registros'}">Sin registros</h3>
+    <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto" th:text="${!#strings.isEmpty(mensaje) ? mensaje : 'No existen datos que coincidan con los filtros seleccionados.'}">Sin datos</p>
+</div>
+
+</body>
+</html>
+

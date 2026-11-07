@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Documentos Tributarios | Municipalidad Distrital de Quinua</title>
+    <!-- Tailwind CSS compilado localmente -->
+    <link rel="stylesheet" th:href="@{/css/tailwind.min.css}">
+    <!-- Lucide Icons Local -->
+    <script th:src="@{/js/lucide.min.js}"></script>
+    <style>
+        body {
+            background-color: #101827;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Encabezado Institucional -->
+    <header class="bg-[#1e293b] border-b border-[#334155]/80 py-4 px-6 shadow-md">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white tracking-wide">MUNICIPALIDAD DISTRITAL DE QUINUA</h1>
+                    <p class="text-[11px] text-slate-400">Portal Oficial de Verificación de Recibos y Documentos Tributarios</p>
+                </div>
+            </div>
+            <div class="text-right text-xs text-slate-400 hidden sm:block">
+                <span class="block text-slate-200 font-medium">Huamanga - Ayacucho</span>
+                <span class="text-[10px] text-slate-500">RUC: 20194451731</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Central -->
+    <main class="max-w-3xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+
+        <!-- Caja de Búsqueda de Verificación -->
+        <div class="bg-[#202c3d] rounded-2xl border border-[#334155]/80 p-6 shadow-xl space-y-4">
+            <div class="text-center space-y-1">
+                <h2 class="text-lg font-bold text-white flex items-center justify-center gap-2">
+                    <i data-lucide="qr-code" class="w-5 h-5 text-blue-400"></i>
+                    Consulta de Autenticidad Documental
+                </h2>
+                <p class="text-xs text-slate-400 max-w-lg mx-auto">
+                    Ingrese el código de verificación alfanumérico o el número de recibo impreso en su documento para validar su autenticidad.
+                </p>
+            </div>
+
+            <form th:action="@{/verificar/documento-tributario}" method="get" class="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
+                <div class="relative flex-1">
+                    <input type="text" name="codigo" th:value="${codigoConsultado}" required
+                           placeholder="Ej. VER-A1B2C3D4 o REC01-00000001"
+                           class="w-full bg-[#101827] border border-[#334155] rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono pl-10 uppercase">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                </div>
+                <button type="submit"
+                        class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Verificar</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- RESULTADO DE LA VERIFICACIÓN -->
+        <div th:if="${resultado != null}" class="space-y-4">
+
+            <!-- CASO 1: Documento VÁLIDO -->
+            <div th:if="${resultado.existe and resultado.valido}"
+                 class="bg-[#202c3d] rounded-2xl border border-emerald-500/40 p-6 shadow-xl space-y-5">
+                <div class="flex items-center gap-3 border-b border-[#334155]/60 pb-4">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/30">
+                        <i data-lucide="badge-check" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-white">DOCUMENTO OFICIAL VÁLIDO Y AUTÉNTICO</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">VIGENTE</span>
+                        </div>
+                        <p class="text-xs text-emerald-400 mt-0.5" th:text="${resultado.mensajeResultado}">
+                            Documento emitido válidamente por la Municipalidad Distrital de Quinua.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Detalle de Datos Verificados (Minimizados) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="p-3 bg-[#101827]/60 rounded-xl border border-[#334155]/40 space-y-1">
+                        <span class="text-slate-400 text-[11px] block">Número de Documento</span>
+                        <span class="font-mono font-bold text-white text-sm" th:text="${resultado.codigoDocumento}">REC01-00000001</span>
+                    </div>
+
+                    <div class="p-3 bg-[#101827]/60 rounded-xl border border-[#334155]/40 space-y-1">
+                        <span class="text-slate-400 text-[11px] block">Tipo de Documento</span>
+                        <span class="font-medium text-slate-200" th:text="${resultado.tipoDocumentoNombre}">Recibo de Caja Municipal</span>
+                    </div>
+
+                    <div class="p-3 bg-[#101827]/60 rounded-xl border border-[#334155]/40 space-y-1">
+                        <span class="text-slate-400 text-[11px] block">Contribuyente (Protegido por Ley N° 29733)</span>
+                        <span class="font-medium text-slate-200 font-mono" th:text="${resultado.contribuyenteEnmascarado}">J*** P**** Q******</span>
+                    </div>
+
+                    <div class="p-3 bg-[#101827]/60 rounded-xl border border-[#334155]/40 space-y-1">
+                        <span class="text-slate-400 text-[11px] block">Fecha y Hora de Emisión</span>
+                        <span class="font-medium text-slate-200" th:text="${#temporals.format(resultado.fechaEmision, 'dd/MM/yyyy HH:mm:ss')}">26/10/2026 17:00</span>
+                    </div>
+
+                    <div class="p-3 bg-[#101827]/60 rounded-xl border border-[#334155]/40 space-y-1 sm:col-span-2">
+                        <span class="text-slate-400 text-[11px] block">Importe Total Recaudado</span>
+                        <span class="text-lg font-bold text-emerald-400">
+                            <span th:text="${resultado.moneda}">PEN</span> <span th:text="${#numbers.formatDecimal(resultado.importeTotal, 1, 'COMMA', 2, 'POINT')}">150.00</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Conceptos Aplicados -->
+                <div th:if="${resultado.conceptosPagados != null and not #lists.isEmpty(resultado.conceptosPagados)}" class="space-y-2">
+                    <span class="text-xs font-semibold text-slate-300 block">Conceptos Tributarios Incluidos en el Pago:</span>
+                    <ul class="space-y-1 text-xs text-slate-400">
+                        <li th:each="c : ${resultado.conceptosPagados}" class="flex items-center gap-2 p-2 bg-[#101827]/40 rounded-lg border border-[#334155]/30">
+                            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span th:text="${c}">Impuesto Predial - 2026</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Integridad Criptográfica -->
+                <div class="p-3 bg-[#101827] rounded-xl border border-[#334155] text-xs space-y-1">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Huella Digital del Documento (SHA-256)</span>
+                    <p class="font-mono text-[10px] text-slate-400 break-all select-all" th:text="${resultado.hashDocumento}">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</p>
+                </div>
+            </div>
+
+            <!-- CASO 2: Documento ANULADO o SUSTITUIDO -->
+            <div th:if="${resultado.existe and not resultado.valido}"
+                 class="bg-[#202c3d] rounded-2xl border border-rose-500/40 p-6 shadow-xl space-y-4">
+                <div class="flex items-center gap-3 border-b border-[#334155]/60 pb-4">
+                    <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/30">
+                        <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-white">DOCUMENTO SIN EFICACIA PROBATORIA</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                  th:text="${resultado.estado}">ANULADO</span>
+                        </div>
+                        <p class="text-xs text-rose-400 mt-0.5" th:text="${resultado.mensajeResultado}">
+                            Este documento fue anulado o sustituido y no constituye constancia válida de pago.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[11px] block">Documento</span>
+                        <span class="font-mono font-bold text-white" th:text="${resultado.codigoDocumento}">REC01-00000001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[11px] block">Fecha de Emisión</span>
+                        <span class="font-medium text-slate-200" th:text="${#temporals.format(resultado.fechaEmision, 'dd/MM/yyyy HH:mm')}">26/10/2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CASO 3: Documento NO ENCONTRADO -->
+            <div th:if="${not resultado.existe}"
+                 class="bg-[#202c3d] rounded-2xl border border-slate-700 p-8 shadow-xl text-center space-y-3">
+                <div class="w-12 h-12 bg-slate-800 text-slate-400 rounded-full flex items-center justify-center mx-auto border border-slate-700">
+                    <i data-lucide="help-circle" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-base font-bold text-white">Documento No Encontrado</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto" th:text="${resultado.mensajeResultado}">
+                    No se encontró ningún recibo ni constancia tributaria con los datos especificados.
+                </p>
+                <p class="text-[11px] text-slate-500">
+                    Verifique que el código alfanumérico ingresado coincida exactamente con el impreso en el documento municipal.
+                </p>
+            </div>
+
+            <!-- Advertencia de Protección de Datos Personales -->
+            <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
+                <div class="flex items-center gap-1.5 text-slate-300 font-semibold text-[11px]">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span>Protección de Datos Personales (Ley N° 29733):</span>
+                </div>
+                <p class="text-[11px] text-slate-500">
+                    Por motivos de seguridad y privacidad del contribuyente, este portal público muestra datos estrictamente necesarios de verificación. La descarga del archivo PDF íntegro solo está disponible mediante acceso autenticado en ventanilla o portal tributario.
+                </p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <footer class="bg-[#1e293b] border-t border-[#334155]/80 py-4 px-6 text-center text-xs text-slate-500">
+        <p class="font-medium text-slate-400">Municipalidad Distrital de Quinua — Gestión Integral Municipal (SIGM-QUINUA)</p>
+        <p class="text-[10px] text-slate-500 mt-0.5">Plaza de Armas s/n, Quinua, Huamanga, Ayacucho • Capital de la Independencia Americana</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

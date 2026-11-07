@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title>Panel de Control y Métricas Institucionales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- 1. PANEL DE BIENVENIDA PERSONALIZADO (SUPERADMIN / ADMIN) -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#1e293b] to-[#101827] border border-theme p-6 shadow-xl">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Sistema Integral de Gestión Municipal — SIGM-QUINUA</span>
+                    <span sec:authorize="hasRole('SUPERADMIN')"
+                          class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
+                        SUPERADMINISTRADOR
+                    </span>
+                    <span sec:authorize="hasRole('ADMIN') and !hasRole('SUPERADMIN')"
+                          class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                        ADMINISTRADOR
+                    </span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-100">
+                    Bienvenido, <span class="text-blue-400" th:text="${userProfile != null ? userProfile.nombreCompleto : 'Servidor Municipal'}">Administrador</span>
+                </h2>
+                <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    Plataforma Oficial de la Municipalidad Distrital de Quinua, provincia de Huamanga, Ayacucho.
+                    Monitoreo en tiempo real de los 4 servicios municipales, identidades institucionales, estructura orgánica y trazabilidad administrativa.
+                </p>
+                <div class="pt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                    <div class="flex items-center space-x-1.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-700/60">
+                        <i data-lucide="building" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span th:text="${userProfile != null ? userProfile.oficina : 'Sede Central Quinua'}">Oficina</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-700/60">
+                        <i data-lucide="badge-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span th:text="${userProfile != null ? userProfile.cargo : 'Gestión Municipal'}">Cargo</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-700/60">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span th:text="${userProfile != null ? userProfile.fechaHoraActualPeru : 'Hoy'}">Fecha</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesos Rápidos Principales condicionados por permisos -->
+            <div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 min-w-[210px]">
+                <a th:href="@{/admin/usuarios}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'USUARIOS_READ', 'USUARIOS_MANAGE')"
+                   class="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl btn-primary text-xs font-semibold shadow-lg shadow-blue-900/40 hover:scale-[1.02] transition-all">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Gestionar Usuarios</span>
+                </a>
+                <a th:href="@{/admin/auditoria}"
+                   sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'AUDITORIA_READ')"
+                   class="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+                    <span>Trazabilidad de Seguridad</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. TARJETAS ESTADÍSTICAS REALES (PostgreSQL) — Componente Reutilizable statisticsCard -->
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i>
+                <span>Indicadores Administrativos Reales</span>
+            </h3>
+            <span class="text-[11px] text-slate-400">Consultados directamente desde PostgreSQL</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Usuarios Activos', ${summary.totalUsuariosActivos}, 'Habilitados en el sistema', 'users', 'success')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Oficinas y Áreas', ${summary.totalOficinasActivas}, 'Estructura orgánica de Quinua', 'building', 'info')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Roles Dinámicos', ${summary.totalRolesActivos}, 'Perfiles de seguridad activos', 'shield-check', 'purple')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Padrón Personas', ${summary.totalPersonasRegistradas}, 'Ciudadanos y servidores', 'contact', 'info')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Tipos Actores', ${summary.totalTiposActores}, 'Clasificación municipal', 'user-check', 'purple')}"></div>
+            <div th:replace="~{components/feedback/statistics-card :: statisticsCard('Cuentas Bloqueadas', ${summary.totalUsuariosBloqueados}, 'Protección contra ataques', 'lock', ${summary.totalUsuariosBloqueados > 0 ? 'danger' : 'info'})}"></div>
+        </div>
+    </div>
+
+    <!-- 3. SERVICIOS MUNICIPALES OFICIALES OPERATIVOS (4 SERVICIOS) -->
+    <div class="bg-card/60 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+                <span>Servicios Municipales Oficiales — SIGM-QUINUA</span>
+            </span>
+            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                4 Servicios Autorizados
+            </span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <!-- 1. Mesa de Partes Virtual -->
+            <a th:href="@{/dashboard/mesa-partes/bandeja}"
+               sec:authorize="@officeSecurity.canAccessModule(#authentication, 'MESAPARTES')"
+               class="group p-4 bg-slate-900/70 hover:bg-slate-800/80 rounded-xl border border-slate-700/60 hover:border-blue-500/50 transition-all block">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-200 font-semibold text-xs group-hover:text-blue-400 transition-colors">1. Mesa de Partes Virtual</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-bold">MPV</span>
+                </div>
+                <p class="font-semibold text-emerald-400 mt-2 flex items-center space-x-1.5">
+                    <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
+                    <span th:text="${summary.expedientesRecibidos}">Operativo</span>
+                </p>
+                <span class="text-[10px] text-slate-400 mt-2 inline-flex items-center gap-1 group-hover:text-blue-300">
+                    <span>Ir a Bandeja General</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </span>
+            </a>
+
+            <!-- 2. Mercados Municipales -->
+            <a th:href="@{/dashboard/mercados}"
+               sec:authorize="@officeSecurity.canAccessModule(#authentication, 'MERCADOS')"
+               class="group p-4 bg-slate-900/70 hover:bg-slate-800/80 rounded-xl border border-slate-700/60 hover:border-emerald-500/50 transition-all block">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-200 font-semibold text-xs group-hover:text-emerald-400 transition-colors">2. Mercados Municipales</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">MKT</span>
+                </div>
+                <p class="font-semibold text-emerald-400 mt-2 flex items-center space-x-1.5">
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                    <span th:text="${summary.mercadosRegistrados}">Operativo</span>
+                </p>
+                <span class="text-[10px] text-slate-400 mt-2 inline-flex items-center gap-1 group-hover:text-emerald-300">
+                    <span>Ir a Gestión de Mercados</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </span>
+            </a>
+
+            <!-- 3. Seguridad Ciudadana y Serenazgo -->
+            <a th:href="@{/dashboard/serenazgo}"
+               sec:authorize="@officeSecurity.canAccessModule(#authentication, 'SERENAZGO')"
+               class="group p-4 bg-slate-900/70 hover:bg-slate-800/80 rounded-xl border border-slate-700/60 hover:border-indigo-500/50 transition-all block">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-200 font-semibold text-xs group-hover:text-indigo-400 transition-colors">3. Seguridad y Serenazgo</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono font-bold">SC</span>
+                </div>
+                <p class="font-semibold text-emerald-400 mt-2 flex items-center space-x-1.5">
+                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                    <span th:text="${summary.incidenciasSerenazgo}">Operativo</span>
+                </p>
+                <span class="text-[10px] text-slate-400 mt-2 inline-flex items-center gap-1 group-hover:text-indigo-300">
+                    <span>Ir a Centro de Control</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </span>
+            </a>
+
+            <!-- 4. Recaudación Tributaria Municipal -->
+            <a th:href="@{/dashboard/tributaria}"
+               sec:authorize="@officeSecurity.canAccessModule(#authentication, 'TRIBUTARIA')"
+               class="group p-4 bg-slate-900/70 hover:bg-slate-800/80 rounded-xl border border-slate-700/60 hover:border-amber-500/50 transition-all block">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-200 font-semibold text-xs group-hover:text-amber-400 transition-colors">4. Recaudación Tributaria</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">M4</span>
+                </div>
+                <p class="font-semibold text-emerald-400 mt-2 flex items-center space-x-1.5">
+                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+                    <span th:text="${summary.recaudacionTributaria}">Operativo</span>
+                </p>
+                <span class="text-[10px] text-slate-400 mt-2 inline-flex items-center gap-1 group-hover:text-amber-300">
+                    <span>Ir a Gestión Tributaria</span>
+                    <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </span>
+            </a>
+        </div>
+
+        <!-- Accesos rápidos a Gobernanza, Configuración y Reportes según permisos efectivos -->
+        <div class="pt-3 border-t border-slate-700/50 flex flex-wrap items-center gap-2.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Gobernanza:</span>
+            <a th:href="@{/admin/usuarios}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'USUARIOS_READ', 'USUARIOS_MANAGE')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Usuarios</span>
+            </a>
+            <a th:href="@{/admin/roles}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'ROLES_READ', 'ROLES_MANAGE')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>Roles</span>
+            </a>
+            <a th:href="@{/admin/permisos}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'PERMISOS_READ', 'ROLES_MANAGE')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="grid" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Permisos</span>
+            </a>
+            <a th:href="@{/admin/oficinas}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'OFICINAS_READ')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="building" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Oficinas</span>
+            </a>
+            <a th:href="@{/admin/auditoria}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'AUDITORIA_READ')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Auditoría</span>
+            </a>
+            <a th:href="@{/admin/portal/configuracion}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'PORTAL_MANAGE')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="settings" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Configuración</span>
+            </a>
+            <a th:href="@{/dashboard/mesa-partes/reportes}"
+               sec:authorize="hasRole('SUPERADMIN') or hasAnyAuthority('ADMINISTRACION_MANAGE', 'MESAPARTES_REPORTES_GENERAL')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors">
+                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Reportes Generales</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. GRÁFICOS INTERACTIVOS (Chart.js) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 1: Estado de Usuarios -->
+        <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Estado de Cuentas de Acceso</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Distribución de usuarios activos, inactivos y bloqueados</p>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="chartUsuariosEstado"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Personal por Oficina -->
+        <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
+                        <span>Personal Asignado por Oficina</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Distribución de servidores según dependencia orgánica</p>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="chartUsuariosOficina"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 3: Usuarios por Rol -->
+        <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                        <i data-lucide="shield" class="w-4 h-4 text-purple-400"></i>
+                        <span>Distribución de Usuarios por Rol</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Asignación de perfiles de seguridad institucionales</p>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="chartUsuariosRol"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 4: Actividad Administrativa -->
+        <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
+                        <span>Operaciones Administrativas Registradas</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Frecuencia de acciones registradas en auditoría</p>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="chartActividad"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. TABLA DE ACTIVIDAD RECIENTE CON FILTROS -->
+    <div class="bg-card rounded-2xl border border-theme shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-theme flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+                    <span>Trazabilidad de Operaciones Recientes</span>
+                </h4>
+                <p class="text-[11px] text-slate-400">Bitácora administrativa oficial de SIGM-QUINUA</p>
+            </div>
+
+            <!-- Filtros de período y resultado -->
+            <form th:action="@{/admin/dashboard}" method="get" class="flex flex-wrap items-center gap-2">
+                <select name="periodo" onchange="this.form.submit()"
+                        class="px-3 py-1.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+                    <option value="todos" th:selected="${periodoFiltro == 'todos'}">Todo el historial</option>
+                    <option value="hoy" th:selected="${periodoFiltro == 'hoy'}">Operaciones de hoy</option>
+                    <option value="7dias" th:selected="${periodoFiltro == '7dias'}">Últimos 7 días</option>
+                    <option value="30dias" th:selected="${periodoFiltro == '30dias'}">Últimos 30 días</option>
+                    <option value="mes" th:selected="${periodoFiltro == 'mes'}">Mes actual</option>
+                </select>
+
+                <select name="resultado" onchange="this.form.submit()"
+                        class="px-3 py-1.5 bg-slate-900 border border-theme rounded-lg text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+                    <option value="todos" th:selected="${resultadoFiltro == 'todos'}">Todos los estados</option>
+                    <option value="EXITO" th:selected="${resultadoFiltro == 'EXITO'}">Éxito</option>
+                    <option value="ALERTA" th:selected="${resultadoFiltro == 'ALERTA'}">Alerta</option>
+                    <option value="FALLO" th:selected="${resultadoFiltro == 'FALLO'}">Fallo</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-theme">
+                <tr>
+                    <th class="px-5 py-3">Fecha y Hora (Perú)</th>
+                    <th class="px-5 py-3">Usuario Responsable</th>
+                    <th class="px-5 py-3">Acción Registrada</th>
+                    <th class="px-5 py-3">Entidad / Módulo</th>
+                    <th class="px-5 py-3">Resultado</th>
+                    <th class="px-5 py-3">Detalle Operacional</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                <tr th:if="${actividadPage == null || actividadPage.content.isEmpty()}">
+                    <td colspan="6" class="px-5 py-6">
+                        <div th:replace="~{components/feedback/empty-state :: emptyState('inbox', 'Sin registros de auditoría', 'No se encontraron registros de auditoría para el período seleccionado.')}"></div>
+                    </td>
+                </tr>
+                <tr th:each="act : ${actividadPage.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="px-5 py-3 text-slate-400 font-mono text-[11px]" th:text="${act.fecha}">15/10/2026</td>
+                    <td class="px-5 py-3 font-semibold text-slate-200">
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]" th:text="${act.usuarioResponsable}">admin</span>
+                    </td>
+                    <td class="px-5 py-3 text-slate-300 font-medium" th:text="${act.accion}">CREAR_USUARIO</td>
+                    <td class="px-5 py-3 text-slate-400" th:text="${act.entidadAfectada}">USUARIO</td>
+                    <td class="px-5 py-3">
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge(${act.resultado})}"></span>
+                    </td>
+                    <td class="px-5 py-3 text-slate-400 max-w-xs truncate" th:text="${act.detalle}" th:title="${act.detalle}">Detalle</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${actividadPage != null && actividadPage.totalPages > 1}"
+             class="p-4 border-t border-theme flex items-center justify-between text-xs text-slate-400">
+            <span th:text="'Página ' + (${actividadPage.number} + 1) + ' de ' + ${actividadPage.totalPages}">Página 1 de 1</span>
+            <div class="flex items-center space-x-2">
+                <a th:if="${actividadPage.hasPrevious()}"
+                   th:href="@{/admin/dashboard(periodo=${periodoFiltro}, resultado=${resultadoFiltro}, page=${actividadPage.number - 1})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition-colors">
+                    Anterior
+                </a>
+                <a th:if="${actividadPage.hasNext()}"
+                   th:href="@{/admin/dashboard(periodo=${periodoFiltro}, resultado=${resultadoFiltro}, page=${actividadPage.number + 1})}"
+                   class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition-colors">
+                    Siguiente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para inicializar Chart.js con datos reales inyectados -->
+    <script th:inline="javascript">
+    (function() {
+        /*<![CDATA[*/
+        let chartsData = /*[[${charts}]]*/ null;
+        /*]]>*/
+
+        function renderCharts(data) {
+            if (!window.Chart || !data) return;
+
+            Chart.defaults.color = "#94a3b8";
+            Chart.defaults.borderColor = "#334155";
+            Chart.defaults.font.family = "ui-sans-serif, system-ui, sans-serif";
+
+            const ctxEstado = document.getElementById("chartUsuariosEstado");
+            if (ctxEstado && data.usuariosPorEstado) {
+                const existing = Chart.getChart(ctxEstado);
+                if (existing) existing.destroy();
+                new Chart(ctxEstado, {
+                    type: "doughnut",
+                    data: {
+                        labels: data.usuariosPorEstado.labels || [],
+                        datasets: [{
+                            data: data.usuariosPorEstado.data || [],
+                            backgroundColor: data.usuariosPorEstado.backgroundColors || ["#16a34a", "#64748b", "#dc2626"],
+                            borderColor: data.usuariosPorEstado.borderColors || ["#15803d", "#475569", "#b91c1c"],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            const ctxOficina = document.getElementById("chartUsuariosOficina");
+            if (ctxOficina && data.usuariosPorOficina) {
+                const existing = Chart.getChart(ctxOficina);
+                if (existing) existing.destroy();
+                new Chart(ctxOficina, {
+                    type: "bar",
+                    data: {
+                        labels: data.usuariosPorOficina.labels || [],
+                        datasets: [{
+                            label: "Personal Asignado",
+                            data: data.usuariosPorOficina.data || [],
+                            backgroundColor: data.usuariosPorOficina.backgroundColors || "#1d4ed8",
+                            borderColor: data.usuariosPorOficina.borderColors || "#3b82f6",
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            const ctxRol = document.getElementById("chartUsuariosRol");
+            if (ctxRol && data.usuariosPorRol) {
+                const existing = Chart.getChart(ctxRol);
+                if (existing) existing.destroy();
+                new Chart(ctxRol, {
+                    type: "bar",
+                    data: {
+                        labels: data.usuariosPorRol.labels || [],
+                        datasets: [{
+                            label: "Usuarios",
+                            data: data.usuariosPorRol.data || [],
+                            backgroundColor: data.usuariosPorRol.backgroundColors || "#7c3aed",
+                            borderColor: data.usuariosPorRol.borderColors || "#8b5cf6",
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            const ctxAct = document.getElementById("chartActividad");
+            if (ctxAct && data.actividadPorAccion) {
+                const existing = Chart.getChart(ctxAct);
+                if (existing) existing.destroy();
+                new Chart(ctxAct, {
+                    type: "bar",
+                    data: {
+                        labels: data.actividadPorAccion.labels || [],
+                        datasets: [{
+                            label: "Operaciones",
+                            data: data.actividadPorAccion.data || [],
+                            backgroundColor: data.actividadPorAccion.backgroundColors || "#f59e0b",
+                            borderColor: data.actividadPorAccion.borderColors || "#fbbf24",
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        async function initCharts() {
+            if (!window.Chart) {
+                console.warn("Chart.js aún no está disponible.");
+                return;
+            }
+
+            if (chartsData && chartsData.usuariosPorEstado && chartsData.usuariosPorEstado.labels && chartsData.usuariosPorEstado.labels.length > 0) {
+                renderCharts(chartsData);
+            } else {
+                try {
+                    const response = await fetch("/api/dashboard/charts", {
+                        headers: { "Accept": "application/json" }
+                    });
+                    if (response.ok) {
+                        const json = await response.json();
+                        if (json && json.data) {
+                            chartsData = json.data;
+                            renderCharts(chartsData);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error al cargar gráficos del dashboard vía API:", err);
+                }
+            }
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initCharts);
+        } else {
+            initCharts();
+        }
+    })();
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Historial: ' + ${sereno.codigoInterno} + ' | SIGM-QUINUA'">Historial Personal | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumb -->
+    <div class="border-b border-theme pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/personal}" class="hover:text-indigo-400 transition-colors">Personal de Serenazgo</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/serenazgo/personal/{id}(id=${sereno.id})}" th:text="${sereno.codigoInterno}" class="hover:text-indigo-400 font-mono">SER-000001</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300">Línea de Tiempo e Historial</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="history" class="w-6 h-6 text-indigo-400"></i>
+                <span th:text="'Historial Operativo: ' + ${sereno.nombreCompleto}">Historial</span>
+            </h1>
+        </div>
+
+        <a th:href="@{/dashboard/serenazgo/personal/{id}(id=${sereno.id})}"
+           class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-theme transition-colors flex items-center space-x-1.5 self-start">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Volver a Ficha</span>
+        </a>
+    </div>
+
+    <!-- Sección 1: Historial de Cargos -->
+    <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+        <div class="p-4 border-b border-theme flex items-center justify-between">
+            <h2 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="award" class="w-4 h-4 text-indigo-400"></i>
+                <span>Evolución de Cargos Operativos</span>
+            </h2>
+            <span class="text-xs text-slate-400 font-mono" th:text="${#lists.size(sereno.historialCargos)} + ' eventos'">0</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr>
+                    <th class="py-2.5 px-4">Fecha Inicio</th>
+                    <th class="py-2.5 px-4">Fecha Fin</th>
+                    <th class="py-2.5 px-4">Cargo Anterior</th>
+                    <th class="py-2.5 px-4">Cargo Asignado</th>
+                    <th class="py-2.5 px-4">Motivo / Fundamento</th>
+                    <th class="py-2.5 px-4">Usuario Registro</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/40 font-medium">
+                <tr th:if="${#lists.isEmpty(sereno.historialCargos)}" class="text-center">
+                    <td colspan="6" class="py-6 text-slate-500">Sin historial registrado.</td>
+                </tr>
+                <tr th:each="h : ${sereno.historialCargos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-2.5 px-4 font-mono text-white" th:text="${h.fechaInicio}">2026-01-15</td>
+                    <td class="py-2.5 px-4 font-mono text-slate-400" th:text="${h.fechaFin != null ? h.fechaFin : 'Vigente'}">Vigente</td>
+                    <td class="py-2.5 px-4 text-slate-400" th:text="${h.cargoAnterior}">-</td>
+                    <td class="py-2.5 px-4 font-bold text-indigo-300" th:text="${h.cargoNuevo}">Sereno Patrullero</td>
+                    <td class="py-2.5 px-4 text-slate-200" th:text="${h.motivo}">Alta inicial</td>
+                    <td class="py-2.5 px-4 text-slate-400 font-mono" th:text="${h.usuarioRegistro}">admin</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sección 2: Historial de Estados -->
+    <div class="bg-card border border-theme rounded-2xl overflow-hidden shadow-sm">
+        <div class="p-4 border-b border-theme flex items-center justify-between">
+            <h2 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
+                <span>Trazabilidad de Situación de Revista y Estados</span>
+            </h2>
+            <span class="text-xs text-slate-400 font-mono" th:text="${#lists.size(sereno.historialEstados)} + ' eventos'">0</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr>
+                    <th class="py-2.5 px-4">Fecha Efectiva</th>
+                    <th class="py-2.5 px-4">Estado Anterior</th>
+                    <th class="py-2.5 px-4">Estado Resultante</th>
+                    <th class="py-2.5 px-4">Motivo / Causal</th>
+                    <th class="py-2.5 px-4">Usuario Autorizador</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-theme/40 font-medium">
+                <tr th:if="${#lists.isEmpty(sereno.historialEstados)}" class="text-center">
+                    <td colspan="5" class="py-6 text-slate-500">Sin historial registrado.</td>
+                </tr>
+                <tr th:each="he : ${sereno.historialEstados}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-2.5 px-4 font-mono text-white" th:text="${he.fechaEfectiva}">2026-01-15</td>
+                    <td class="py-2.5 px-4 text-slate-400" th:text="${he.estadoAnterior}">ACTIVO</td>
+                    <td class="py-2.5 px-4 font-bold text-amber-300" th:text="${he.estadoNuevo}">ACTIVO</td>
+                    <td class="py-2.5 px-4 text-slate-200" th:text="${he.motivo}">Alta administrativa</td>
+                    <td class="py-2.5 px-4 text-slate-400 font-mono" th:text="${he.usuarioRegistro}">admin</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

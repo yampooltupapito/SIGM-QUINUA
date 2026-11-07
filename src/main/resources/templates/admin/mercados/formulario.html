@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${esEdicion} ? 'Editar Mercado Municipal | SIGM-QUINUA' : 'Nuevo Mercado Municipal | SIGM-QUINUA'">
+        Mercado Municipal | SIGM-QUINUA
+    </title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- Encabezado y Migas de Pan -->
+    <div class="border-b border-theme pb-5">
+        <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+            <span>Módulos Municipales</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+            <a th:href="@{/dashboard/mercados}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Mercados Municipales</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+            <a th:href="@{/dashboard/mercados/listado}" class="text-blue-400 hover:text-blue-300 transition-colors">Padrón</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span class="text-slate-300" th:text="${esEdicion} ? 'Edición de Mercado' : 'Nuevo Registro'">Registro</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-2">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                    <i th:data-lucide="${esEdicion} ? 'edit-3' : 'plus-circle'" class="w-6 h-6 text-blue-500"></i>
+                    <span th:text="${esEdicion} ? 'Actualización de Mercado Municipal' : 'Registro de Nuevo Mercado Municipal'">Mercado Municipal</span>
+                </h1>
+                <p class="text-xs md:text-sm text-slate-400 mt-1">
+                    Complete los datos institucionales, catastrales y la oficina administradora responsable de la fiscalización.
+                </p>
+            </div>
+            <div>
+                <a th:href="@{/dashboard/mercados/listado}"
+                   class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-theme text-xs font-semibold transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Volver al Padrón</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes de Alerta -->
+    <div id="form-alert" class="hidden p-4 rounded-xl border text-sm flex items-start space-x-3">
+        <i id="form-alert-icon" data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+        <div class="flex-1">
+            <h4 id="form-alert-title" class="font-semibold text-sm"></h4>
+            <div id="form-alert-message" class="text-xs mt-0.5"></div>
+        </div>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form id="mercadoForm" class="space-y-6" novalidate>
+        <!-- Token CSRF -->
+        <input type="hidden" id="csrf-token" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" id="csrf-header" th:value="${_csrf.headerName}"/>
+
+        <input type="hidden" id="esEdicion" th:value="${esEdicion}"/>
+        <input type="hidden" id="mercadoId" th:value="${mercadoId}"/>
+        <input type="hidden" id="version" name="version" th:value="${version ?: 0}"/>
+
+        <!-- 1. Identificación y Estado -->
+        <div class="bg-card border border-theme rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <div class="flex items-center space-x-2.5 pb-3 border-b border-theme/60">
+                <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+                <h3 class="text-sm font-semibold text-white tracking-wide uppercase">Identificación Institucional</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Código -->
+                <div>
+                    <label for="codigo" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Código Municipal <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="codigo" name="codigo"
+                               th:value="${esEdicion ? mercadoCodigo : mercado?.codigo}"
+                               th:disabled="${esEdicion}"
+                               required maxlength="20"
+                               placeholder="Ej: MER-QUI-001"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors uppercase disabled:bg-slate-800/60 disabled:text-slate-400 disabled:cursor-not-allowed"/>
+                    </div>
+                    <span id="err-codigo" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                    <p class="text-[11px] text-slate-400 mt-1" th:if="${esEdicion}">El código del mercado no es modificable después de su registro.</p>
+                </div>
+
+                <!-- Nombre -->
+                <div class="md:col-span-2">
+                    <label for="nombre" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Nombre Oficial del Mercado <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="nombre" name="nombre"
+                           th:value="${mercado?.nombre}"
+                           required maxlength="150"
+                           placeholder="Ej: Mercado Central de Abastos de Quinua"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-nombre" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Estado Inicial / Actual -->
+                <div>
+                    <label for="estado" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Estado Operativo <span class="text-rose-500">*</span>
+                    </label>
+                    <select id="estado" name="estado" required
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option th:each="est : ${estados}"
+                                th:value="${est.name()}"
+                                th:text="${est.descripcion}"
+                                th:selected="${mercado?.estado != null ? mercado.estado.name() == est.name() : est.name() == 'ACTIVO'}">
+                            ACTIVO
+                        </option>
+                    </select>
+                    <span id="err-estado" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Capacidad Referencial -->
+                <div>
+                    <label for="capacidadReferencial" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Capacidad Referencial (Puestos)
+                    </label>
+                    <input type="number" id="capacidadReferencial" name="capacidadReferencial"
+                           th:value="${mercado?.capacidadReferencial ?: 0}"
+                           min="0" max="9999"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-capacidadReferencial" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Oficina Administradora -->
+                <div>
+                    <label for="oficinaAdministradoraId" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Oficina Administradora Responsable
+                    </label>
+                    <select id="oficinaAdministradoraId" name="oficinaAdministradoraId"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <option value="">-- Sin oficina específica asignada --</option>
+                        <option th:each="ofi : ${oficinas}"
+                                th:value="${ofi.id}"
+                                th:text="${ofi.codigo + ' - ' + ofi.nombre}"
+                                th:selected="${mercado?.oficinaAdministradoraId != null and mercado.oficinaAdministradoraId == ofi.id}">
+                            Subgerencia de Fiscalización
+                        </option>
+                    </select>
+                    <span id="err-oficinaAdministradoraId" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Descripción -->
+                <div class="md:col-span-3">
+                    <label for="descripcion" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Descripción o Glosa Informativa
+                    </label>
+                    <textarea id="descripcion" name="descripcion" rows="2" maxlength="500"
+                              placeholder="Breve reseña sobre el mercado, giro comercial predominante, sectores o notas de administración..."
+                              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                              th:text="${mercado?.descripcion}"></textarea>
+                    <span id="err-descripcion" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Ubicación Geográfica e Institucional -->
+        <div class="bg-card border border-theme rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <div class="flex items-center space-x-2.5 pb-3 border-b border-theme/60">
+                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+                <h3 class="text-sm font-semibold text-white tracking-wide uppercase">Ubicación y Catastro Urbano</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Departamento -->
+                <div>
+                    <label for="departamento" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Departamento <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="departamento" name="departamento"
+                           th:value="${mercado?.departamento ?: 'Ayacucho'}"
+                           required maxlength="100"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-departamento" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Provincia -->
+                <div>
+                    <label for="provincia" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Provincia <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="provincia" name="provincia"
+                           th:value="${mercado?.provincia ?: 'Huamanga'}"
+                           required maxlength="100"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-provincia" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Distrito -->
+                <div>
+                    <label for="distrito" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Distrito <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="distrito" name="distrito"
+                           th:value="${mercado?.distrito ?: 'Quinua'}"
+                           required maxlength="100"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-distrito" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Dirección -->
+                <div class="md:col-span-2">
+                    <label for="direccion" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Dirección Oficial <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="direccion" name="direccion"
+                           th:value="${mercado?.direccion}"
+                           required maxlength="255"
+                           placeholder="Ej: Jr. Sucre s/n, Barrio Centro"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-direccion" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Referencia -->
+                <div>
+                    <label for="referenciaUbicacion" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Referencia de Ubicación
+                    </label>
+                    <input type="text" id="referenciaUbicacion" name="referenciaUbicacion"
+                           th:value="${mercado?.referenciaUbicacion}"
+                           maxlength="255"
+                           placeholder="Ej: A 1 cuadra de la Plaza Principal"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-referenciaUbicacion" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Latitud -->
+                <div>
+                    <label for="latitud" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Latitud (WGS-84) <span class="text-slate-400 text-[10px]">[-90 a 90]</span>
+                    </label>
+                    <input type="number" step="0.000001" id="latitud" name="latitud"
+                           th:value="${mercado?.latitud}"
+                           placeholder="-13.042500"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-latitud" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <!-- Longitud -->
+                <div>
+                    <label for="longitud" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Longitud (WGS-84) <span class="text-slate-400 text-[10px]">[-180 a 180]</span>
+                    </label>
+                    <input type="number" step="0.000001" id="longitud" name="longitud"
+                           th:value="${mercado?.longitud}"
+                           placeholder="-74.140800"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-theme text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"/>
+                    <span id="err-longitud" class="text-[11px] text-rose-400 hidden mt-1 block"></span>
+                </div>
+
+                <div class="flex items-end">
+                    <button type="button" id="btnCoordenadasQuinua"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-theme transition-colors flex items-center justify-center space-x-1.5">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Fijar Centro de Quinua</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end space-x-3 pt-3">
+            <a th:href="@{/dashboard/mercados/listado}"
+               class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-theme text-sm font-semibold transition-colors">
+                Cancelar
+            </a>
+            <button type="submit" id="btnGuardarMercado"
+                    class="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition-all">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span id="btnGuardarTexto" th:text="${esEdicion} ? 'Actualizar Mercado' : 'Registrar Mercado'">Guardar Mercado</span>
+                <span id="btnGuardarSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Scripts específicos del formulario -->
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/mercados-formulario.js}"></script>
+</th:block>
+</body>
+</html>

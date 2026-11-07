@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Reportar Nueva Incidencia</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+        <a th:href="@{/portal/comerciante/incidencias}" class="hover:text-blue-600">Incidencias</a>
+        <span>/</span>
+        <span class="text-slate-800 font-semibold">Nuevo Reporte</span>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Reportar Incidencia o Avería</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Notifique desperfectos, filtraciones de agua, fallas eléctricas o incidentes de salubridad para atención de la cuadrilla municipal.
+        </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-2xl">
+        <div id="alertSuccess" class="hidden mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-800 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+            <div>
+                <p class="font-bold">Incidencia registrada correctamente.</p>
+                <p class="text-emerald-700 mt-0.5">La administración de mercados ha recibido el reporte. Redirigiendo...</p>
+            </div>
+        </div>
+        <div id="alertError" class="hidden mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg text-xs font-medium text-rose-800 flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-600 shrink-0"></i>
+            <span id="errorMessage">Error al registrar la incidencia.</span>
+        </div>
+
+        <form id="formIncidencia" onsubmit="enviarIncidencia(event)" class="space-y-5">
+            <div>
+                <label for="puestoId" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Puesto Relacionado (Opcional si ocurre en áreas comunes)
+                </label>
+                <select id="puestoId" name="puestoId" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Incidencia en pasadizo / área común --</option>
+                    <option th:each="p : ${puestos}" th:value="${p.puestoId}" th:data-mercado="${p.mercadoId}" th:text="${'Puesto ' + p.codigoPuesto + ' (' + p.mercadoNombre + ')'}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label for="tipoIncidenciaId" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Tipo de Incidencia *
+                </label>
+                <select id="tipoIncidenciaId" name="tipoIncidenciaId" required class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="" disabled selected>Cargando tipos de incidencia...</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="descripcion" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Descripción Detallada de los Hechos *
+                </label>
+                <textarea id="descripcion" name="descripcion" rows="4" required minlength="10" maxlength="2000" placeholder="Detalle la ubicación exacta, hora en que inició el problema y posibles riesgos..." class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+
+            <div class="pt-2 flex items-center gap-3">
+                <button type="submit" id="btnEnviarIncidencia" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+                    <i data-lucide="send" class="w-4 h-4"></i> Registrar Incidencia
+                </button>
+                <a th:href="@{/portal/comerciante/incidencias}" class="px-4 py-2.5 text-xs text-slate-600 hover:text-slate-800 font-semibold">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        let mercadoDefectoId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar tipos de incidencia disponibles
+            fetch('/api/mercados/incidencias/tipos')
+                .then(res => res.json())
+                .then(tipos => {
+                    const sel = document.getElementById('tipoIncidenciaId');
+                    sel.innerHTML = '<option value="" disabled selected>-- Seleccione el tipo de incidencia --</option>';
+                    tipos.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.innerText = t.nombre;
+                        sel.appendChild(opt);
+                    });
+                }).catch(() => {
+                    const sel = document.getElementById('tipoIncidenciaId');
+                    sel.innerHTML = '<option value="" disabled selected>Error al cargar tipos de incidencia</option>';
+                });
+
+            // Resolver mercado por defecto
+            const puestoSel = document.getElementById('puestoId');
+            if (puestoSel.options.length > 1) {
+                mercadoDefectoId = puestoSel.options[1].getAttribute('data-mercado');
+            }
+        });
+
+        function enviarIncidencia(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnEnviarIncidencia');
+            const alertSuccess = document.getElementById('alertSuccess');
+            const alertError = document.getElementById('alertError');
+            const errorMsg = document.getElementById('errorMessage');
+
+            alertSuccess.classList.add('hidden');
+            alertError.classList.add('hidden');
+            btn.disabled = true;
+
+            const puestoSel = document.getElementById('puestoId');
+            const puestoId = puestoSel.value || null;
+            let mercadoId = null;
+            if (puestoSel.selectedIndex > 0) {
+                mercadoId = puestoSel.options[puestoSel.selectedIndex].getAttribute('data-mercado');
+            }
+            if (!mercadoId) {
+                mercadoId = mercadoDefectoId;
+            }
+
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+            const payload = {
+                mercadoId: mercadoId,
+                puestoId: puestoId,
+                tipoIncidenciaId: document.getElementById('tipoIncidenciaId').value,
+                descripcion: document.getElementById('descripcion').value
+            };
+
+            fetch('/api/portal/comerciante/incidencias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(payload)
+            }).then(async res => {
+                btn.disabled = false;
+                if (res.ok) {
+                    alertSuccess.classList.remove('hidden');
+                    if (window.lucide) lucide.createIcons();
+                    setTimeout(() => {
+                        window.location.href = '/portal/comerciante/incidencias';
+                    }, 1500);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    errorMsg.innerText = data.message || 'Error al registrar la incidencia.';
+                    alertError.classList.remove('hidden');
+                    if (window.lucide) lucide.createIcons();
+                }
+            }).catch(() => {
+                btn.disabled = false;
+                errorMsg.innerText = 'Error de conexión con el servidor.';
+                alertError.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

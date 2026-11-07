@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Recibos y Constancias de Pago | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="contenido" class="space-y-6">
+
+    <!-- Mensajes de feedback -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+    </div>
+
+    <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">&times;</button>
+    </div>
+
+    <!-- Header Principal -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <span>/</span>
+                <span class="text-slate-200">Recibos y Constancias</span>
+            </div>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="file-check-2" class="w-6 h-6 text-blue-500"></i>
+                Recibos y Constancias de Pago
+            </h1>
+            <p class="text-xs text-slate-400">Emisión, administración y verificación de documentos tributarios municipales con QR y PDF.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a th:href="@{/verificar/documento-tributario}" target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors flex items-center gap-1.5"
+               title="Acceso al portal ciudadano de verificación">
+                <i data-lucide="external-link" class="w-4 h-4 text-slate-400"></i>
+                <span>Portal Verificación</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/documentos/emitir}"
+               sec:authorize="hasAuthority('TRIBUTARIA_DOCUMENTOS_EMITIR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO', 'TRIBUTACION')"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Emitir Documento</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Financieros y Documentales (KPIs) -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Total Emitidos</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-emerald-400" th:text="${metricas.totalEmitidos}">0</span>
+                <i data-lucide="file-check" class="w-4 h-4 text-emerald-400/60"></i>
+            </div>
+        </div>
+
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Recibos de Caja</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-blue-400" th:text="${metricas.recibosEmitidos}">0</span>
+                <i data-lucide="receipt" class="w-4 h-4 text-blue-400/60"></i>
+            </div>
+        </div>
+
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Constancias Pago</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-indigo-400" th:text="${metricas.constanciasEmitidas}">0</span>
+                <i data-lucide="award" class="w-4 h-4 text-indigo-400/60"></i>
+            </div>
+        </div>
+
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Mes en Curso</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-cyan-400" th:text="${metricas.totalPeriodo}">0</span>
+                <i data-lucide="calendar" class="w-4 h-4 text-cyan-400/60"></i>
+            </div>
+        </div>
+
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Sustituidos</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-amber-400" th:text="${metricas.totalSustituidos}">0</span>
+                <i data-lucide="repeat" class="w-4 h-4 text-amber-400/60"></i>
+            </div>
+        </div>
+
+        <div class="p-3 bg-[#202c3d] rounded-xl border border-[#334155]/60 flex flex-col justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Anulados</span>
+            <div class="flex items-baseline justify-between mt-2">
+                <span class="text-lg font-bold text-rose-400" th:text="${metricas.totalAnulados}">0</span>
+                <i data-lucide="ban" class="w-4 h-4 text-rose-400/60"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="p-4 bg-[#202c3d] rounded-xl border border-[#334155]/60">
+        <form th:action="@{/dashboard/tributaria/documentos}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Búsqueda rápida</label>
+                <div class="relative">
+                    <input type="text" name="query" th:value="${query}" placeholder="N° Doc, contribuyente, código..."
+                           class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 pl-8">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Tipo Documental</label>
+                <select name="tipoDocId" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tiposDocumento}" th:value="${t.id}" th:text="${t.nombre}" th:selected="${t.id == tipoDocId}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">-- Todos los estados --</option>
+                    <option th:each="e : ${estados}" th:value="${e}" th:text="${e}" th:selected="${e == estado}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Fecha Emisión</label>
+                <input type="date" name="desde" th:value="${desde}"
+                       class="w-full bg-[#101827] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/tributaria/documentos}" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-lg border border-slate-700 transition-colors" title="Limpiar">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Documentos -->
+    <div class="bg-[#202c3d] rounded-xl border border-[#334155]/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-[#101827]/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-[#334155]">
+                <tr>
+                    <th class="py-3 px-4">N° Documento</th>
+                    <th class="py-3 px-4">Tipo</th>
+                    <th class="py-3 px-4">Fecha Emisión</th>
+                    <th class="py-3 px-4">Contribuyente</th>
+                    <th class="py-3 px-4">Operación Pago</th>
+                    <th class="py-3 px-4 text-right">Importe</th>
+                    <th class="py-3 px-4 text-center">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#334155]/40">
+                <tr th:each="d : ${documentos.content}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-4 font-mono font-bold text-white">
+                        <a th:href="@{'/dashboard/tributaria/documentos/' + ${d.id}}"
+                           th:text="${d.codigoDocumento}"
+                           class="hover:text-blue-400 hover:underline flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>REC01-00000001</span>
+                        </a>
+                        <div class="text-[10px] text-slate-500 font-mono mt-0.5" th:text="${d.codigoVerificacion}">VER-XXXXXXXX</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700"
+                              th:text="${d.tipoDocumentoNombre}">Recibo</span>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap text-slate-400"
+                        th:text="${#temporals.format(d.fechaEmision, 'dd/MM/yyyy HH:mm')}">26/10/2026 17:00</td>
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-slate-200" th:text="${d.nombreContribuyente}">Juan Pérez</div>
+                        <div class="text-[10px] text-slate-500" th:text="${d.codigoContribuyente} + ' • ' + ${d.numeroDocumentoContribuyente}">CT-001 • 44556677</div>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-slate-400">
+                        <a th:href="@{'/dashboard/tributaria/pagos/' + ${d.pagoId}}"
+                           th:text="${d.codigoPago}" class="hover:text-blue-400 hover:underline">PAG-2026-00001</a>
+                    </td>
+                    <td class="py-3 px-4 text-right font-bold text-white">
+                        S/ <span th:text="${#numbers.formatDecimal(d.importeTotal, 1, 'COMMA', 2, 'POINT')}">150.00</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span th:if="${d.estado.name() == 'EMITIDO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">EMITIDO</span>
+                        <span th:if="${d.estado.name() == 'ANULADO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">ANULADO</span>
+                        <span th:if="${d.estado.name() == 'SUSTITUIDO'}" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">SUSTITUIDO</span>
+                        <div th:if="${d.numeroReimpresiones > 0}" class="text-[9px] text-slate-500 mt-0.5">
+                            <span th:text="${d.numeroReimpresiones}">1</span> reimpresiones
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <a th:href="@{'/dashboard/tributaria/documentos/' + ${d.id}}"
+                               class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors" title="Ver Detalle">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{'/dashboard/tributaria/documentos/' + ${d.id} + '/pdf'}"
+                               target="_blank"
+                               class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors" title="Descargar PDF">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{'/dashboard/tributaria/documentos/' + ${d.id} + '/qr'}"
+                               target="_blank"
+                               class="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded transition-colors" title="Código QR">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(documentos.content)}">
+                    <td colspan="8" class="py-12 text-center text-slate-500">
+                        <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                        <p class="text-sm font-medium">No se encontraron documentos tributarios emitidos con los filtros aplicados</p>
+                        <p class="text-xs text-slate-600 mt-1">Los documentos se generan a partir de pagos tributarios en estado CONFIRMADO</p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${documentos.totalPages > 1}" class="p-3 bg-[#101827]/60 border-t border-[#334155]/60 flex items-center justify-between text-xs text-slate-400">
+            <span>Página <span th:text="${documentos.number + 1}">1</span> de <span th:text="${documentos.totalPages}">1</span> (Total: <span th:text="${documentos.totalElements}">0</span> documentos)</span>
+            <div class="flex items-center gap-1">
+                <a th:if="${documentos.hasPrevious()}"
+                   th:href="@{/dashboard/tributaria/documentos(page=${documentos.number - 1}, query=${query}, tipoDocId=${tipoDocId}, estado=${estado}, desde=${desde})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-700 transition-colors">Anterior</a>
+                <a th:if="${documentos.hasNext()}"
+                   th:href="@{/dashboard/tributaria/documentos(page=${documentos.number + 1}, query=${query}, tipoDocId=${tipoDocId}, estado=${estado}, desde=${desde})}"
+                   class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-700 transition-colors">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

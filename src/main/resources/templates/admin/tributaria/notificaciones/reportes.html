@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{admin/admin-layout :: html(
+        title='Reportes de Notificaciones Tributarias | SIGM-QUINUA',
+        content=~{::content},
+        scripts=~{::scripts}
+      )}">
+<head><title>Reportes de Notificaciones</title></head>
+<body>
+<div th:fragment="content" class="space-y-6">
+
+    <!-- Header Institucional -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-lg">
+        <div>
+            <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <a th:href="@{/dashboard/tributaria/notificaciones}" class="hover:underline">Notificaciones</a>
+                <span>/</span>
+                <span>Analítica y Plazos</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-100 tracking-tight">Reportes y Control de Plazos</h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Métricas consolidadas de efectividad de diligencias, entrega fáctica y términos procesales en Quinua.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a th:href="@{/dashboard/tributaria/notificaciones}"
+               class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg transition-colors border border-slate-600 flex items-center space-x-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver al Listado</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/notificaciones/exportar/csv}"
+               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center space-x-2">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                <span>Exportar Padrón CSV</span>
+            </a>
+            <a th:href="@{/dashboard/tributaria/notificaciones/exportar/pdf}" target="_blank"
+               class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center space-x-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Exportar Consolidado PDF</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores Estadísticos Reales -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Notificaciones</span>
+                <i data-lucide="mail" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <div class="text-3xl font-black text-slate-100 mt-2" th:text="${dashboard.totalNotificaciones}">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Expedientes procesados</p>
+        </div>
+
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Entregas Materiales</span>
+                <i data-lucide="package-check" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-3xl font-black text-emerald-400 mt-2" th:text="${dashboard.totalEntregadasConEvidencia}">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Con cargo o constancia</p>
+        </div>
+
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Validadas Legalmente</span>
+                <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
+            </div>
+            <div class="text-3xl font-black text-purple-400 mt-2" th:text="${dashboard.totalValidadasLegalmente}">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Conformidad procedimental</p>
+        </div>
+
+        <div class="bg-[#202c3d] p-5 rounded-xl border border-slate-700/60 shadow-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Observadas / Incidencias</span>
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <div class="text-3xl font-black text-rose-400 mt-2" th:text="${dashboard.totalObservadas + dashboard.totalNoEntregadas}">0</div>
+            <p class="text-[10px] text-slate-500 mt-1">Rechazadas o no ubicadas</p>
+        </div>
+    </div>
+
+    <!-- Monitor de Plazos Próximos a Vencer -->
+    <div class="bg-[#202c3d] p-6 rounded-xl border border-slate-700/60 shadow-sm space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+            <h2 class="text-sm font-bold text-slate-200 flex items-center space-x-2">
+                <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+                <span>Alertas de Plazos Próximos a Vencer (Días Hábiles)</span>
+            </h2>
+            <span class="text-xs text-amber-400 font-semibold" th:text="${plazosProximos.size()} + ' plazos en monitoreo'"></span>
+        </div>
+
+        <div th:if="${plazosProximos.empty}" class="text-xs text-slate-500 py-6 text-center">
+            No existen plazos en riesgo inminente de vencimiento en los próximos 5 días hábiles.
+        </div>
+
+        <div th:unless="${plazosProximos.empty}" class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="bg-slate-800/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700/60">
+                    <th class="py-2.5 px-3">Notificación</th>
+                    <th class="py-2.5 px-3">Destinatario</th>
+                    <th class="py-2.5 px-3">Término / Plazo Legal</th>
+                    <th class="py-2.5 px-3">Hito Inicial</th>
+                    <th class="py-2.5 px-3">Vencimiento</th>
+                    <th class="py-2.5 px-3">Días Restantes</th>
+                    <th class="py-2.5 px-3 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                <tr th:each="p : ${plazosProximos}" class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-2.5 px-3 font-mono font-bold text-blue-400" th:text="${p.notificacion.codigoNotificacion}"></td>
+                    <td class="py-2.5 px-3" th:text="${p.notificacion.destinatarioNombre}"></td>
+                    <td class="py-2.5 px-3 font-medium text-slate-200" th:text="${p.tipoPlazo}"></td>
+                    <td class="py-2.5 px-3 text-slate-400" th:text="${#temporals.format(p.fechaHitoInicial, 'dd/MM/yyyy')}"></td>
+                    <td class="py-2.5 px-3 text-rose-400 font-bold" th:text="${#temporals.format(p.fechaVencimiento, 'dd/MM/yyyy')}"></td>
+                    <td class="py-2.5 px-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              th:text="${p.diasRestantes} + ' días'"></span>
+                    </td>
+                    <td class="py-2.5 px-3 text-right">
+                        <a th:href="@{/dashboard/tributaria/notificaciones/{id}(id=${p.notificacion.id},tab='plazos')}"
+                           class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-semibold transition-colors">
+                            Ver Detalle
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<th:block th:fragment="scripts">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>
+

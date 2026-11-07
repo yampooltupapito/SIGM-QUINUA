@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title>Verificación Pública de Documentos Oficiales — Municipalidad Distrital de Quinua</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA INSTITUCIONAL -->
+    <section class="bg-gradient-to-b from-[#101827] to-slate-900 text-white py-12 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3" aria-label="Ruta de navegación">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/mesa-partes}" class="hover:text-white transition-colors">Mesa de Partes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold">Verificación Documental</span>
+            </nav>
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800/80 mb-3">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    Servicio Público de Integridad y Autenticidad
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    Verificación de Documentos y Constancias Oficiales
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                    Compruebe la autenticidad, vigencia y registro institucional de constancias y documentos emitidos por la Municipalidad Distrital de Quinua ingresando el código de verificación o escaneando el código QR impreso en el documento.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+
+        <!-- CAJA DE BÚSQUEDA Y VALIDACIÓN -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- FORMULARIO DE CONSULTA -->
+            <div class="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center space-x-3 border-b border-slate-100 pb-4">
+                    <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                        <i data-lucide="qr-code" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900">Verificar Documento o Constancia</h2>
+                        <p class="text-xs text-slate-500">Ingrese el código de verificación o token QR institucional</p>
+                    </div>
+                </div>
+
+                <form method="get" th:action="@{/verificar-documento}" class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label for="codigoDocInput" class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Código de Verificación Documental
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="codigoDocInput" name="codigo" th:value="${codigoIngresado}"
+                                   placeholder="Ejemplo: VER-A1B2C3D4 o token QR"
+                                   required autocomplete="off" spellcheck="false"
+                                   class="w-full text-sm font-mono uppercase tracking-wider rounded-2xl border border-slate-300 pl-11 pr-4 py-3 text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition-all placeholder:text-slate-400 placeholder:normal-case placeholder:font-sans">
+                            <i data-lucide="file-check-2" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                        <p class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i>
+                            El código seguro consta de caracteres alfanuméricos impreso en el pie de página o QR del documento.
+                        </p>
+                    </div>
+
+                    <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                        <button type="submit"
+                                class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-2xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 active:scale-[0.98] shadow-md shadow-blue-700/20 transition-all">
+                            <i data-lucide="shield-check" class="w-4 h-4 mr-2"></i>
+                            Verificar Autenticidad
+                        </button>
+                        <a th:if="${consultado}" th:href="@{/verificar-documento}"
+                           class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-3 rounded-2xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 mr-1.5"></i>
+                            Nueva Verificación
+                        </a>
+                    </div>
+                </form>
+
+                <!-- AVISO DE SEGURIDAD Y PRIVACIDAD -->
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs text-slate-600 space-y-1.5">
+                    <div class="flex items-center gap-2 font-bold text-slate-800 text-xs">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-600"></i>
+                        Acceso Restringido a Contenido Sensible
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Por razones de seguridad y estricto cumplimiento de la Ley N° 29733 de Protección de Datos Personales, la verificación pública confirma únicamente la existencia, validez jurídica e integridad del documento oficial, sin exponer el contenido sensible ni permitir la descarga libre del archivo completo a terceros no autorizados.
+                    </p>
+                </div>
+            </div>
+
+            <!-- GUÍA VISUAL -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                            <i data-lucide="help-circle" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-sm sm:text-base text-slate-900">¿Cómo verificar con Código QR?</h3>
+                    </div>
+                    <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold mt-0.5">1</div>
+                            <p>Enfoque la cámara de su teléfono inteligente o lector óptico al <strong class="text-slate-900">código QR impreso</strong> en el margen inferior de la constancia.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold mt-0.5">2</div>
+                            <p>Abra el enlace institucional seguro que inicia con el dominio oficial de la Municipalidad Distrital de Quinua.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold mt-0.5">3</div>
+                            <p>El sistema mostrará automáticamente la ficha de integridad y estado del documento oficial.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-900 to-[#101827] text-white p-5 rounded-3xl border border-slate-800 text-xs space-y-2">
+                    <h4 class="font-bold text-white flex items-center gap-2">
+                        <i data-lucide="scale" class="w-4 h-4 text-blue-400"></i>
+                        Marco Normativo Peruano
+                    </h4>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Conforme al TUO de la Ley N° 27444 (Ley del Procedimiento Administrativo General) y el Decreto Legislativo N° 1412 (Ley de Gobierno Digital), los actos y constancias administrativas emitidos mediante medios electrónicos gozan de plena validez jurídica.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RESULTADOS DE VERIFICACIÓN -->
+        <section th:if="${consultado and resultado != null}" class="space-y-6">
+
+            <!-- CASO: DOCUMENTO VÁLIDO O ANULADO -->
+            <div th:if="${resultado.valido or resultado.estadoDocumento == 'ANULADO'}"
+                 class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Documento Oficial</span>
+                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-bold text-slate-900 bg-slate-100"
+                                  th:text="${resultado.codigoVerificacion}">VER-12345678</span>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-900" th:text="${resultado.tipoDocumento} + ' N° ' + ${resultado.numeroDocumento}">
+                            Constancia de Presentación
+                        </h3>
+                    </div>
+
+                    <!-- ESTADO DEL DOCUMENTO -->
+                    <div>
+                        <span th:if="${resultado.estadoDocumento == 'VIGENTE'}"
+                              class="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-extrabold text-emerald-900 bg-emerald-100 border border-emerald-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-600"></i>
+                            DOCUMENTO OFICIAL VIGENTE
+                        </span>
+                        <span th:if="${resultado.estadoDocumento == 'ANULADO'}"
+                              class="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-extrabold text-rose-900 bg-rose-100 border border-rose-300">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-2 text-rose-600"></i>
+                            DOCUMENTO ANULADO O REVOCADO
+                        </span>
+                    </div>
+                </div>
+
+                <!-- FICHA TÉCNICA DE EMISIÓN -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase">Entidad Emisora</span>
+                        <span class="font-bold text-slate-800" th:text="${resultado.entidadEmisora}">Municipalidad Distrital de Quinua</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase">Fecha de Emisión</span>
+                        <span class="font-bold text-slate-800" th:text="${#temporals.format(resultado.fechaEmision, 'dd/MM/yyyy HH:mm')}">15/10/2026 10:00</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase">Autoridad Emisora</span>
+                        <span class="font-bold text-slate-800" th:text="${resultado.autoridadFirmante}">Mesa de Partes Virtual</span>
+                        <span class="text-[11px] text-slate-500 block truncate" th:text="${resultado.cargoFirmante}">Sistema Institucional</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase">Verificaciones Registradas</span>
+                        <span class="font-bold text-slate-800" th:text="${resultado.vecesConsultado} + ' consultas'">1 consulta</span>
+                    </div>
+                </div>
+
+                <!-- HASH SHA-256 DE INTEGRIDAD -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                            <i data-lucide="binary" class="w-4 h-4 text-blue-700"></i>
+                            Huella Digital de Integridad (SHA-256)
+                        </span>
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">Criptográficamente Verificado</span>
+                    </div>
+                    <p class="font-mono text-[11px] text-slate-600 break-all select-all bg-white p-2.5 rounded-xl border border-slate-200"
+                       th:text="${resultado.hashSha256}">
+                        e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                    </p>
+                </div>
+
+                <!-- ALERTA LEGAL SOBRE FIRMA DIGITAL -->
+                <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start gap-3">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5"></i>
+                    <p class="leading-relaxed" th:text="${resultado.mensajeLegal}">
+                        Esta verificación acredita la autenticidad e integridad del documento oficial emitido por la Municipalidad Distrital de Quinua conforme al TUO de la Ley N° 27444.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- CASO: NO ENCONTRADO O NO VERIFICABLE -->
+            <div th:if="${!resultado.valido and resultado.estadoDocumento != 'ANULADO'}"
+                 class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-12 text-center space-y-4">
+                <div class="w-14 h-14 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                    <i data-lucide="file-x" class="w-7 h-7"></i>
+                </div>
+                <div class="max-w-md mx-auto space-y-2">
+                    <h3 class="text-lg font-bold text-slate-900">Documento no verificable o inexistente</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed" th:text="${resultado.mensajeLegal}">
+                        No se encontró ningún documento oficial registrado con el código ingresado. Verifique que no contenga espacios ni caracteres erróneos.
+                    </p>
+                </div>
+                <div class="pt-2">
+                    <a th:href="@{/verificar-documento}" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 mr-1.5"></i>
+                        Reintentar verificación
+                    </a>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

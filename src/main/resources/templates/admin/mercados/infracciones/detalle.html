@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Presunta Infracción ' + ${infraccion.codigo} + ' | SIGM-QUINUA'">Detalle de Presunta Infracción | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/infracciones}" class="hover:text-blue-400">Presuntas Infracciones</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${infraccion.codigo}">INF-2026-000001</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight" th:text="${infraccion.codigo}">
+                    INF-2026-000001
+                </h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                      th:classappend="${infraccion.estadoEvaluacion.badgeClass}"
+                      th:text="${infraccion.estadoEvaluacion.label}">En Evaluación</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="'Mercado: ' + ${infraccion.mercadoNombre} + ' | Detección: ' + ${#temporals.format(infraccion.fechaDeteccion, 'dd/MM/yyyy')}">
+                Mercado Central | 17/10/2026
+            </p>
+        </div>
+
+        <!-- Botones de Acción Administrativa -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Evaluar -->
+            <button type="button" onclick="abrirModal('modalEvaluar')"
+                    th:if="${infraccion.estadoEvaluacion.name() == 'REGISTRADA' or infraccion.estadoEvaluacion.name() == 'EN_EVALUACION' or infraccion.estadoEvaluacion.name() == 'PENDIENTE_INFORMACION'}"
+                    sec:authorize="hasAuthority('MERCADOS_INFRACCION_EVALUAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors shadow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Evaluar Hechos
+            </button>
+
+            <!-- Derivar a Procedimiento -->
+            <button type="button" onclick="abrirModal('modalDerivar')"
+                    th:if="${infraccion.estadoEvaluacion.name() != 'DESCARTADA' and infraccion.estadoEvaluacion.name() != 'DERIVADA_A_PROCEDIMIENTO' and infraccion.estadoEvaluacion.name() != 'CERRADA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INFRACCION_DERIVAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-colors shadow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                Derivar a Procedimiento
+            </button>
+
+            <!-- Registrar Descargo -->
+            <button type="button" onclick="abrirModal('modalDescargo')"
+                    th:if="${infraccion.estadoEvaluacion.name() != 'DESCARTADA' and infraccion.estadoEvaluacion.name() != 'CERRADA'}"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl transition-colors shadow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Registrar Descargo
+            </button>
+
+            <!-- Registrar Decisión -->
+            <button type="button" onclick="abrirModal('modalDecision')"
+                    th:if="${infraccion.estadoEvaluacion.name() != 'CERRADA'}"
+                    sec:authorize="hasAuthority('MERCADOS_INFRACCION_EVALUAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-colors shadow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Registrar Decisión
+            </button>
+
+            <a th:href="@{/dashboard/mercados/infracciones}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Garantía Constitucional -->
+    <div class="p-4 bg-slate-800/60 border border-slate-700 rounded-2xl flex items-center gap-3">
+        <svg class="w-5 h-5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-xs text-slate-300">
+            <strong>Marco de Legalidad:</strong> Conforme al TUO de la Ley N° 27444, toda actuación en materia sancionadora requiere tipificación previa, imparcialidad, derecho de defensa y resolución motivada.
+        </span>
+    </div>
+
+    <!-- Contenido Principal: Datos y Ficha Técnica -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Columna Izquierda: Información de Hechos y Tipificación -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Hechos y Tipificación -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <h2 class="text-sm font-bold text-white border-b border-slate-700/60 pb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Descripción Circunstanciada de los Hechos
+                </h2>
+                <p class="text-xs text-slate-200 leading-relaxed whitespace-pre-line bg-[#101827] p-4 rounded-xl border border-slate-800"
+                   th:text="${infraccion.descripcionHechos}">
+                    Detalle de hechos...
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-[#101827] p-3.5 rounded-xl border border-slate-800">
+                        <span class="text-[11px] font-medium text-slate-400 block mb-1">Tipificación Normativa</span>
+                        <div class="text-xs font-bold text-white" th:text="${infraccion.tipificacionCodigo != null ? infraccion.tipificacionCodigo : 'En tipificación'}">INF-001</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5" th:text="${infraccion.normaReferencia != null ? infraccion.normaReferencia : '-'}">Ley 27972</div>
+                        <div class="text-[10px] text-slate-500 mt-1" th:text="${infraccion.articulo != null ? 'Artículo: ' + infraccion.articulo : ''}">Art. 83</div>
+                    </div>
+
+                    <div class="bg-[#101827] p-3.5 rounded-xl border border-slate-800">
+                        <span class="text-[11px] font-medium text-slate-400 block mb-1">Autoridad Competente</span>
+                        <div class="text-xs font-bold text-slate-200" th:text="${infraccion.autoridadCompetente != null ? infraccion.autoridadCompetente : 'Subgerencia de Servicios Municipales'}">Autoridad</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación Preliminar -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-4">
+                <h2 class="text-sm font-bold text-white border-b border-slate-700/60 pb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    Resultado de la Evaluación Técnica Preliminar
+                </h2>
+                <div th:if="${infraccion.informeEvaluacion != null or infraccion.evaluacionInforme != null}">
+                    <div class="bg-[#101827] p-4 rounded-xl border border-slate-800 text-xs text-slate-300 whitespace-pre-line"
+                         th:text="${infraccion.informeEvaluacion != null ? infraccion.informeEvaluacion : infraccion.evaluacionInforme}">
+                        Informe de evaluación...
+                    </div>
+                    <div class="mt-3 flex items-center gap-4 text-xs text-slate-400">
+                        <span th:if="${infraccion.fechaEvaluacion != null}" th:text="'Fecha Evaluación: ' + ${#temporals.format(infraccion.fechaEvaluacion, 'dd/MM/yyyy HH:mm')}">17/10/2026</span>
+                        <span th:if="${infraccion.responsableEvaluacionNombre != null}" th:text="'Evaluador: ' + ${infraccion.responsableEvaluacionNombre}">Juan Pérez</span>
+                    </div>
+                </div>
+                <div th:if="${infraccion.evaluacionInforme == null}" class="p-6 text-center text-xs text-slate-400 bg-[#101827] rounded-xl border border-slate-800">
+                    Aún no se ha registrado la evaluación técnica preliminar de esta presunta infracción.
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Trazabilidad y Expediente -->
+        <div class="space-y-6">
+            <!-- Ubicación y Actores -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-3">
+                <h2 class="text-sm font-bold text-white border-b border-slate-700/60 pb-2">Datos Operativos</h2>
+                <div class="text-xs space-y-2 text-slate-300">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Mercado</span>
+                        <strong class="text-white" th:text="${infraccion.mercadoNombre}">Mercado Central</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Puesto</span>
+                        <span th:text="${infraccion.puestoNumero != null ? 'Puesto ' + infraccion.puestoNumero : 'Área General / Sin puesto'}">Puesto 12</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Comerciante Implicado</span>
+                        <span th:text="${infraccion.comercianteNombre != null ? infraccion.comercianteNombre : 'No individualizado'}">Nombre</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Incidencia Origen</span>
+                        <a th:if="${infraccion.incidenciaId != null}"
+                           th:href="@{/dashboard/mercados/incidencias/{id}(id=${infraccion.incidenciaId})}"
+                           class="text-blue-400 hover:underline">
+                            Ver Incidencia Vinculada
+                        </a>
+                        <span th:if="${infraccion.incidenciaId == null}" class="text-slate-500">Sin incidencia previa</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expediente Administrativo -->
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg space-y-3">
+                <h2 class="text-sm font-bold text-white border-b border-slate-700/60 pb-2">Expediente Administrativo</h2>
+                <div class="text-xs space-y-2">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Número de Expediente</span>
+                        <span th:if="${infraccion.expedienteId != null}" class="text-blue-400 font-mono font-bold" th:text="${infraccion.expedienteId}">EXP-2026-00123</span>
+                        <span th:if="${infraccion.expedienteId == null}" class="text-slate-500">No derivado formalmente</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales para Gestión Administrativa -->
+    <!-- 1. Modal Evaluar -->
+    <div id="modalEvaluar" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-slate-700 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Evaluación Técnica de Hechos
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Nuevo Estado de Evaluación *</label>
+                    <select id="evalNuevoEstado" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <option value="EN_EVALUACION">EN EVALUACIÓN</option>
+                        <option value="PENDIENTE_INFORMACION">PENDIENTE INFORMACIÓN ADICIONAL</option>
+                        <option value="DESCARTADA">DESCARTAR (Falta de mérito / Hecho no tipificado)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Informe Técnico / Fundamentación *</label>
+                    <textarea id="evalInforme" rows="4" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="Detalle la motivación fáctica y jurídica..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModal('modalEvaluar')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs">Cancelar</button>
+                <button type="button" onclick="enviarEvaluacion()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">Guardar Evaluación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Modal Derivar -->
+    <div id="modalDerivar" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-slate-700 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                Derivar a Procedimiento Administrativo
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Código de Expediente Administrativo *</label>
+                    <input type="text" id="derivExpedienteId" placeholder="Ej. EXP-2026-00045" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Motivación de la Derivación *</label>
+                    <textarea id="derivMotivo" rows="3" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="Sustento de remisión a la autoridad instructora..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModal('modalDerivar')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs">Cancelar</button>
+                <button type="button" onclick="enviarDerivacion()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Confirmar Derivación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Modal Descargo -->
+    <div id="modalDescargo" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-slate-700 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Registro de Descargo / Alegato de Defensa
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Número de Escrito / Documento de Entrada *</label>
+                    <input type="text" id="descargoDocumento" placeholder="Ej. EXP-MP-2026-00892" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Resumen del Descargo / Medios Probatorios Ofrecidos *</label>
+                    <textarea id="descargoContenido" rows="4" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="Síntesis de argumentos y pruebas presentadas por el administrado..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModal('modalDescargo')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs">Cancelar</button>
+                <button type="button" onclick="enviarDescargo()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Registrar Descargo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Modal Decisión -->
+    <div id="modalDecision" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] rounded-2xl border border-slate-700 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Registro de Decisión de Autoridad Competente
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Sentido de la Decisión *</label>
+                    <select id="decSentido" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <option value="ARCHIVO_POR_INEXISTENCIA">ARCHIVO POR INEXISTENCIA DE INFRACCIÓN</option>
+                        <option value="SUBSANACION_VOLUNTARIA">ARCHIVO POR SUBSANACIÓN VOLUNTARIA PREVIA</option>
+                        <option value="SANCIÓN_DETERMINADA">SANCIÓN DETERMINADA POR RESOLUCIÓN</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Número de Resolución / Acto Resolutivo *</label>
+                    <input type="text" id="decResolucion" placeholder="Ej. RES-SUBGERENCIA-N-012-2026-MDQ" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Fundamentación y Disposición Resolutiva *</label>
+                    <textarea id="decFundamento" rows="4" class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="Contenido resolutivo notificado conforme a ley..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModal('modalDecision')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs">Cancelar</button>
+                <button type="button" onclick="enviarDecision()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">Guardar Decisión</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de Interacción -->
+    <script th:inline="javascript">
+        const infraccionId = /*[[${infraccion.id}]]*/ '';
+
+        function abrirModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function cerrarModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function getCsrfHeaders() {
+            const token = document.querySelector('meta[name="_csrf"]')?.content;
+            const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const headers = {'Content-Type': 'application/json'};
+            if (token && header) headers[header] = token;
+            return headers;
+        }
+
+        async function enviarEvaluacion() {
+            const informe = document.getElementById('evalInforme').value;
+            const nuevoEstado = document.getElementById('evalNuevoEstado').value;
+            if (!informe || informe.trim().length < 10) {
+                alert('Debe ingresar un informe técnico de al menos 10 caracteres.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/mercados/presuntas-infracciones/${infraccionId}/evaluar`, {
+                    method: 'POST',
+                    headers: getCsrfHeaders(),
+                    body: JSON.stringify({ nuevoEstadoEvaluacion: nuevoEstado, informeEvaluacion: informe })
+                });
+                if (res.ok) window.location.reload();
+                else alert('Error: ' + await res.text());
+            } catch (e) {
+                alert('Error al comunicar con el servidor.');
+            }
+        }
+
+        async function enviarDerivacion() {
+            const expediente = document.getElementById('derivExpedienteId').value;
+            const motivo = document.getElementById('derivMotivo').value;
+            if (!expediente || !motivo) {
+                alert('Debe ingresar código de expediente y motivo de derivación.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/mercados/presuntas-infracciones/${infraccionId}/derivar`, {
+                    method: 'POST',
+                    headers: getCsrfHeaders(),
+                    body: JSON.stringify({ expedienteId: expediente, motivo: motivo })
+                });
+                if (res.ok) window.location.reload();
+                else alert('Error: ' + await res.text());
+            } catch (e) {
+                alert('Error al comunicar con el servidor.');
+            }
+        }
+
+        async function enviarDescargo() {
+            const doc = document.getElementById('descargoDocumento').value;
+            const cont = document.getElementById('descargoContenido').value;
+            if (!doc || !cont) {
+                alert('Debe ingresar el número de escrito y el contenido del descargo.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/mercados/presuntas-infracciones/${infraccionId}/descargo`, {
+                    method: 'POST',
+                    headers: getCsrfHeaders(),
+                    body: JSON.stringify({ documentoReferencia: doc, contenidoDescargo: cont })
+                });
+                if (res.ok) window.location.reload();
+                else alert('Error: ' + await res.text());
+            } catch (e) {
+                alert('Error al comunicar con el servidor.');
+            }
+        }
+
+        async function enviarDecision() {
+            const sentido = document.getElementById('decSentido').value;
+            const resolucion = document.getElementById('decResolucion').value;
+            const fundamento = document.getElementById('decFundamento').value;
+            if (!resolucion || !fundamento) {
+                alert('Debe ingresar la resolución y los fundamentos de la decisión.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/mercados/presuntas-infracciones/${infraccionId}/decision`, {
+                    method: 'POST',
+                    headers: getCsrfHeaders(),
+                    body: JSON.stringify({ sentido: sentido, numeroResolucion: resolucion, fundamentacion: fundamento })
+                });
+                if (res.ok) window.location.reload();
+                else alert('Error: ' + await res.text());
+            } catch (e) {
+                alert('Error al comunicar con el servidor.');
+            }
+        }
+    </script>
+
+</div>
+</body>
+</html>

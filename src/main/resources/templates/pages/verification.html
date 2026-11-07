@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title>Catálogo y Verificación Visual de Componentes</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-7xl mx-auto space-y-8">
+
+    <!-- Bloqueo en caso de entorno de producción -->
+    <div th:if="${profile != null and profile == 'PROD'}" class="py-16">
+        <div th:replace="~{components/feedback/error-state :: errorState('Página restringida al entorno de desarrollo', 'El catálogo de verificación visual de componentes UI solo está habilitado en perfiles DEV o TEST.', '/bienvenida')}"></div>
+    </div>
+
+    <!-- Contenido exclusivo de Desarrollo / Pruebas -->
+    <div th:if="${profile == null or profile != 'PROD'}" class="space-y-8">
+
+        <!-- 1. Breadcrumb y PageHeader -->
+        <nav th:replace="~{components/navigation/breadcrumb :: breadcrumb('Sistema de Diseño Institucional', 'Verificación Visual de Componentes (Prompt 2)')}"></nav>
+
+        <div class="bg-card rounded-2xl border border-blue-500/30 p-6 shadow-xl relative overflow-hidden">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="space-y-1.5">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold uppercase tracking-wider">
+                        <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>
+                        <span>DEMOSTRACIÓN DE COMPONENTES &bull; ENTORNO <span th:text="${profile != null ? profile : 'DEV'}">DEV</span></span>
+                    </div>
+                    <h1 class="text-2xl font-extrabold text-slate-100">Sistema de Diseño y Componentes Reutilizables — SIGM-QUINUA</h1>
+                    <p class="text-xs text-slate-400">
+                        Municipalidad Distrital de Quinua, Huamanga, Ayacucho &bull; Todos los ejemplos de esta vista son demostrativos y no alteran datos de producción.
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="abrirModal('modalDemoFormulario')" class="sigm-btn sigm-btn-primary">
+                        <i data-lucide="layout-template" class="w-4 h-4"></i>
+                        <span>Probar Modal Estándar</span>
+                    </button>
+                    <button type="button"
+                            onclick="abrirModalConfirmacion({titulo: 'Confirmar Anulación (Demostración)', mensaje: 'Este es un ejemplo del ConfirmationModal para operaciones críticas auditadas.', actionUrl: '/verify', textoBoton: 'Confirmar Demo'})"
+                            class="sigm-btn sigm-btn-danger">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                        <span>Probar Modal Confirmación</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Tarjetas Estadísticas (StatisticsCard) -->
+        <section class="space-y-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span>1. Tarjetas de Estadísticas (StatisticsCard)</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div th:replace="~{components/feedback/statistics-card :: statisticsCard('1. Mesa de Partes (Demo)', '500', 'Expedientes paginados en BD', 'inbox', 'blue')}"></div>
+                <div th:replace="~{components/feedback/statistics-card :: statisticsCard('2. Mercados (Demo)', '500', 'Comerciantes empadronados', 'shopping-bag', 'emerald')}"></div>
+                <div th:replace="~{components/feedback/statistics-card :: statisticsCard('3. Serenazgo (Demo)', '500', 'Incidencias georreferenciadas', 'shield', 'amber')}"></div>
+                <div th:replace="~{components/feedback/statistics-card :: statisticsCard('4. Tributación (Demo)', '500', 'Contribuyentes registrados', 'receipt', 'purple')}"></div>
+            </div>
+        </section>
+
+        <!-- 3. Botones, Insignias (StatusBadge) y Alertas / Toasts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Botones e Insignias -->
+            <section class="bg-card rounded-xl border border-theme p-5 space-y-5">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                    <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                    <span>2. Botones (Button) e Insignias (StatusBadge)</span>
+                </h2>
+
+                <div class="space-y-2">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase">Variantes de Botón y Estados</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'primary', 'check', 'Primario')}"></button>
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'secondary', 'sliders', 'Secundario')}"></button>
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'success', 'file-check', 'Aprobar')}"></button>
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'warning', 'clock', 'Observar')}"></button>
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'danger', 'trash-2', 'Eliminar')}"></button>
+                        <button th:replace="~{components/forms/form-actions :: button('button', 'ghost', 'eye', 'Ghost')}"></button>
+                        <button type="button" disabled class="sigm-btn sigm-btn-primary">Deshabilitado</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-3 border-t border-slate-700/60">
+                    <p class="text-[11px] font-semibold text-slate-400 uppercase">Insignias de Estado y Prioridad (StatusBadge &amp; PriorityBadge)</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('RECIBIDO')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('EN_REVISION')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('RESUELTO')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('OBSERVADO')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('VENCIDO')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: statusBadge('ARCHIVADO')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: priorityBadge('URGENTE')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: priorityBadge('ALTA')}"></span>
+                        <span th:replace="~{components/feedback/status-badge :: priorityBadge('NORMAL')}"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alertas y Disparadores de Toast -->
+            <section class="bg-card rounded-xl border border-theme p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                        <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                        <span>3. Alertas (Alert) y Notificaciones Toast</span>
+                    </h2>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="mostrarToast('Expediente registrado correctamente (Demo)', 'success')" class="sigm-btn sigm-btn-success px-2.5 py-1 text-[11px]">Toast Éxito</button>
+                        <button type="button" onclick="mostrarToast('Revise los plazos TUPA pendientes (Demo)', 'warning')" class="sigm-btn sigm-btn-warning px-2.5 py-1 text-[11px]">Toast Alerta</button>
+                        <button type="button" onclick="mostrarToast('Error de validación simulado (Demo)', 'error')" class="sigm-btn sigm-btn-danger px-2.5 py-1 text-[11px]">Toast Error</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div th:replace="~{components/feedback/alert :: alert('success', 'Conformidad Técnica (Demo)', 'El componente Alert soporta cierre accesible y semántica ARIA.')}"></div>
+                    <div th:replace="~{components/feedback/alert :: alert('warning', 'Plazo Legal Próximo a Vencer (Demo)', 'Quedan 2 días hábiles para emitir pronunciamiento administrativo.')}"></div>
+                    <div th:replace="~{components/feedback/alert :: alert('error', 'Requisito TUPA Observado (Demo)', 'El archivo PDF adjunto requiere firma digital o visación legible.')}"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 4. Componentes de Formulario y Estados de Validación -->
+        <section class="bg-card rounded-xl border border-theme p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-theme pb-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                    <i data-lucide="file-Spreadsheet" class="w-4 h-4"></i>
+                    <span>4. Controles de Formulario (Input, Select, Textarea, Checkbox, FormGroup, FormActions)</span>
+                </h2>
+                <span class="text-[11px] text-slate-400">Validación accesible interactiva (pruebe dejar campos vacíos y enviar)</span>
+            </div>
+
+            <form action="/verify" method="get" data-sigm-validate="true" novalidate class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div th:replace="~{components/forms/input :: input('demoDni', 'demoDni', 'DNI del Administrado (Demo)', 'text', '45892314', '8 dígitos numéricos', true, null)}"></div>
+                    <div th:replace="~{components/forms/input :: input('demoAsunto', 'demoAsunto', 'Asunto con Estado de Error (Demo)', 'text', '', 'Ingrese asunto obligatorio...', true, 'El asunto del trámite es obligatorio.')}"></div>
+                    <div class="sigm-form-group">
+                        <label for="demoServicio" class="sigm-label">
+                            <span>Servicio Municipal (Select)</span>
+                            <span class="sigm-label-required">*</span>
+                        </label>
+                        <select id="demoServicio" name="demoServicio" required class="sigm-select">
+                            <option value="MPV">1. Mesa de Partes Virtual</option>
+                            <option value="MKT">2. Mercados Municipales</option>
+                            <option value="SER">3. Seguridad Ciudadana y Serenazgo</option>
+                            <option value="TRI">4. Recaudación Tributaria Municipal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div th:replace="~{components/forms/textarea :: textarea('demoObservacion', 'demoObservacion', 'Fundamentación o Proveído (Textarea)', 2, 'Demostración de campo de texto multilínea estandarizado.', 'Escriba el detalle...', false, null)}"></div>
+
+                <div class="pt-1">
+                    <label th:replace="~{components/forms/checkbox :: checkbox('demoNotificar', 'demoNotificar', 'Notificar automáticamente al buzón electrónico del administrado (Checkbox)', true, 'Se enviará constancia con código de verificación QR.')}"></label>
+                </div>
+
+                <div th:replace="~{components/forms/form-actions :: formActions('/verify', 'Restablecer Demo', 'Validar Formulario Demo', 'check-circle')}"></div>
+            </form>
+        </section>
+
+        <!-- 5. Tabla de Datos (DataTable), Búsqueda, Filtros y Paginación (500+ Registros) -->
+        <section class="space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                <i data-lucide="table-2" class="w-4 h-4"></i>
+                <span>5. Tabla Reutilizable (DataTable), SearchBar, FilterPanel y Paginación Servidor (500+ Registros)</span>
+            </h2>
+
+            <!-- Barra de filtro rápido de demostración -->
+            <div class="sigm-filter-panel flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div class="flex-1 max-w-md relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none"></i>
+                    <input type="search"
+                           placeholder="Filtrar filas de demostración en vivo (ej. MPV, Mercados, Serenazgo, Tributaria)..."
+                           oninput="SigmTable.filtrarLocal(this, 'tablaDemoComponentes')"
+                           class="sigm-input pl-9 pr-4"/>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 font-mono-code">Capacidad: 500+ registros por servicio</span>
+                </div>
+            </div>
+
+            <div class="sigm-table-card">
+                <div class="table-responsive-wrapper">
+                    <table id="tablaDemoComponentes" class="sigm-table">
+                        <thead>
+                        <tr>
+                            <th>Código (Demo)</th>
+                            <th>Servicio Oficial</th>
+                            <th>Descripción de Registro Demostrativo</th>
+                            <th>Oficina Responsable</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr data-table-row>
+                            <td class="font-mono-code font-bold text-blue-400">DEMO-MPV-00500</td>
+                            <td>1. Mesa de Partes Virtual</td>
+                            <td class="text-slate-200">Expediente administrativo de demostración visual</td>
+                            <td>Subgerencia de Obras</td>
+                            <td><span th:replace="~{components/feedback/status-badge :: priorityBadge('URGENTE')}"></span></td>
+                            <td><span th:replace="~{components/feedback/status-badge :: statusBadge('EN_REVISION')}"></span></td>
+                            <td class="text-center">
+                                <button type="button" onclick="abrirModal('modalDemoFormulario')" class="sigm-btn sigm-btn-secondary px-2.5 py-1">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                    <span>Ver</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-table-row>
+                            <td class="font-mono-code font-bold text-emerald-400">DEMO-MKT-00500</td>
+                            <td>2. Mercados Municipales</td>
+                            <td class="text-slate-200">Puesto y comerciante de demostración visual</td>
+                            <td>Administración de Mercados</td>
+                            <td><span th:replace="~{components/feedback/status-badge :: priorityBadge('NORMAL')}"></span></td>
+                            <td><span th:replace="~{components/feedback/status-badge :: statusBadge('VIGENTE')}"></span></td>
+                            <td class="text-center">
+                                <button type="button" onclick="mostrarToast('Detalle demostrativo de Mercados', 'info')" class="sigm-btn sigm-btn-secondary px-2.5 py-1">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                    <span>Ver</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-table-row>
+                            <td class="font-mono-code font-bold text-amber-400">DEMO-SER-00500</td>
+                            <td>3. Seguridad Ciudadana</td>
+                            <td class="text-slate-200">Parte táctico de Serenazgo de demostración visual</td>
+                            <td>Gerencia de Seguridad Ciudadana</td>
+                            <td><span th:replace="~{components/feedback/status-badge :: priorityBadge('ALTA')}"></span></td>
+                            <td><span th:replace="~{components/feedback/status-badge :: statusBadge('ATENDIDA')}"></span></td>
+                            <td class="text-center">
+                                <button type="button" onclick="mostrarToast('Detalle demostrativo de Serenazgo', 'info')" class="sigm-btn sigm-btn-secondary px-2.5 py-1">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                    <span>Ver</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-table-row>
+                            <td class="font-mono-code font-bold text-purple-400">DEMO-TRI-00500</td>
+                            <td>4. Recaudación Tributaria</td>
+                            <td class="text-slate-200">Cuenta corriente predial de demostración visual</td>
+                            <td>Subgerencia de Rentas y Tributación</td>
+                            <td><span th:replace="~{components/feedback/status-badge :: priorityBadge('NORMAL')}"></span></td>
+                            <td><span th:replace="~{components/feedback/status-badge :: statusBadge('ACTIVO')}"></span></td>
+                            <td class="text-center">
+                                <button type="button" onclick="mostrarToast('Detalle demostrativo de Tributación', 'info')" class="sigm-btn sigm-btn-secondary px-2.5 py-1">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                    <span>Ver</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-empty-filter-row class="hidden">
+                            <td colspan="7" class="p-6">
+                                <div th:replace="~{components/feedback/empty-state :: emptyState('search-x', 'Sin coincidencias en la demostración', 'Ninguna fila coincide con el texto escrito en el buscador.')}"></div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:replace="~{components/tables/pagination :: paginationStatic(1, 25, 500)}"></div>
+            </div>
+        </section>
+
+        <!-- 6. Estados de Interfaz: EmptyState, LoadingState y ErrorState -->
+        <section class="space-y-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>6. Estados de Interfaz (EmptyState, LoadingState, ErrorState)</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div th:replace="~{components/feedback/empty-state :: emptyState('inbox', 'Estado Vacío (EmptyState)', 'Aparece cuando una bandeja o filtro no retorna registros.')}"></div>
+                <div th:replace="~{components/feedback/loading-state :: loadingState('Estado de Carga (LoadingState)', 'Indicador visual durante consultas o generación de reportes.')}"></div>
+                <div th:replace="~{components/feedback/error-state :: errorState('Estado de Error (ErrorState)', 'Muestra fallos controlados con opción de reintento.', '/verify')}"></div>
+            </div>
+        </section>
+
+        <!-- Modal Demostrativo Estándar -->
+        <div id="modalDemoFormulario" role="dialog" aria-modal="true" aria-labelledby="modalDemoTitulo" aria-hidden="true"
+             class="modal-container sigm-modal-backdrop fixed inset-0 bg-slate-950/75 z-50 hidden items-center justify-center p-4">
+            <div class="sigm-modal-dialog w-full max-w-lg animate-fade-in">
+                <div class="sigm-modal-header">
+                    <h3 id="modalDemoTitulo" class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                        <i data-lucide="layout-template" class="w-4 h-4 text-blue-400"></i>
+                        <span>Demostración de Componente Modal Accesible</span>
+                    </h3>
+                    <button type="button" onclick="cerrarModal('modalDemoFormulario')" aria-label="Cerrar modal" class="text-slate-400 hover:text-white p-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="sigm-modal-body space-y-4 text-xs">
+                    <p class="text-slate-300">
+                        Este modal gestiona automáticamente el foco inicial, permite cerrarse con la tecla <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700">Esc</kbd> y restaura el foco al botón que lo abrió.
+                    </p>
+                    <div th:replace="~{components/forms/input :: input('modalInputDemo', 'modalInputDemo', 'Proveído o Nota Rápida (Demo)', 'text', '', 'Escriba un texto de prueba...', false, null)}"></div>
+                </div>
+                <div class="sigm-modal-footer">
+                    <button type="button" onclick="cerrarModal('modalDemoFormulario')" class="sigm-btn sigm-btn-secondary">Cerrar</button>
+                    <button type="button" onclick="cerrarModal('modalDemoFormulario'); mostrarToast('Acción de modal demostrativo completada', 'success');" class="sigm-btn sigm-btn-primary">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>Probar Acción</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

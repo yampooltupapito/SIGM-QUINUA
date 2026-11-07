@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${esNuevoCalculo == true ? 'Nuevo Cálculo Preliminar de Arbitrios' : 'Simulación de Arbitrios Municipales'} + ' — SIGM-QUINUA'">
+        Simulación de Arbitrios — SIGM-QUINUA
+    </title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes de Alerta -->
+    <div th:if="${errorNegocio}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorNegocio}">Error al procesar la determinación</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/tributaria}" class="hover:text-blue-400 transition-colors">Recaudación Tributaria</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/tributaria/arbitrios}" class="hover:text-blue-400 transition-colors">Arbitrios Municipales</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-slate-300 font-medium" th:text="${esNuevoCalculo == true ? 'Nuevo Cálculo' : 'Simulador'}">Simulador</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i th:data-lucide="${esNuevoCalculo == true ? 'file-plus' : 'play-circle'}" class="w-6 h-6 text-blue-500"></i>
+                <span th:text="${esNuevoCalculo == true ? 'Nuevo Cálculo Preliminar de Arbitrios Municipales' : 'Simulación de Arbitrios Municipales'}">Simulación</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                <span th:if="${esNuevoCalculo != true}">
+                    Simulación referencial explicable en tiempo real. <strong>No constituye liquidación oficial ni genera deuda exigible.</strong>
+                </span>
+                <span th:if="${esNuevoCalculo == true}">
+                    Genera una determinación preliminar formal sujeta a revisión administrativa y aprobación tributaria.
+                </span>
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-2.5">
+            <a th:href="@{/dashboard/tributaria/arbitrios}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Volver al Padrón</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Advertencia de Simulación Legal -->
+    <div th:if="${esNuevoCalculo != true}" class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start space-x-3 text-amber-300 text-xs">
+        <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400"></i>
+        <div>
+            <div class="font-bold text-amber-200">Aviso Legal y Normativo:</div>
+            <div>Esta herramienta simula la distribución de costos de los 4 servicios públicos municipales autorizados (Limpieza Residuos, Barrido, Parques y Jardines, Serenazgo) de acuerdo a la ordenanza municipal y coeficientes de distribución vigentes. El resultado es estrictamente informativo y no genera obligaciones en cuenta corriente tributaria.</div>
+        </div>
+    </div>
+
+    <!-- Formulario de Simulación / Cálculo -->
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 shadow-sm">
+        <form th:action="${esNuevoCalculo == true ? '/dashboard/tributaria/arbitrios/nuevo' : '/dashboard/tributaria/arbitrios/simular'}"
+              th:object="${request}" method="POST" class="space-y-4" id="formCalculoArbitrio">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Contribuyente -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Contribuyente Titular <span class="text-rose-500">*</span></label>
+                    <select th:field="*{contribuyenteId}" id="selectContribuyente" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500" required>
+                        <option value="">-- Seleccione Contribuyente --</option>
+                        <option th:each="c : ${contribuyentes}"
+                                th:value="${c.id}"
+                                th:text="${c.codigoContribuyente} + ' - ' + ${c.nombreRazonSocial} + ' (' + (${c.numeroDocumento != null ? c.numeroDocumento : 'S/D'}) + ')'">
+                            CT-000001 - Juan Pérez
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Predio -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Predio Tributario <span class="text-rose-500">*</span></label>
+                    <select th:field="*{predioId}" id="selectPredio" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500" required>
+                        <option value="">-- Seleccione Predio --</option>
+                        <option th:each="p : ${predios}"
+                                th:value="${p.id}"
+                                th:text="${p.codigoPredio} + ' - ' + ${p.direccion} + ' (' + ${p.tipoPredio} + ')'">
+                            PR-000001 - Jr. Ayacucho 123
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Período Fiscal -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Período / Ejercicio Fiscal <span class="text-rose-500">*</span></label>
+                    <select th:field="*{periodoId}" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500" required>
+                        <option value="">-- Seleccione Ejercicio --</option>
+                        <option th:each="per : ${periodos}"
+                                th:value="${per.id}"
+                                th:text="${per.anio} + ' (' + ${per.estado} + ' - UIT: S/ ' + ${per.uitVigente} + ')'">
+                            2026
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Beneficio -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Beneficio / Deducción Legal</label>
+                    <select th:field="*{beneficio}" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                        <option th:each="ben : ${beneficios}"
+                                th:value="${ben}"
+                                th:text="${ben.descripcion}">
+                            Sin Beneficio
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Porcentaje Condómino -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">% Participación Condómino <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <input type="number" step="0.01" min="0.01" max="100.00" th:field="*{porcentajeCondomino}" id="inputPorcentaje"
+                               class="w-full pl-3 pr-8 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500 font-mono" required>
+                        <span class="absolute right-3 top-2 text-xs text-slate-400">%</span>
+                    </div>
+                </div>
+
+                <!-- Fecha de Referencia -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Fecha de Referencia</label>
+                    <input type="date" th:field="*{fechaReferencia}"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-700/60">
+                <button type="submit"
+                        th:class="${esNuevoCalculo == true ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'} + ' px-5 py-2 text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center space-x-2'">
+                    <i th:data-lucide="${esNuevoCalculo == true ? 'file-check' : 'calculator'}" class="w-4 h-4"></i>
+                    <span th:text="${esNuevoCalculo == true ? 'Generar Determinación Preliminar' : 'Calcular Simulación'}">Calcular</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultados de Simulación en Pantalla -->
+    <div th:if="${resultado != null}" class="space-y-5">
+        <!-- Banner informativo -->
+        <div class="bg-blue-950/40 border border-blue-500/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30">
+                    <i data-lucide="calculator" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Resultado de Determinación de Arbitrios Municipales</h3>
+                    <p class="text-xs text-slate-400">
+                        Código de Determinación: <span class="font-mono text-blue-400 font-bold" th:text="${resultado.codigoCalculo}">ARB-2026-000001</span> |
+                        Contribuyente: <strong class="text-slate-200" th:text="${resultado.contribuyenteNombre}">Juan Pérez</strong> |
+                        Predio: <span class="font-mono text-slate-300" th:text="${resultado.predioCodigo}">PR-000001</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Botón de descarga o registro -->
+            <div class="flex items-center space-x-2">
+                <a th:href="@{/dashboard/tributaria/arbitrios/calculos/{id}/liquidacion-pdf(id=${resultado.id})}"
+                   target="_blank"
+                   class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-sm">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Imprimir Hoja de Liquidación</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Indicadores de Totales -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+                <div class="text-xs text-slate-400 mb-1">Subtotal de Costos Brutos</div>
+                <div class="text-xl font-bold font-mono text-slate-200" th:text="'S/ ' + ${#numbers.formatDecimal(resultado.subtotalCalculado, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+                <div class="text-[10px] text-slate-400 mt-1">Suma al 100% de servicios aplicables</div>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+                <div class="text-xs text-slate-400 mb-1">Deducción / Beneficio Legal</div>
+                <div class="text-xl font-bold font-mono text-rose-400" th:text="${resultado.importeBeneficio != null and resultado.importeBeneficio.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '-S/ ' + #numbers.formatDecimal(resultado.importeBeneficio, 1, 'COMMA', 2, 'POINT') : 'S/ 0.00'}">S/ 0.00</div>
+                <div class="text-[10px] text-slate-400 mt-1" th:text="${resultado.beneficioAplicado != null ? resultado.beneficioAplicado.descripcion : 'Sin beneficio'}">Sin beneficio</div>
+            </div>
+
+            <div class="bg-slate-800/80 border border-blue-500/30 rounded-xl p-4 shadow-sm">
+                <div class="text-xs text-blue-300 font-semibold mb-1">Total Anual Determinado</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(resultado.importeAnualTotal, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+                <div class="text-[10px] text-slate-400 mt-1" th:text="'% Condómino: ' + ${resultado.porcentajeParticipacion} + '%'">% Condómino: 100%</div>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-4 shadow-sm">
+                <div class="text-xs text-slate-400 mb-1">Cuota Estimada Trimestral</div>
+                <div class="text-xl font-bold font-mono text-blue-400" th:text="'S/ ' + ${#numbers.formatDecimal(resultado.importePeriodoTotal, 1, 'COMMA', 2, 'POINT')}">S/ 0.00</div>
+                <div class="text-[10px] text-slate-400 mt-1" th:text="'Periodicidad: ' + ${resultado.subperiodo}">Periodicidad: Trimestral</div>
+            </div>
+        </div>
+
+        <!-- Tabla de Desglose de Servicios Determinados -->
+        <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-sm">
+            <div class="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between bg-slate-900/60">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider">Desglose de Servicios Públicos y Criterios de Distribución</h3>
+                </div>
+                <span class="text-[11px] text-slate-400 font-mono">Moneda: PEN (Soles)</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                    <tr class="bg-slate-900/40 border-b border-slate-700/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        <th class="py-3 px-4">Servicio Público Municipal</th>
+                        <th class="py-3 px-3">Metodología de Distribución</th>
+                        <th class="py-3 px-3">Criterio / Factor del Predio</th>
+                        <th class="py-3 px-3 text-right">Costo Total Servicio (S/)</th>
+                        <th class="py-3 px-3 text-right">Subtotal Bruto (S/)</th>
+                        <th class="py-3 px-3 text-right">Beneficio (S/)</th>
+                        <th class="py-3 px-4 text-right">Importe Determinado (S/)</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/40">
+                    <tr th:each="det : ${resultado.detalles}" class="hover:bg-slate-700/20 transition-colors">
+                        <td class="py-3 px-4 font-semibold text-white">
+                            <span th:text="${det.servicioNombre}">Limpieza Pública: Residuos Sólidos</span>
+                        </td>
+                        <td class="py-3 px-3 text-slate-300" th:text="${det.metodoDistribucion != null ? det.metodoDistribucion : '-'}">
+                            Uso y Área Construida
+                        </td>
+                        <td class="py-3 px-3">
+                            <span class="text-blue-300 font-medium" th:text="${det.criterioNombre}">Área y Uso</span>
+                            <span class="text-slate-400 text-[11px] font-mono" th:text="' (factor ' + ${#numbers.formatDecimal(det.factorPredio, 1, 'COMMA', 2, 'POINT')} + ')'">(factor 1.00)</span>
+                        </td>
+                        <td class="py-3 px-3 text-right font-mono text-slate-400" th:text="${#numbers.formatDecimal(det.costoServicioTotal, 1, 'COMMA', 2, 'POINT')}">
+                            0.00
+                        </td>
+                        <td class="py-3 px-3 text-right font-mono text-slate-300" th:text="${#numbers.formatDecimal(det.importeSubtotal, 1, 'COMMA', 2, 'POINT')}">
+                            0.00
+                        </td>
+                        <td class="py-3 px-3 text-right font-mono text-rose-400" th:text="${det.importeBeneficio != null and det.importeBeneficio.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '-' + #numbers.formatDecimal(det.importeBeneficio, 1, 'COMMA', 2, 'POINT') : '0.00'}">
+                            0.00
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-emerald-400" th:text="'S/ ' + ${#numbers.formatDecimal(det.importeCalculado, 1, 'COMMA', 2, 'POINT')}">
+                            S/ 0.00
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Script para carga dinámica de predios por contribuyente -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectContribuyente = document.getElementById('selectContribuyente');
+        const selectPredio = document.getElementById('selectPredio');
+        const inputPorcentaje = document.getElementById('inputPorcentaje');
+
+        if (selectContribuyente) {
+            selectContribuyente.addEventListener('change', function () {
+                const contribuyenteId = this.value;
+                if (!contribuyenteId) return;
+
+                fetch('/dashboard/tributaria/arbitrios/contribuyentes/' + contribuyenteId + '/predios')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            selectPredio.innerHTML = '<option value="">-- Seleccione Predio del Contribuyente --</option>';
+                            data.forEach(p => {
+                                const opt = document.createElement('option');
+                                opt.value = p.id;
+                                opt.textContent = p.codigoPredio + ' - ' + p.direccion + ' (' + p.porcentajeCondomino + '%)';
+                                opt.dataset.porcentaje = p.porcentajeCondomino;
+                                selectPredio.appendChild(opt);
+                            });
+                            // Auto-select first predio
+                            selectPredio.selectedIndex = 1;
+                            if (inputPorcentaje && data[0].porcentajeCondomino) {
+                                inputPorcentaje.value = data[0].porcentajeCondomino;
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Error al cargar predios del contribuyente:', err));
+            });
+        }
+
+        if (selectPredio) {
+            selectPredio.addEventListener('change', function () {
+                const selectedOpt = this.options[this.selectedIndex];
+                if (selectedOpt && selectedOpt.dataset.porcentaje && inputPorcentaje) {
+                    inputPorcentaje.value = selectedOpt.dataset.porcentaje;
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

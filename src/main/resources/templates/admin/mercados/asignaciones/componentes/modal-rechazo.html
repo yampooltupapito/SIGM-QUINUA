@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<div id="modalRechazo" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#1e293b] w-full max-w-lg rounded-2xl border border-[#334155] shadow-2xl overflow-hidden flex flex-col">
+        <div class="px-6 py-4 bg-[#101827] border-b border-[#334155] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Denegar / Rechazar Solicitud de Asignación
+            </h3>
+            <button type="button" onclick="cerrarModal('modalRechazo')" class="text-slate-400 hover:text-white">&times;</button>
+        </div>
+
+        <form id="formRechazo" class="p-6 space-y-4">
+            <p class="text-xs text-rose-300">
+                Esta acción es definitiva. La solicitud pasará al estado <span class="font-bold">RECHAZADA</span> y no podrá ser aprobada posteriormente.
+            </p>
+
+            <div>
+                <label for="rechazoMotivo" class="block text-xs font-medium text-slate-300 mb-1">Motivo Legal y Técnico de Denegación *</label>
+                <textarea id="rechazoMotivo" name="motivoRechazo" rows="4" required
+                          placeholder="Fundamente las causas de orden normativo o técnico que impiden la asignación..."
+                          class="w-full bg-[#101827] border border-[#334155] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#334155]">
+                <button type="button" onclick="cerrarModal('modalRechazo')"
+                        class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-[#334155]">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-lg">
+                    Confirmar Rechazo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+</html>

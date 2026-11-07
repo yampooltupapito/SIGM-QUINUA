@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Registrar Pago / Cobranza | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Encabezado con breadcrumbs -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+            <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+            <span>/</span>
+            <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+            <span>/</span>
+            <a th:href="@{/dashboard/mercados/pagos}" class="hover:text-blue-400 transition-colors">Pagos</a>
+            <span>/</span>
+            <span class="text-slate-200">Nuevo Cobro</span>
+        </div>
+        <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Registro de Pago y Recaudación de Mercados
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Ingreso de recaudación en caja, aplicación a obligaciones exigibles y emisión de constancia oficial.</p>
+    </div>
+
+    <!-- Formulario de Cobro -->
+    <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <form id="formRegistrarPago" class="space-y-6">
+            <input type="hidden" id="comercianteId" th:value="${comercianteIdPreseleccionado}">
+
+            <div id="alertaErrorPago" class="hidden p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold"></div>
+            <div id="alertaExitoPago" class="hidden p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold"></div>
+
+            <!-- Paso 1: Selección y Búsqueda de Comerciante -->
+            <div class="space-y-3 pb-4 border-b border-[#334155]/60">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">1. Identificación del Comerciante</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <input type="text" id="busquedaComerciante" placeholder="Buscar por DNI o Código de comerciante..."
+                               class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500 text-xs">
+                    </div>
+                    <div>
+                        <button type="button" onclick="buscarComerciante()"
+                                class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs transition-colors">
+                            Buscar Deudas
+                        </button>
+                    </div>
+                </div>
+
+                <div id="infoComerciante" class="hidden p-4 rounded-xl bg-[#101827] border border-[#334155] text-xs">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Paso 2: Obligaciones Exigibles a Cancelar -->
+            <div class="space-y-3 pb-4 border-b border-[#334155]/60">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                    <span>2. Obligaciones Pendientes a Cancelar</span>
+                    <span id="totalSeleccionadoBadge" class="text-emerald-400 font-mono font-bold text-sm">Total a Pagar: S/ 0.00</span>
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-[#101827] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#334155]/60">
+                            <tr>
+                                <th class="px-3 py-2.5 w-8">Sel.</th>
+                                <th class="px-3 py-2.5">Código</th>
+                                <th class="px-3 py-2.5">Concepto</th>
+                                <th class="px-3 py-2.5">Vencimiento</th>
+                                <th class="px-3 py-2.5 text-right">Saldo Pendiente</th>
+                                <th class="px-3 py-2.5 text-right w-36">Monto a Aplicar (S/)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyDeudas" class="divide-y divide-[#334155]/40 font-medium">
+                            <tr>
+                                <td colspan="6" class="px-3 py-6 text-center text-slate-500">
+                                    Ingrese o seleccione un comerciante para cargar sus obligaciones pendientes.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paso 3: Datos de la Transacción y Medio de Pago -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">3. Datos de Pago y Arqueo</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Monto Recibido en Caja (S/) *</label>
+                        <input type="number" step="0.01" min="0.01" id="montoRecibido" required placeholder="0.00"
+                               class="w-full bg-[#101827] text-white font-mono font-bold text-sm px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Medio de Pago *</label>
+                        <select id="medioPago" required class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                            <option value="EFECTIVO">Efectivo en Caja</option>
+                            <option value="TRANSFERENCIA_BANCARIA">Transferencia Bancaria</option>
+                            <option value="DEPOSITO_BANCARIO">Depósito en Cuenta</option>
+                            <option value="TARJETA_DEBITO_CREDITO">Tarjeta Débito/Crédito</option>
+                            <option value="BILLETERA_DIGITAL">Billetera Digital (Yape / Plin)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Caja Recaudadora</label>
+                        <select id="cajaSesionId" class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                            <option value="">Oficina de Recaudación / General</option>
+                            <option th:each="c : ${cajas}" th:value="${c.id}" th:text="${c.nombre} + ' (' + ${c.codigo} + ')'"></option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">N° Operación / Referencia Bancaria</label>
+                        <input type="text" id="referenciaOperacion" placeholder="N° de voucher o código de depósito..."
+                               class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Observaciones</label>
+                        <input type="text" id="observacionesPago" placeholder="Notas adicionales..."
+                               class="w-full bg-[#101827] text-white px-3 py-2 rounded-xl border border-[#334155] focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-[#334155]/60">
+                <a th:href="@{/dashboard/mercados/pagos}"
+                   class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition-colors text-xs">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg transition-colors text-xs flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Confirmar y Emitir Recibo
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script th:src="@{/js/mercados/pago-formulario.js}"></script>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/pago-formulario.js}"></script>
+</th:block>
+</body>
+</html>

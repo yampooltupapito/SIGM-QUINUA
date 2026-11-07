@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Dashboard Ejecutivo — Mercados Municipales | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado Institucional y Breadcrumb -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/mercados/reportes}" class="hover:text-white transition-colors">Centro de Reportes</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-blue-400 font-semibold">Dashboard Ejecutivo</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 text-blue-500"></i>
+                <span>Dashboard Ejecutivo Consolidado</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">
+                Visión gerencial integral de infraestructura, ocupación, regularización contractual, recaudación y fiscalización municipal.
+            </p>
+        </div>
+
+        <!-- Botones de Exportación -->
+        <div class="flex items-center space-x-2.5">
+            <button onclick="exportarReporte('EXCEL')" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Exportar Excel
+            </button>
+            <button onclick="exportarReporte('PDF')" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4 mr-1.5"></i> Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros Contextuales -->
+    <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+        <form id="formFiltro" method="get" th:action="@{/dashboard/mercados/reportes/ejecutivo}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Mercado Municipal</label>
+                <select name="mercadoId" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">Todos los Mercados</option>
+                    <option th:each="m : ${mercados}" th:value="${m.id}" th:text="${m.nombre}" th:selected="${filtro.mercadoId == m.id}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Período de Análisis</label>
+                <select name="periodo" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option th:each="p : ${periodos}" th:value="${p}" th:text="${p.descripcion}" th:selected="${filtro.periodo == p}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Inicial (Opcional)</label>
+                <input type="date" name="fechaInicio" th:value="${filtro.fechaInicio}" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Final (Opcional)</label>
+                    <input type="date" name="fechaFin" th:value="${filtro.fechaFin}" class="w-full bg-slate-900 border border-theme rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center h-[34px]">
+                    <i data-lucide="filter" class="w-3.5 h-3.5 mr-1"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bloque 1: Tarjetas KPI Principales (15 Métricas Reales) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <!-- Mercados -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Mercados Registrados</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-white" th:text="${data.totalMercados}">0</span>
+                <span class="text-xs text-emerald-400 font-medium" th:text="${data.mercadosActivos} + ' activos'">0 activos</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Estructura comercial catastrada</p>
+        </div>
+
+        <!-- Sectores y Pabellones -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Zonificación Interna</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-white" th:text="${data.totalSectores}">0</span>
+                <span class="text-xs text-indigo-400 font-medium" th:text="${data.totalPabellones} + ' pabellones'">0 pabellones</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Sectores y bloques comerciales</p>
+        </div>
+
+        <!-- Puestos Totales -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Capacidad de Puestos</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-white" th:text="${data.totalPuestos}">0</span>
+                <span class="text-xs text-emerald-400 font-medium" th:text="${data.puestosDisponibles} + ' libres'">0 libres</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1" th:text="${data.puestosOcupados} + ' ocupados en uso'">0 ocupados</p>
+        </div>
+
+        <!-- Tasa de Ocupación -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tasa de Ocupación</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-blue-400" th:text="${data.porcentajeOcupacionTexto}">0.0%</span>
+                <span class="text-xs text-slate-400 font-medium">Efectiva</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Ocupados / Habilitados</p>
+        </div>
+
+        <!-- Comerciantes -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Padrón de Comerciantes</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-white" th:text="${data.totalComerciantes}">0</span>
+                <span class="text-xs text-blue-400 font-medium">Titulares</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Conductor único formalizado</p>
+        </div>
+
+        <!-- Contratos Vigentes -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Contratos Vigentes</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-emerald-400" th:text="${data.contratosVigentes}">0</span>
+                <span class="text-xs text-slate-400 font-medium">Actos jurídicos</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Excluye borradores</p>
+        </div>
+
+        <!-- Autorizaciones Vigentes -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Autorizaciones Vigentes</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-teal-400" th:text="${data.autorizacionesVigentes}">0</span>
+                <span class="text-xs text-slate-400 font-medium">Licencias</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Habilitaciones comerciales</p>
+        </div>
+
+        <!-- Recaudación Neta Confirmada -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Recaudación Neta</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-emerald-400" th:text="'S/ ' + ${data.recaudacionPeriodo}">S/ 0.00</span>
+                <span class="text-xs text-emerald-500 font-medium">Confirmado</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Auditado sin reversos</p>
+        </div>
+
+        <!-- Obligaciones Pendientes -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Obligaciones Pendientes</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-amber-400" th:text="${data.obligacionesPendientes}">0</span>
+                <span class="text-xs text-amber-500 font-medium">Recibos</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Merced conductiva exigible</p>
+        </div>
+
+        <!-- Fiscalización y Seguridad -->
+        <div class="bg-card border border-theme rounded-xl p-4 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Control Operativo</span>
+            <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-2xl font-bold text-cyan-400" th:text="${data.inspeccionesRealizadas}">0</span>
+                <span class="text-xs text-rose-400 font-medium" th:text="${data.incidenciasAbiertas} + ' incid.'">0 incid.</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Inspecciones / Incidencias</p>
+        </div>
+    </div>
+
+    <!-- Bloque 2: Gráficos de Distribución y Salud de Operaciones -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Distribución de Puestos Comerciales -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i>
+                    <span>Estado Físico y Operativo de Puestos</span>
+                </h3>
+                <span class="text-xs text-slate-400" th:text="${data.totalPuestos} + ' puestos totales'">0 puestos</span>
+            </div>
+
+            <!-- Barras visuales dinámicas basadas en datos reales -->
+            <div class="space-y-3.5">
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300 flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span> Ocupados Formalizados
+                        </span>
+                        <span class="font-bold text-white" th:text="${data.puestosOcupados} + ' puestos (' + ${data.porcentajeOcupacionTexto} + ')'">0</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
+                             th:style="'width: ' + (${data.totalPuestos > 0 ? (data.puestosOcupados * 100.0 / data.totalPuestos) : 0}) + '%'"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300 flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Disponibles para Convocatoria
+                        </span>
+                        <span class="font-bold text-white" th:text="${data.puestosDisponibles} + ' puestos'">0</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                             th:style="'width: ' + (${data.totalPuestos > 0 ? (data.puestosDisponibles * 100.0 / data.totalPuestos) : 0}) + '%'"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-300 flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></span> En Mantenimiento / Bloqueados
+                        </span>
+                        <span class="font-bold text-white" th:text="${data.totalPuestos - data.puestosOcupados - data.puestosDisponibles} + ' puestos'">0</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-500"
+                             th:style="'width: ' + (${data.totalPuestos > 0 ? ((data.totalPuestos - data.puestosOcupados - data.puestosDisponibles) * 100.0 / data.totalPuestos) : 0}) + '%'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-theme/60 flex items-center justify-between text-xs">
+                <span class="text-slate-400">Denominador: Puestos Habilitados</span>
+                <a th:href="@{/dashboard/mercados/reportes/ocupacion}" class="text-blue-400 hover:text-blue-300 font-medium">Ver desglose detallado &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Regularización Contractual y Jurídica -->
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Estado de Regularización Comercial</span>
+                </h3>
+                <span class="text-xs text-slate-400">Seguridad jurídica</span>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-theme">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded bg-emerald-500/10 text-emerald-400">
+                            <i data-lucide="file-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-white">Contratos Formalizados</span>
+                            <p class="text-[11px] text-slate-400">Actos vigentes con resolución o firma</p>
+                        </div>
+                    </div>
+                    <span class="text-base font-bold text-emerald-400" th:text="${data.contratosVigentes}">0</span>
+                </div>
+
+                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-theme">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded bg-teal-500/10 text-teal-400">
+                            <i data-lucide="badge-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-white">Autorizaciones Comerciales</span>
+                            <p class="text-[11px] text-slate-400">Licencias activas sin suspensión</p>
+                        </div>
+                    </div>
+                    <span class="text-base font-bold text-teal-400" th:text="${data.autorizacionesVigentes}">0</span>
+                </div>
+
+                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-theme">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded bg-rose-500/10 text-rose-400">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-white">Vencimientos Próximos</span>
+                            <p class="text-[11px] text-slate-400">Instrumentos por vencer en menos de 60 días</p>
+                        </div>
+                    </div>
+                    <a th:href="@{/dashboard/mercados/reportes/vencimientos}" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">Consultar &rarr;</a>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-theme/60 flex items-center justify-between text-xs">
+                <span class="text-slate-400">Cero datos inventados</span>
+                <a th:href="@{/dashboard/mercados/reportes/contratos}" class="text-emerald-400 hover:text-emerald-300 font-medium">Ver contratos &rarr;</a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    async function exportarReporte(formato) {
+        const form = document.getElementById('formFiltro');
+        const formData = new FormData(form);
+
+        const requestPayload = {
+            tipoReporte: 'EJECUTIVO',
+            formato: formato,
+            filtro: {
+                mercadoId: formData.get('mercadoId') || null,
+                periodo: formData.get('periodo'),
+                fechaInicio: formData.get('fechaInicio') || null,
+                fechaFin: formData.get('fechaFin') || null
+            }
+        };
+
+        const url = formato === 'EXCEL' ? '/api/mercados/reportes/exportar/excel' : '/api/mercados/reportes/exportar/pdf';
+        const token = document.querySelector('meta[name="_csrf"]')?.content;
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [header]: token
+                },
+                body: JSON.stringify(requestPayload)
+            });
+
+            if (!resp.ok) {
+                alert('No se pudo generar la exportación');
+                return;
+            }
+
+            const blob = await resp.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `DASHBOARD_EJECUTIVO_${new Date().toISOString().slice(0,10)}.${formato === 'EXCEL' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (e) {
+            console.error('Error exportando:', e);
+            alert('Error en la descarga del archivo');
+        }
+    }
+</script>
+</th:block>
+</body>
+</html>

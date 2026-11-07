@@ -1,0 +1,94 @@
+/* ==========================================================================
+   SIGM-QUINUA — BOTONES Y ESTADOS INTERACTIVOS (HOVER, FOCUS, DISABLED, LOADING)
+   ========================================================================== */
+
+.btn-primary,
+.sigm-btn-primary {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.btn-primary:hover:not(:disabled),
+.sigm-btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+}
+
+.sigm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.sigm-btn-secondary {
+    background-color: var(--sigm-navy-800);
+    color: var(--text-theme-light);
+    border: 1px solid var(--border-theme);
+}
+.sigm-btn-secondary:hover:not(:disabled) {
+    background-color: var(--sigm-navy-700);
+    color: #ffffff;
+}
+
+.sigm-btn-success {
+    background-color: #059669;
+    color: #ffffff;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.sigm-btn-success:hover:not(:disabled) {
+    background-color: #047857;
+}
+
+.sigm-btn-warning {
+    background-color: #d97706;
+    color: #ffffff;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.sigm-btn-warning:hover:not(:disabled) {
+    background-color: #b45309;
+}
+
+.sigm-btn-danger {
+    background-color: #e11d48;
+    color: #ffffff;
+    border: 1px solid rgba(244, 63, 94, 0.4);
+}
+.sigm-btn-danger:hover:not(:disabled) {
+    background-color: #be123c;
+}
+
+.sigm-btn-ghost {
+    background-color: transparent;
+    color: var(--text-theme-muted);
+    border: 1px solid transparent;
+}
+.sigm-btn-ghost:hover:not(:disabled) {
+    background-color: rgba(51, 65, 85, 0.4);
+    color: #ffffff;
+}
+
+/* Estados Deshabilitado y En Carga */
+.sigm-btn:disabled,
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+button.is-submitting,
+input[type="submit"].is-submitting,
+.sigm-btn.is-loading {
+    opacity: 0.78;
+    pointer-events: none;
+    cursor: wait;
+}
+

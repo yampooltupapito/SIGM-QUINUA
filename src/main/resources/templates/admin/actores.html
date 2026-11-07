@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Tipos de Actores Institucionales</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
+                <i data-lucide="user-check" class="w-5 h-5 text-blue-500"></i>
+                <span>Catálogo Dinámico de Tipos de Actores</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Clasificación funcional de personas que interactúan con la municipalidad (ciudadanos, comerciantes, serenos, etc.).</p>
+        </div>
+        <div>
+            <button onclick="abrirModal('modalNuevoActor')" class="flex items-center space-x-2 px-4 py-2.5 rounded-lg btn-primary text-xs font-semibold shadow-md shadow-blue-900/40">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nuevo Tipo de Actor</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="bg-card p-4 rounded-xl border border-slate-700/60 shadow-sm">
+        <form th:action="@{/admin/actores}" method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Buscar por código o denominación</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" name="term" th:value="${term}" placeholder="Ej. CIUDADANO, COMERCIANTE, FISCALIZADOR..."
+                           class="w-full pl-9 pr-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors">
+                    Buscar
+                </button>
+                <a th:href="@{/admin/actores}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-xs border border-slate-700 transition-colors">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-card rounded-xl border border-slate-700/60 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-800/80 text-slate-400 font-semibold border-b border-slate-700/60 uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Nombre / Denominación</th>
+                        <th class="px-4 py-3">Descripción Funcional</th>
+                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/40 text-slate-300">
+                    <tr th:if="${actoresPage.content.empty}">
+                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                            <i data-lucide="user-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            <p>No se encontraron tipos de actores registrados.</p>
+                        </td>
+                    </tr>
+                    <tr th:each="a : ${actoresPage.content}" class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-4 py-3 font-mono font-bold text-blue-400" th:text="${a.codigo}">CIUDADANO</td>
+                        <td class="px-4 py-3 font-semibold text-slate-100" th:text="${a.nombre}">Ciudadano / Administrado</td>
+                        <td class="px-4 py-3 text-slate-400" th:text="${a.descripcion != null ? a.descripcion : 'Sin descripción'}">Vecino o administrado general</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${a.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-emerald-400 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Activo</span>
+                            </span>
+                            <span th:unless="${a.estado == 'ACTIVO'}" class="inline-flex items-center space-x-1 text-slate-500 text-[11px] font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                <span>Inactivo</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button th:data-id="${a.id}" onclick="abrirEditarActor(this.dataset.id)" title="Editar Tipo de Actor"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button th:if="${a.estado == 'ACTIVO'}" th:data-id="${a.id}" onclick="cambiarEstadoActor(this.dataset.id, 'desactivar')" title="Desactivar"
+                                        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-right" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                                <button th:unless="${a.estado == 'ACTIVO'}" th:data-id="${a.id}" onclick="cambiarEstadoActor(this.dataset.id, 'activar')" title="Activar"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors">
+                                    <i data-lucide="toggle-left" class="w-4 h-4 text-slate-500"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO TIPO DE ACTOR -->
+    <div id="modalNuevoActor" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-blue-500"></i>
+                    <span>Crear Tipo de Actor</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalNuevoActor')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formNuevoActor" data-no-loading="true" onsubmit="guardarNuevoActor(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Código Único *</label>
+                    <input type="text" id="na_codigo" required placeholder="Ej. TRANSPORTISTA"
+                           oninput="this.value = this.value.toUpperCase().replace(/\s+/g, '_')"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono uppercase">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Solo letras mayúsculas, números y guiones bajos (_).</span>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre Descriptivo *</label>
+                    <input type="text" id="na_nombre" required placeholder="Ej. Transportista Municipal"
+                           class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="na_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalNuevoActor')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarNuevoActor" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Actor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR TIPO DE ACTOR -->
+    <div id="modalEditarActor" class="modal-container hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-card w-full max-w-md rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col mx-auto my-auto">
+            <div class="px-6 py-4 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Editar Tipo de Actor</span>
+                </h3>
+                <button type="button" onclick="cerrarModal('modalEditarActor')" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="formEditarActor" data-no-loading="true" onsubmit="guardarEdicionActor(event)" class="p-6 space-y-4">
+                <input type="hidden" id="ea_id">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Código (No editable)</label>
+                    <input type="text" id="ea_codigo" disabled class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Nombre *</label>
+                    <input type="text" id="ea_nombre" required class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="ea_descripcion" rows="2" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/60 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="cerrarModal('modalEditarActor')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancelar</button>
+                    <button type="submit" id="btnGuardarEdicionActor" class="px-4 py-2 btn-primary rounded-lg text-xs font-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+    async function guardarNuevoActor(e) {
+        e.preventDefault();
+        const codigoNormalizado = document.getElementById("na_codigo").value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+        document.getElementById("na_codigo").value = codigoNormalizado;
+
+        const body = {
+            codigo: codigoNormalizado,
+            nombre: document.getElementById("na_nombre").value.trim(),
+            descripcion: document.getElementById("na_descripcion").value.trim() || null
+        };
+
+        const btn = document.getElementById("btnGuardarNuevoActor");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/actores", {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Tipo de actor registrado exitosamente.", "success");
+            cerrarModal("modalNuevoActor");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Actor";
+            }
+        }
+    }
+
+    async function abrirEditarActor(id) {
+        try {
+            const res = await fetchApi("/api/admin/actores/" + id);
+            const a = res.data;
+            document.getElementById("ea_id").value = a.id;
+            document.getElementById("ea_codigo").value = a.codigo || "";
+            document.getElementById("ea_nombre").value = a.nombre || "";
+            document.getElementById("ea_descripcion").value = a.descripcion || "";
+            abrirModal("modalEditarActor");
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {}
+    }
+
+    async function guardarEdicionActor(e) {
+        e.preventDefault();
+        const id = document.getElementById("ea_id").value;
+        const body = {
+            nombre: document.getElementById("ea_nombre").value.trim(),
+            descripcion: document.getElementById("ea_descripcion").value.trim() || null
+        };
+
+        const btn = document.getElementById("btnGuardarEdicionActor");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+        }
+
+        try {
+            await fetchApi("/api/admin/actores/" + id, {
+                method: "PUT",
+                body: JSON.stringify(body)
+            });
+            mostrarToast("Tipo de actor actualizado correctamente.", "success");
+            cerrarModal("modalEditarActor");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Guardar Cambios";
+            }
+        }
+    }
+
+    async function cambiarEstadoActor(id, accion) {
+        if (!confirm(`¿Está seguro de que desea ${accion} este tipo de actor?`)) return;
+        try {
+            await fetchApi(`/api/admin/actores/${id}/${accion}`, { method: "PATCH" });
+            mostrarToast(`Tipo de actor ${accion === "activar" ? "activado" : "desactivado"} exitosamente.`, "success");
+            setTimeout(() => window.location.reload(), 900);
+        } catch (err) {}
+    }
+
+    window.guardarNuevoActor = guardarNuevoActor;
+    window.abrirEditarActor = abrirEditarActor;
+    window.guardarEdicionActor = guardarEdicionActor;
+    window.cambiarEstadoActor = cambiarEstadoActor;
+</script>
+</th:block>
+</body>
+</html>

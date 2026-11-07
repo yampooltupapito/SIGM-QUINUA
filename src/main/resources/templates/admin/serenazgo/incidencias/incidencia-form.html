@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${incidenciaId != null ? 'Editar Incidencia ' + codigoIncidencia : 'Registrar Incidencia de Seguridad'}">Formulario de Incidencia</title>
+</head>
+<body>
+<div layout:fragment="content" class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Mensajes Flash -->
+    <div th:if="${mensajeError}" class="p-4 bg-rose-900/50 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error en el formulario.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado de Navegación -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/incidencias}" class="hover:text-blue-400 flex items-center gap-1">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver al listado
+                </a>
+                <span>/</span>
+                <span th:text="${incidenciaId != null ? 'Edición' : 'Nuevo Registro'}">Registro</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-7 h-7 text-blue-500"></i>
+                <span th:text="${incidenciaId != null ? 'Editar Incidencia: ' + codigoIncidencia : 'Registrar Nueva Incidencia de Seguridad'}">Nueva Incidencia</span>
+            </h1>
+            <p class="text-sm text-slate-400 mt-1">
+                El Serenazgo municipal no es autoridad judicial ni policial. Registre los hechos con objetividad y prudencia.
+            </p>
+        </div>
+    </div>
+
+    <!-- Banner interactivo de advertencia por duplicados -->
+    <div id="bannerDuplicados" class="hidden p-4 bg-amber-950/60 border border-amber-600/50 rounded-xl text-amber-200">
+        <div class="flex items-start gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+                <h4 class="font-semibold text-amber-300">Posible incidencia duplicada detectada</h4>
+                <p class="text-xs text-amber-200/90 mt-0.5">
+                    Se han identificado reportes similares en el mismo sector durante las últimas 24 horas:
+                </p>
+                <ul id="listaDuplicados" class="mt-2 text-xs space-y-1 list-disc list-inside font-mono"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form th:action="${incidenciaId != null ? '/dashboard/serenazgo/incidencias/' + incidenciaId + '/editar' : '/dashboard/serenazgo/incidencias'}"
+          th:object="${incidenciaForm}"
+          method="post"
+          class="space-y-6">
+
+        <!-- SECCIÓN 1: Clasificación General y Tipología -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="tag" class="w-4 h-4 text-blue-400"></i>
+                1. Clasificación y Naturaleza del Hecho
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Título descriptivo -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Título breve de la incidencia <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" th:field="*{titulo}" required maxlength="200"
+                           placeholder="Ej. Alteración del orden público en inmediaciones de la plaza central"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                    <p th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}" class="text-xs text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Tipo de Incidencia -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Tipo de Incidencia <span class="text-rose-400">*</span>
+                    </label>
+                    <select id="tipoIncidenciaSelect" th:field="*{tipoIncidenciaId}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar tipo --</option>
+                        <option th:each="t : ${tiposIncidencia}"
+                                th:value="${t.id}"
+                                th:text="${t.nombre}">Tipo</option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('tipoIncidenciaId')}" th:errors="*{tipoIncidenciaId}" class="text-xs text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Prioridad Inicial (solo en creación) -->
+                <div th:if="${incidenciaId == null}">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Prioridad Administrativa <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{prioridad}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="p : ${prioridades}"
+                                th:value="${p}"
+                                th:text="${p.descripcion}">Prioridad</option>
+                    </select>
+                </div>
+
+                <!-- Canal de reporte -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Canal o Medio de Recepción <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{canalReporte}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="c : ${canalesReporte}"
+                                th:value="${c}"
+                                th:text="${c.descripcion}">Canal</option>
+                    </select>
+                </div>
+
+                <!-- Origen del Hecho -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Origen del Hecho <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{origenHecho}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="o : ${origenesHecho}"
+                                th:value="${o}"
+                                th:text="${o.descripcion}">Origen</option>
+                    </select>
+                </div>
+
+                <!-- Nivel de Confidencialidad -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Nivel de Confidencialidad <span class="text-rose-400">*</span>
+                    </label>
+                    <select th:field="*{nivelConfidencialidad}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option th:each="nc : ${nivelesConfidencialidad}"
+                                th:value="${nc}"
+                                th:text="${nc.descripcion}">Nivel</option>
+                    </select>
+                </div>
+
+                <!-- Fecha y hora de Ocurrencia (solo en creación o edición) -->
+                <div th:if="${incidenciaId == null}">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Fecha y Hora Estimada de Ocurrencia <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="datetime-local" id="fechaOcurrenciaInput" th:field="*{fechaHoraOcurrencia}" required
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: Ubicación Geográfica y Sectorización -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+                2. Ubicación y Sector Operativo
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Sector -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Sector de Patrullaje <span class="text-rose-400">*</span>
+                    </label>
+                    <select id="sectorSelect" th:field="*{sectorId}" required
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Seleccionar Sector --</option>
+                        <option th:each="s : ${sectores}"
+                                th:value="${s.id}"
+                                th:text="${s.nombre}">Sector</option>
+                    </select>
+                </div>
+
+                <!-- Zona dinámica -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Zona Específica (Opcional)
+                    </label>
+                    <select id="zonaSelect" th:field="*{zonaId}"
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Toda la zona / Sin zona específica --</option>
+                    </select>
+                </div>
+
+                <!-- Referencia de Ubicación -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Referencia o Dirección Descriptiva <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" th:field="*{ubicacionReferencia}" required maxlength="300"
+                           placeholder="Ej. Jr. Sucre con Av. Independencia, cerca al monumento de Quinua"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+
+                <!-- Coordenadas Geográficas (Opcionales) -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Latitud (Opcional)</label>
+                    <input type="number" step="0.0000001" th:field="*{latitud}" placeholder="-13.0450000"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Longitud (Opcional)</label>
+                    <input type="number" step="0.0000001" th:field="*{longitud}" placeholder="-74.1350000"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: Datos de la Fuente y Reportante -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i>
+                    3. Información del Reportante (Protección de Datos Personales)
+                </h2>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="checkAnonimo" th:field="*{reportanteAnonimo}"
+                           class="w-4 h-4 text-blue-600 rounded bg-slate-900 border-slate-700 focus:ring-0"/>
+                    <span class="text-xs font-medium text-slate-300">Reporte Anónimo</span>
+                </label>
+            </div>
+
+            <div id="seccionDatosReportante" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nombre Completo del Ciudadano</label>
+                    <input type="text" id="reportanteNombre" th:field="*{reportanteNombre}" maxlength="150"
+                           placeholder="Apellidos y Nombres"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Teléfono / Celular de Contacto</label>
+                    <input type="text" id="reportanteTelefono" th:field="*{reportanteTelefono}" maxlength="30"
+                           placeholder="Ej. 966123456"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Dirección del Reportante</label>
+                    <input type="text" id="reportanteDireccion" th:field="*{reportanteDireccion}" maxlength="200"
+                           placeholder="Domicilio o referencia"
+                           class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-500">
+                Nota: Conforme a la Ley de Protección de Datos Personales, la identidad del reportante se mantendrá reservada y enmascarada para resguardar su integridad.
+            </p>
+        </div>
+
+        <!-- SECCIÓN 4: Descripción de Hechos y Observaciones -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="align-left" class="w-4 h-4 text-amber-400"></i>
+                4. Relato de Hechos y Observaciones Administrativas
+            </h2>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Descripción Objetiva de los Hechos Comunicados u Observados <span class="text-rose-400">*</span>
+                </label>
+                <textarea th:field="*{descripcion}" rows="4" required
+                          placeholder="Describa el hecho de forma clara, fáctica y objetiva sin calificar legalmente delitos ni imputar culpabilidades sin sustento..."
+                          class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+                <p th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}" class="text-xs text-rose-400 mt-1"></p>
+            </div>
+
+            <div th:if="${incidenciaId != null}">
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Motivo de la Modificación <span class="text-rose-400">*</span>
+                </label>
+                <input type="text" th:field="*{motivoModificacion}" required maxlength="255"
+                       placeholder="Justifique el motivo de la modificación para trazabilidad y auditoría..."
+                       class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500"/>
+                <p th:if="${#fields.hasErrors('motivoModificacion')}" th:errors="*{motivoModificacion}" class="text-xs text-rose-400 mt-1"></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Observaciones Internas / Notas Operativas de Recepción (Opcional)
+                </label>
+                <textarea th:field="*{observacionesInternas}" rows="2"
+                          placeholder="Anotaciones de uso exclusivo interno para la supervisión del Serenazgo..."
+                          class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 5: Asignación Institucional -->
+        <div class="bg-[#202c3d] border border-slate-700/60 rounded-xl p-5 shadow-sm space-y-4">
+            <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i data-lucide="building-2" class="w-4 h-4 text-sky-400"></i>
+                5. Vinculación Institucional
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Personal de Serenazgo que reporta -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Personal de Serenazgo que Comunica / Observa</label>
+                    <select th:field="*{personalReportaId}"
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- No aplica / Comunicación ciudadana directa --</option>
+                        <option th:each="p : ${personalList}"
+                                th:value="${p.id}"
+                                th:text="${p.codigoSereno + ' - ' + p.nombres + ' ' + p.apellidos}">Sereno</option>
+                    </select>
+                </div>
+
+                <!-- Oficina Responsable -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Oficina Responsable</label>
+                    <select th:field="*{oficinaResponsableId}"
+                            class="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Por defecto: Seguridad Ciudadana --</option>
+                        <option th:each="of : ${oficinas}"
+                                th:value="${of.id}"
+                                th:text="${of.nombre}">Oficina</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a th:href="@{/dashboard/serenazgo/incidencias}"
+               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg border border-slate-700 transition">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition flex items-center gap-2 shadow">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span th:text="${incidenciaId != null ? 'Guardar Cambios' : 'Registrar Incidencia'}">Guardar</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Manejo de Reportante Anónimo
+            const checkAnonimo = document.getElementById('checkAnonimo');
+            const seccionReportante = document.getElementById('seccionDatosReportante');
+            const txtNombre = document.getElementById('reportanteNombre');
+            const txtTelefono = document.getElementById('reportanteTelefono');
+            const txtDireccion = document.getElementById('reportanteDireccion');
+
+            function toggleAnonimo() {
+                if (checkAnonimo && checkAnonimo.checked) {
+                    txtNombre.disabled = true;
+                    txtTelefono.disabled = true;
+                    txtDireccion.disabled = true;
+                    txtNombre.value = '';
+                    txtTelefono.value = '';
+                    txtDireccion.value = '';
+                    seccionReportante.classList.add('opacity-40');
+                } else if (checkAnonimo) {
+                    txtNombre.disabled = false;
+                    txtTelefono.disabled = false;
+                    txtDireccion.disabled = false;
+                    seccionReportante.classList.remove('opacity-40');
+                }
+            }
+
+            if (checkAnonimo) {
+                checkAnonimo.addEventListener('change', toggleAnonimo);
+                toggleAnonimo();
+            }
+
+            // Carga Dinámica de Zonas por Sector
+            const sectorSelect = document.getElementById('sectorSelect');
+            const zonaSelect = document.getElementById('zonaSelect');
+
+            if (sectorSelect && zonaSelect) {
+                sectorSelect.addEventListener('change', function () {
+                    const sectorId = this.value;
+                    zonaSelect.innerHTML = '<option value="">-- Toda la zona / Sin zona específica --</option>';
+
+                    if (sectorId) {
+                        fetch('/dashboard/serenazgo/incidencias/api/sectores/' + sectorId + '/zonas')
+                            .then(response => response.json())
+                            .then(zonas => {
+                                zonas.forEach(z => {
+                                    const opt = document.createElement('option');
+                                    opt.value = z.id;
+                                    opt.textContent = z.nombre;
+                                    zonaSelect.appendChild(opt);
+                                });
+                            })
+                            .catch(err => console.error('Error al cargar zonas:', err));
+                    }
+                    verificarPosiblesDuplicados();
+                });
+            }
+
+            // Detección Asistida de Duplicados en Tiempo Real
+            const tipoSelect = document.getElementById('tipoIncidenciaSelect');
+            const fechaInput = document.getElementById('fechaOcurrenciaInput');
+            const bannerDuplicados = document.getElementById('bannerDuplicados');
+            const listaDuplicados = document.getElementById('listaDuplicados');
+
+            function verificarPosiblesDuplicados() {
+                const tipoId = tipoSelect ? tipoSelect.value : null;
+                const sectorId = sectorSelect ? sectorSelect.value : null;
+                const fecha = fechaInput ? fechaInput.value : null;
+
+                if (!tipoId || !fecha) {
+                    if (bannerDuplicados) bannerDuplicados.classList.add('hidden');
+                    return;
+                }
+
+                const fechaIso = new Date(fecha).toISOString();
+                const url = `/dashboard/serenazgo/incidencias/api/duplicados?tipoId=${tipoId}&fecha=${encodeURIComponent(fechaIso)}` +
+                            (sectorId ? `&sectorId=${sectorId}` : '');
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(dups => {
+                        if (dups && dups.length > 0) {
+                            listaDuplicados.innerHTML = '';
+                            dups.forEach(d => {
+                                const li = document.createElement('li');
+                                li.textContent = `[${d.codigo}] ${d.titulo} - ${d.sectorNombre} (${d.estadoDesc})`;
+                                listaDuplicados.appendChild(li);
+                            });
+                            bannerDuplicados.classList.remove('hidden');
+                        } else {
+                            bannerDuplicados.classList.add('hidden');
+                        }
+                    })
+                    .catch(err => console.error('Error al verificar duplicados:', err));
+            }
+
+            if (tipoSelect) tipoSelect.addEventListener('change', verificarPosiblesDuplicados);
+            if (fechaInput) fechaInput.addEventListener('change', verificarPosiblesDuplicados);
+        });
+    </script>
+</th:block>
+</body>
+</html>

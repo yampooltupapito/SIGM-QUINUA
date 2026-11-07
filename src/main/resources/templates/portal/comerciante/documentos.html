@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Centro de Documentos</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Centro de Documentos</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Descargue copias oficiales y certificadas en formato PDF de sus contratos, licencias y recibos municipales.
+            </p>
+        </div>
+
+        <!-- Filtros Rápidos por Tipo de Documento -->
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+            <a th:href="@{/portal/comerciante/documentos}" th:classappend="${tipoSeleccionado == null or tipoSeleccionado == '' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}" class="px-3 py-1.5 rounded-md transition-all">Todos</a>
+            <a th:href="@{/portal/comerciante/documentos(tipo='CONTRATO')}" th:classappend="${tipoSeleccionado == 'CONTRATO' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}" class="px-3 py-1.5 rounded-md transition-all">Contratos</a>
+            <a th:href="@{/portal/comerciante/documentos(tipo='AUTORIZACION')}" th:classappend="${tipoSeleccionado == 'AUTORIZACION' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}" class="px-3 py-1.5 rounded-md transition-all">Autorizaciones</a>
+            <a th:href="@{/portal/comerciante/documentos(tipo='PAGO')}" th:classappend="${tipoSeleccionado == 'PAGO' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}" class="px-3 py-1.5 rounded-md transition-all">Recibos</a>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Documento Oficial</th>
+                        <th class="px-6 py-3.5">Tipo</th>
+                        <th class="px-6 py-3.5">Código Referencia</th>
+                        <th class="px-6 py-3.5">Puesto</th>
+                        <th class="px-6 py-3.5">Fecha Emisión</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Descarga</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="d : ${documentosPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                            <span th:text="${d.nombreDocumento}">Contrato</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700" th:text="${d.tipoDocumento}">CONTRATO</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${d.codigoReferencia}">COD-01</td>
+                        <td class="px-6 py-4 font-mono" th:text="${d.puestoCodigo != null ? d.puestoCodigo : '-'}">P-01</td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${d.fechaEmision != null ? #temporals.format(d.fechaEmision, 'dd/MM/yyyy') : '-'}">01/01/2026</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800" th:text="${d.estado}">EMITIDO</span>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-1">
+                            <a th:if="${d.urlVerificacion != null}" th:href="${d.urlVerificacion}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors" title="Verificar validez">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                            </a>
+                            <a th:href="${d.urlDescarga}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${documentosPage.empty}">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="folder-down" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra documentos disponibles para descarga en esta categoría.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Ficha de Atención ' + atencion.codigo + ' — Serenazgo Quinua'}">Ficha de Atención Operativa</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash de Notificación -->
+    <div th:if="${mensajeExito}" class="p-4 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span th:text="${mensajeExito}">Operación completada con éxito.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 bg-rose-950/60 border border-rose-500/40 rounded-xl text-rose-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+            <span th:text="${mensajeError}">Ocurrió un error.</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- Encabezado con Migas de Pan y Acciones Operativas -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard/serenazgo/atenciones}" class="hover:text-blue-400 transition">Centro de Atención</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span class="font-mono text-blue-400 font-bold" th:text="${atencion.codigo}">ATN-2026-00001</span>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="shield" class="w-7 h-7 text-blue-500"></i>
+                    Orden de Atención Operativa
+                </h1>
+                <!-- Estado Badge -->
+                <span th:if="${atencion.estado?.name() == 'PENDIENTE_ASIGNACION'}" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">PENDIENTE ASIGNACIÓN</span>
+                <span th:if="${atencion.estado?.name() == 'ASIGNADA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">ASIGNADA</span>
+                <span th:if="${atencion.estado?.name() == 'DESPACHADA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">DESPACHADA</span>
+                <span th:if="${atencion.estado?.name() == 'ACEPTADA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">ACEPTADA</span>
+                <span th:if="${atencion.estado?.name() == 'EN_ATENCION'}" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">EN ATENCIÓN (EN SITIO)</span>
+                <span th:if="${atencion.estado?.name() == 'EN_ESPERA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">EN ESPERA</span>
+                <span th:if="${atencion.estado?.name() == 'FINALIZADA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">FINALIZADA</span>
+                <span th:if="${atencion.estado?.name() == 'CANCELADA'}" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">CANCELADA</span>
+
+                <!-- Prioridad Badge -->
+                <span th:if="${atencion.prioridadOperativa?.name() == 'ALTA'}" class="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">PRIORIDAD ALTA</span>
+                <span th:if="${atencion.prioridadOperativa?.name() == 'MEDIA'}" class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">PRIORIDAD MEDIA</span>
+                <span th:if="${atencion.prioridadOperativa?.name() == 'BAJA'}" class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">PRIORIDAD BAJA</span>
+            </div>
+        </div>
+
+        <!-- Botonera Dinámica según Estado -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón Asignar Recursos (si PENDIENTE_ASIGNACION) -->
+            <button th:if="${atencion.estado?.name() == 'PENDIENTE_ASIGNACION'}"
+                    onclick="abrirModal('modalAsignar')"
+                    class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Asignar Recursos</span>
+            </button>
+
+            <!-- Botón Despachar (si ASIGNADA) -->
+            <button th:if="${atencion.estado?.name() == 'ASIGNADA'}"
+                    onclick="abrirModal('modalDespachar')"
+                    class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="radio" class="w-4 h-4"></i>
+                <span>Despachar Efectivos</span>
+            </button>
+
+            <!-- Botón Aceptar y Rechazar (si DESPACHADA) -->
+            <button th:if="${atencion.estado?.name() == 'DESPACHADA'}"
+                    onclick="abrirModal('modalAceptar')"
+                    class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Confirmar Aceptación</span>
+            </button>
+            <button th:if="${atencion.estado?.name() == 'DESPACHADA'}"
+                    onclick="abrirModal('modalRechazar')"
+                    class="px-3 py-2 rounded-xl bg-rose-800/80 hover:bg-rose-700 text-rose-200 text-xs font-bold border border-rose-700 flex items-center gap-1.5 transition">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                <span>Rechazo Justificado</span>
+            </button>
+
+            <!-- Botón Iniciar en Sitio (si ACEPTADA) -->
+            <button th:if="${atencion.estado?.name() == 'ACEPTADA'}"
+                    onclick="abrirModal('modalIniciar')"
+                    class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Registrar Llegada / Inicio</span>
+            </button>
+
+            <!-- Botones durante Atención Activa -->
+            <th:block th:if="${atencion.estado?.name() == 'EN_ATENCION'}">
+                <button onclick="abrirModal('modalNovedad')"
+                        class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="plus" class="w-4 h-4 text-sky-400"></i>
+                    <span>Novedad</span>
+                </button>
+                <button onclick="abrirModal('modalPausar')"
+                        class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="pause" class="w-4 h-4 text-purple-400"></i>
+                    <span>Pausar</span>
+                </button>
+                <button onclick="abrirModal('modalReasignar')"
+                        class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i>
+                    <span>Reasignar</span>
+                </button>
+                <button onclick="abrirModal('modalEscalar')"
+                        class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="external-link" class="w-4 h-4 text-orange-400"></i>
+                    <span>Escalar</span>
+                </button>
+                <button onclick="abrirModal('modalFinalizar')"
+                        class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition">
+                    <i data-lucide="check-check" class="w-4 h-4"></i>
+                    <span>Finalizar Atención</span>
+                </button>
+            </th:block>
+
+            <!-- Botones si EN_ESPERA -->
+            <th:block th:if="${atencion.estado?.name() == 'EN_ESPERA'}">
+                <button onclick="abrirModal('modalReanudar')"
+                        class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+                    <i data-lucide="play" class="w-4 h-4"></i>
+                    <span>Reanudar Atención</span>
+                </button>
+                <button onclick="abrirModal('modalNovedad')"
+                        class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="plus" class="w-4 h-4 text-sky-400"></i>
+                    <span>Novedad</span>
+                </button>
+                <button onclick="abrirModal('modalFinalizar')"
+                        class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition">
+                    <i data-lucide="check-check" class="w-4 h-4"></i>
+                    <span>Finalizar Atención</span>
+                </button>
+            </th:block>
+
+            <!-- Botón Cancelar (si no está finalizada ni cancelada) -->
+            <button th:if="${atencion.estado?.name() != 'FINALIZADA' and atencion.estado?.name() != 'CANCELADA'}"
+                    onclick="abrirModal('modalCancelar')"
+                    class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 text-xs font-semibold border border-slate-700 transition" title="Cancelar Orden">
+                <i data-lucide="ban" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Advertencia Institucional -->
+    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0 text-amber-400"></i>
+        <span>
+            <strong>Advertencia Legal Administrativa:</strong> Esta orden de atención registra actuaciones de apoyo y prevención en el marco de la Ley de Serenazgo Municipal. No constituye informe pericial ni resolución jurisdiccional.
+        </span>
+    </div>
+
+    <!-- Pestañas de la Ficha Operativa -->
+    <div class="border-b border-slate-700/80 flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+        <button onclick="cambiarPestana('tab-resumen')" id="btn-tab-resumen"
+                class="tab-btn px-4 py-2.5 border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Resumen Operativo</span>
+        </button>
+        <button onclick="cambiarPestana('tab-incidencia')" id="btn-tab-incidencia"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span>Incidencia Vinculada</span>
+        </button>
+        <button onclick="cambiarPestana('tab-personal')" id="btn-tab-personal"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Personal Asignado (<span th:text="${#lists.size(atencion.personal)}">0</span>)</span>
+        </button>
+        <button onclick="cambiarPestana('tab-recursos')" id="btn-tab-recursos"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="truck" class="w-4 h-4"></i>
+            <span>Unidad y Equipos (<span th:text="${#lists.size(atencion.equipamiento)}">0</span>)</span>
+        </button>
+        <button onclick="cambiarPestana('tab-eventos')" id="btn-tab-eventos"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span>Línea de Tiempo (<span th:text="${#lists.size(atencion.eventos)}">0</span>)</span>
+        </button>
+        <button onclick="cambiarPestana('tab-escalamientos')" id="btn-tab-escalamientos"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition whitespace-nowrap">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            <span>Escalamientos (<span th:text="${#lists.size(atencion.escalamientos)}">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- CONTENIDO DE PESTAÑAS -->
+
+    <!-- Pestaña 1: Resumen Operativo -->
+    <div id="tab-resumen" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/60">
+                <span class="text-slate-400 text-xs block">Fecha Asignación:</span>
+                <span class="font-bold text-slate-100 text-sm mt-0.5 block" th:text="${atencion.fechaHoraAsignacionFormateada}">25/10/2026 14:00</span>
+                <span class="text-[11px] text-slate-500 mt-1 block" th:text="${'Por: ' + (atencion.responsableAsignacionNombre ?: 'Sistema')}">Supervisor</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/60">
+                <span class="text-slate-400 text-xs block">Fecha Despacho:</span>
+                <span class="font-bold text-slate-100 text-sm mt-0.5 block" th:text="${atencion.fechaHoraDespachoFormateada ?: 'Pendiente de despacho'}">—</span>
+                <span class="text-[11px] text-indigo-400 mt-1 block" th:text="${atencion.canalComunicacion?.etiqueta ?: 'Canal no asignado'}">Radio VHF</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/60">
+                <span class="text-slate-400 text-xs block">Fecha Inicio (Llegada):</span>
+                <span class="font-bold text-slate-100 text-sm mt-0.5 block" th:text="${atencion.fechaHoraInicioFormateada ?: 'No iniciada aún'}">—</span>
+                <span class="text-[11px] text-emerald-400 mt-1 block" th:if="${atencion.tiempoRespuestaMinutos != null}" th:text="${'T. Respuesta: ' + atencion.tiempoRespuestaMinutos + ' min'}">T. Respuesta: 5 min</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/60">
+                <span class="text-slate-400 text-xs block">Fecha Finalización:</span>
+                <span class="font-bold text-slate-100 text-sm mt-0.5 block" th:text="${atencion.fechaHoraFinalizacionFormateada ?: 'En proceso'}">—</span>
+                <span class="text-[11px] text-slate-400 mt-1 block" th:if="${atencion.duracionMinutos != null}" th:text="${'Duración: ' + atencion.duracionMinutos + ' min'}">Duración: 25 min</span>
+            </div>
+        </div>
+
+        <!-- Ficha de Datos Operativos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Resumen de Actuación -->
+                <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                        <i data-lucide="clipboard" class="w-4 h-4 text-blue-400"></i>
+                        Instrucciones y Desarrollo Operativo
+                    </h3>
+                    <div class="text-xs space-y-3">
+                        <div>
+                            <span class="text-slate-400 block text-[11px] font-semibold">Instrucciones u Órdenes de Despacho:</span>
+                            <p class="text-slate-200 mt-0.5 whitespace-pre-line" th:text="${atencion.instruccionesDespacho ?: 'Sin instrucciones específicas registradas.'}"></p>
+                        </div>
+                        <div th:if="${atencion.resultadoAdministrativo != null}" class="pt-2 border-t border-slate-700/50">
+                            <span class="text-slate-400 block text-[11px] font-semibold">Resultado de la Atención:</span>
+                            <span class="inline-block mt-1 px-3 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                  th:text="${atencion.resultadoAdministrativo.etiqueta}">SITUACION CONTROLADA</span>
+                        </div>
+                        <div th:if="${atencion.motivoFinalizacion != null}">
+                            <span class="text-slate-400 block text-[11px] font-semibold">Resumen de Actuaciones al Finalizar:</span>
+                            <p class="text-slate-200 mt-0.5 whitespace-pre-line" th:text="${atencion.motivoFinalizacion}"></p>
+                        </div>
+                        <div th:if="${atencion.observaciones != null}" class="pt-2 border-t border-slate-700/50">
+                            <span class="text-slate-400 block text-[11px] font-semibold">Observaciones Administrativas:</span>
+                            <p class="text-slate-300 italic mt-0.5" th:text="${atencion.observaciones}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Cuadrilla y Vehículo -->
+            <div class="space-y-6">
+                <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                        Responsable y Unidad
+                    </h3>
+                    <div class="text-xs space-y-3 text-slate-300">
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Sereno a Cargo:</span>
+                            <span class="font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
+                                <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
+                                <span th:text="${atencion.responsableOperativoNombre ?: 'Sin asignar'}">Juan Pérez</span>
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Unidad Móvil Asignada:</span>
+                            <span class="font-bold text-slate-100 flex items-center gap-1.5 mt-0.5" th:if="${atencion.unidadMovilCodigo != null}">
+                                <i data-lucide="car" class="w-4 h-4 text-indigo-400"></i>
+                                <span th:text="${atencion.unidadMovilCodigo + ' (' + atencion.unidadMovilPlaca + ')'}">CAM-01 (EGA-123)</span>
+                            </span>
+                            <span class="text-slate-500 italic" th:if="${atencion.unidadMovilCodigo == null}">Modalidad Pedestre (A pie)</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">Sector de Despliegue:</span>
+                            <span class="font-medium text-slate-200" th:text="${atencion.sectorNombre ?: 'Sector no especificado'}">Sector 01</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 2: Incidencia Vinculada -->
+    <div id="tab-incidencia" class="tab-content hidden space-y-6">
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
+                    Datos de la Incidencia (<span class="font-mono text-blue-400" th:text="${atencion.incidenciaCodigo}">INC-2026-00001</span>)
+                </h3>
+                <a th:href="@{/dashboard/serenazgo/incidencias/{id}(id=${atencion.incidenciaId})}" target="_blank"
+                   class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold">
+                    <span>Ver Expediente de Incidencia</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Tipo de Incidencia:</span>
+                    <span class="font-bold text-slate-100 text-sm" th:text="${atencion.incidenciaTipo}">Ruidos Molestos</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Dirección / Ubicación:</span>
+                    <span class="font-medium text-slate-200" th:text="${atencion.direccionIncidencia}">Plaza Mayor de Quinua</span>
+                </div>
+                <div class="md:col-span-2">
+                    <span class="text-slate-400 block text-[11px]">Referencia de Llegada:</span>
+                    <span class="text-slate-300" th:text="${atencion.referenciaIncidencia ?: 'Sin referencia adicional'}">Frente a la iglesia</span>
+                </div>
+                <div class="md:col-span-2 pt-2 border-t border-slate-700/50">
+                    <span class="text-slate-400 block text-[11px]">Relato Administrativo de la Incidencia:</span>
+                    <p class="text-slate-200 mt-1 whitespace-pre-line italic bg-slate-900/60 p-3 rounded-lg border border-slate-700/60"
+                       th:text="${atencion.incidenciaDescripcion}">Descripción del suceso...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 3: Personal Asignado -->
+    <div id="tab-personal" class="tab-content hidden space-y-6">
+        <div class="rounded-xl bg-[#202c3d] border border-slate-700/60 overflow-hidden shadow-sm">
+            <div class="p-4 bg-slate-900/80 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+                    Efectivos de Serenazgo Asignados a la Orden
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-700 text-[11px] font-semibold uppercase">
+                        <th class="py-2.5 px-4">Personal</th>
+                        <th class="py-2.5 px-4">Función / Rol</th>
+                        <th class="py-2.5 px-4">Fecha Asignación</th>
+                        <th class="py-2.5 px-4">Estado en la Orden</th>
+                        <th class="py-2.5 px-4">Desasignación / Motivo</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50 text-slate-300">
+                    <tr th:if="${#lists.isEmpty(atencion.personal)}">
+                        <td colspan="5" class="py-8 text-center text-slate-500">No hay personal registrado en esta atención.</td>
+                    </tr>
+                    <tr th:each="per : ${atencion.personal}">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-100 flex items-center gap-2">
+                                <span th:text="${per.personalNombre}">Juan Quispe</span>
+                                <span th:if="${per.esResponsable}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">LÍDER DE CUADRILLA</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 font-mono" th:text="${per.personalCodigo}">EMP-001</div>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-300" th:text="${per.funcionOperativa}">Operador de cuadrilla</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${per.fechaAsignacionFormateada}">25/10/2026 14:00</td>
+                        <td class="py-3 px-4">
+                            <span th:if="${per.activo}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">ACTIVO</span>
+                            <span th:unless="${per.activo}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-600/30 text-slate-400 border border-slate-600">RELEVADO</span>
+                        </td>
+                        <td class="py-3 px-4 text-[11px] text-slate-400">
+                            <span th:if="${!per.activo}" th:text="${(per.fechaDesasignacionFormateada ?: '') + ' — ' + (per.motivoDesasignacion ?: 'Relevo')}">Relevado por apoyo</span>
+                            <span th:if="${per.activo}" class="text-slate-600">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 4: Unidad Móvil y Equipamiento -->
+    <div id="tab-recursos" class="tab-content hidden space-y-6">
+        <!-- Unidad Móvil -->
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="truck" class="w-4 h-4 text-sky-400"></i>
+                Vehículo Asignado
+            </h3>
+            <div th:if="${atencion.unidadMovilCodigo != null}" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Código de Unidad:</span>
+                    <span class="font-bold text-slate-100 text-sm" th:text="${atencion.unidadMovilCodigo}">CAM-01</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Placa de Rodaje:</span>
+                    <span class="font-medium text-slate-200" th:text="${atencion.unidadMovilPlaca}">EGA-123</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Disponibilidad Registrada:</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">ASIGNADO A ATENCIÓN</span>
+                </div>
+            </div>
+            <div th:if="${atencion.unidadMovilCodigo == null}" class="text-xs text-slate-400 italic">
+                Atención autorizada en modalidad pedestre (sin unidad móvil asignada).
+            </div>
+        </div>
+
+        <!-- Equipamiento Operativo -->
+        <div class="rounded-xl bg-[#202c3d] border border-slate-700/60 overflow-hidden shadow-sm">
+            <div class="p-4 bg-slate-900/80 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="wrench" class="w-4 h-4 text-amber-400"></i>
+                    Equipamiento y Bienes Asignados en Custodia
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-700 text-[11px] font-semibold uppercase">
+                        <th class="py-2.5 px-4">Equipo / Código</th>
+                        <th class="py-2.5 px-4">Tipo</th>
+                        <th class="py-2.5 px-4">Cantidad</th>
+                        <th class="py-2.5 px-4">Custodio</th>
+                        <th class="py-2.5 px-4">Estado Devolución</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50 text-slate-300">
+                    <tr th:if="${#lists.isEmpty(atencion.equipamiento)}">
+                        <td colspan="5" class="py-8 text-center text-slate-500">No se asoció equipamiento específico a esta atención.</td>
+                    </tr>
+                    <tr th:each="equipo : ${atencion.equipamiento}">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-100" th:text="${equipo.equipamientoNombre}">Radio Portátil VHF</div>
+                            <div class="text-[11px] text-slate-500 font-mono" th:text="${equipo.equipamientoCodigo}">PAT-00912</div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${equipo.equipamientoTipo}">COMUNICACIONES</td>
+                        <td class="py-3 px-4 font-semibold text-slate-200" th:text="${equipo.cantidad}">1</td>
+                        <td class="py-3 px-4 text-slate-300" th:text="${equipo.custodioNombre ?: 'Cuadrilla general'}">Juan Quispe</td>
+                        <td class="py-3 px-4">
+                            <span th:if="${equipo.devuelto}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-600/30 text-slate-400 border border-slate-600"
+                                  th:text="${'DEVUELTO (' + (equipo.fechaDevolucionFormateada ?: '') + ')'}">DEVUELTO</span>
+                            <span th:unless="${equipo.devuelto}" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">EN USO</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 5: Línea de Tiempo / Bitácora de Novedades -->
+    <div id="tab-eventos" class="tab-content hidden space-y-6">
+        <div class="p-5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-700/60 pb-2">
+                <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+                Bitácora Inmutable de Actuaciones y Novedades
+            </h3>
+
+            <div th:if="${#lists.isEmpty(atencion.eventos)}" class="text-center py-8 text-slate-500 text-xs">
+                No hay eventos registrados en la bitácora operativa.
+            </div>
+
+            <div class="relative pl-6 space-y-6 border-l-2 border-slate-700 ml-3">
+                <div th:each="ev : ${atencion.eventos}" class="relative group">
+                    <!-- Icono según tipo de evento -->
+                    <div class="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-slate-900 border-2 border-blue-500 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-700/80 space-y-1.5">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-blue-300" th:text="${ev.tipoEvento?.etiqueta}">DESPACHO OPERATIVO</span>
+                            <span class="text-slate-400 font-mono text-[11px]" th:text="${ev.fechaHoraFormateada}">25/10/2026 14:15</span>
+                        </div>
+                        <p class="text-xs text-slate-200 whitespace-pre-line" th:text="${ev.descripcion}">Descripción de la novedad...</p>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800">
+                            <span th:text="${'Registrado por: ' + (ev.registradoPorNombre ?: 'Operador')}">Operador</span>
+                            <span th:if="${ev.visibleCiudadano}" class="text-emerald-400 flex items-center gap-1">
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                                <span>Visible en portal ciudadano</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña 6: Escalamientos Institucionales -->
+    <div id="tab-escalamientos" class="tab-content hidden space-y-6">
+        <div class="rounded-xl bg-[#202c3d] border border-slate-700/60 overflow-hidden shadow-sm">
+            <div class="p-4 bg-slate-900/80 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="external-link" class="w-4 h-4 text-orange-400"></i>
+                    Derivaciones y Coordinaciones Institucionales Externas
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                    <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-700 text-[11px] font-semibold uppercase">
+                        <th class="py-2.5 px-4">Entidad Destino</th>
+                        <th class="py-2.5 px-4">Canal / Contacto</th>
+                        <th class="py-2.5 px-4">Fecha y Hora</th>
+                        <th class="py-2.5 px-4">Motivo de Escalamiento</th>
+                        <th class="py-2.5 px-4">Referencia / Oficio</th>
+                        <th class="py-2.5 px-4">Responsable</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50 text-slate-300">
+                    <tr th:if="${#lists.isEmpty(atencion.escalamientos)}">
+                        <td colspan="6" class="py-8 text-center text-slate-500">No se registraron escalamientos a entidades externas.</td>
+                    </tr>
+                    <tr th:each="esc : ${atencion.escalamientos}">
+                        <td class="py-3 px-4 font-bold text-amber-300" th:text="${esc.entidad?.etiqueta}">POLICÍA NACIONAL DEL PERÚ</td>
+                        <td class="py-3 px-4 text-slate-300">
+                            <span th:text="${esc.canalComunicacion?.etiqueta ?: 'Teléfono institucional'}">Teléfono</span>
+                            <div class="text-[11px] text-slate-500" th:text="${esc.contactoReceptor}">Comisaría Quinua</div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${esc.fechaHoraFormateada}">25/10/2026 14:40</td>
+                        <td class="py-3 px-4 text-slate-200" th:text="${esc.motivo}">Competencia por presunto delito común</td>
+                        <td class="py-3 px-4 font-mono text-slate-400" th:text="${esc.numeroReferencia ?: '—'}">OF-2026-004</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${esc.registradoPorNombre}">Supervisor</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODALES OPERATIVOS ==================== -->
+
+    <!-- Modal 1: Asignar Recursos -->
+    <div id="modalAsignar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="user-plus" class="w-5 h-5 text-blue-400"></i>
+                Asignar Recursos a la Orden
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/asignar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Sereno Responsable Operativo <span class="text-rose-400">*</span></label>
+                    <select name="responsablePersonalId" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option value="">-- Seleccionar efectivo --</option>
+                        <option th:each="per : ${personalDisponible}" th:value="${per.id}" th:text="${per.nombreCompleto + ' (' + per.cargo + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Unidad Móvil (Opcional)</label>
+                    <select name="unidadMovilId" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option value="">-- Modalidad pedestre (Sin vehículo) --</option>
+                        <option th:each="uni : ${unidadesDisponibles}" th:value="${uni.id}" th:text="${uni.codigo + ' (' + uni.placa + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones</label>
+                    <textarea name="observaciones" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalAsignar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Guardar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Despachar -->
+    <div id="modalDespachar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="radio" class="w-5 h-5 text-indigo-400"></i>
+                Confirmar Despacho Operativo
+            </h3>
+            <p class="text-xs text-slate-400">
+                Esta acción activa formalmente la cuadrilla y comunica la orden de desplazamiento al lugar de la incidencia.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/despachar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Canal de Comunicación Empleado <span class="text-rose-400">*</span></label>
+                    <select name="canalComunicacion" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option th:each="c : ${canales}" th:value="${c.name()}" th:text="${c.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Instrucciones de Despacho</label>
+                    <textarea name="instrucciones" rows="3" placeholder="Indicaciones operativas transmitidas..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalDespachar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Confirmar y Despachar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Aceptar Asignación -->
+    <div id="modalAceptar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="check" class="w-5 h-5 text-teal-400"></i>
+                Confirmar Recepción y Aceptación de Cuadrilla
+            </h3>
+            <p class="text-xs text-slate-400">
+                El sereno a cargo o el operador de base confirma que la cuadrilla recibió la orden y se dirige al punto.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/aceptar(id=${atencion.id})}" method="post" class="space-y-4">
+                <input type="hidden" name="aceptado" value="true"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Notas u Observación de Recepción</label>
+                    <textarea name="observaciones" rows="2" placeholder="Confirmación vía radio recibida sin novedades..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalAceptar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cerrar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold">Confirmar Aceptación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Rechazo Justificado -->
+    <div id="modalRechazar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-rose-300 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400"></i>
+                Registrar Rechazo Justificado de Despacho
+            </h3>
+            <p class="text-xs text-slate-400">
+                Registre el motivo de fuerza mayor o imposibilidad operativa que impide la atención por esta cuadrilla.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/rechazar(id=${atencion.id})}" method="post" class="space-y-4">
+                <input type="hidden" name="aceptado" value="false"/>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificado del Rechazo <span class="text-rose-400">*</span></label>
+                    <textarea name="motivoRechazo" required rows="3" placeholder="Falla mecánica sobrevenida, corte de vía, etc." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalRechazar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">Registrar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Iniciar Atención en Sitio -->
+    <div id="modalIniciar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="play" class="w-5 h-5 text-emerald-400"></i>
+                Registrar Llegada e Inicio de Atención en Sitio
+            </h3>
+            <p class="text-xs text-slate-400">
+                Marca la llegada efectiva de los efectivos al lugar de los hechos y la apertura de las actuaciones de serenazgo.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/iniciar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Reporte de Situación Inicial en el Lugar</label>
+                    <textarea name="descripcionSituacionInicial" rows="3" placeholder="Estado del orden público a la llegada..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalIniciar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Registrar Inicio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6: Registrar Novedad -->
+    <div id="modalNovedad" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-sky-400"></i>
+                Registrar Novedad en Bitácora Operativa
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/novedades(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Novedad <span class="text-rose-400">*</span></label>
+                    <select name="tipoEvento" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option th:each="t : ${tiposNovedad}" th:value="${t.name()}" th:text="${t.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Descripción de la Actuación / Novedad <span class="text-rose-400">*</span></label>
+                    <textarea name="descripcion" required rows="3" placeholder="Detalle cronológico de lo ocurrido..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="visibleCiudadano" name="visibleCiudadano" class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                    <label for="visibleCiudadano" class="text-xs text-slate-300">Mostrar avance resumido en portal ciudadano (sin datos sensibles)</label>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalNovedad')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Registrar Novedad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Pausar Atención (En Espera) -->
+    <div id="modalPausar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-purple-300 flex items-center gap-2">
+                <i data-lucide="pause-circle" class="w-5 h-5 text-purple-400"></i>
+                Poner Atención en Estado de Espera
+            </h3>
+            <p class="text-xs text-slate-400">
+                Utilice esta opción ante espera justificada de apoyo institucional externo (PNP, Bomberos, etc.) o condiciones climáticas adversas.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/pausar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificado de Espera <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="3" placeholder="A la espera de presencia de efectivos policiales..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalPausar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold">Poner en Espera</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 8: Reanudar Atención -->
+    <div id="modalReanudar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-emerald-300 flex items-center gap-2">
+                <i data-lucide="play" class="w-5 h-5 text-emerald-400"></i>
+                Reanudar Atención Operativa
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/reanudar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle de Reanudación de Actuaciones <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="3" placeholder="Se retoman las labores tras llegada de apoyo..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalReanudar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Reanudar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 9: Reasignar Recursos -->
+    <div id="modalReasignar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-amber-300 flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-amber-400"></i>
+                Reasignar Efectivo o Vehículo
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/reasignar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nuevo Responsable Operativo (Opcional)</label>
+                    <select name="nuevoPersonalId" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option value="">-- Conservar responsable actual --</option>
+                        <option th:each="per : ${personalDisponible}" th:value="${per.id}" th:text="${per.nombreCompleto}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nueva Unidad Móvil (Opcional)</label>
+                    <select name="nuevaUnidadMovilId" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option value="">-- Conservar unidad actual --</option>
+                        <option th:each="uni : ${unidadesDisponibles}" th:value="${uni.id}" th:text="${uni.codigo + ' (' + uni.placa + ')'}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Justificado del Relevo / Sustitución <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="2" placeholder="Relevo de guardia, recambio vehicular, etc." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalReasignar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold">Confirmar Reasignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 10: Escalamiento Institucional -->
+    <div id="modalEscalar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-orange-300 flex items-center gap-2">
+                <i data-lucide="external-link" class="w-5 h-5 text-orange-400"></i>
+                Registrar Escalamiento a Entidad Competente
+            </h3>
+            <p class="text-xs text-slate-400">
+                Permite dejar constancia administrativa de la comunicación efectuada a organismos públicos (Policía Nacional, Bomberos, SAMU, etc.).
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/escalar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Entidad Destinataria <span class="text-rose-400">*</span></label>
+                    <select name="entidad" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option th:each="ent : ${entidadesEscalamiento}" th:value="${ent.name()}" th:text="${ent.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Canal de Comunicación y Contacto</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select name="canalComunicacion" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                            <option th:each="c : ${canales}" th:value="${c.name()}" th:text="${c.etiqueta}"></option>
+                        </select>
+                        <input type="text" name="contactoReceptor" placeholder="Nombre / Cargo del receptor"
+                               class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Institucional de la Derivación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="2" placeholder="Hecho que excede las facultades de serenazgo..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Número de Referencia u Oficio (Opcional)</label>
+                    <input type="text" name="numeroReferencia" placeholder="Ej: OF-2026-04"
+                           class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalEscalar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold">Registrar Escalamiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 11: Finalizar Atención -->
+    <div id="modalFinalizar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="check-check" class="w-5 h-5 text-blue-400"></i>
+                Finalizar Atención de Serenazgo
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/finalizar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado Administrativo <span class="text-rose-400">*</span></label>
+                    <select name="resultado" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                        <option th:each="res : ${resultadosAtencion}" th:value="${res.name()}" th:text="${res.etiqueta}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resumen de Actuaciones Realizadas <span class="text-rose-400">*</span></label>
+                    <textarea name="resumenActuaciones" required rows="3" placeholder="Síntesis de las diligencias preventivas adoptadas..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-900/60 border border-slate-700">
+                    <input type="checkbox" id="resolverIncidencia" name="resolverIncidencia" value="true" checked class="rounded bg-slate-800 border-slate-700 text-blue-600">
+                    <label for="resolverIncidencia" class="text-xs text-slate-200">
+                        Marcar la incidencia asociada como <strong>RESUELTA</strong> administrativamente
+                    </label>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalFinalizar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Concluir Atención</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 12: Cancelar Atención -->
+    <div id="modalCancelar" class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-base font-bold text-rose-300 flex items-center gap-2">
+                <i data-lucide="ban" class="w-5 h-5 text-rose-400"></i>
+                Cancelar Orden de Atención
+            </h3>
+            <p class="text-xs text-slate-400">
+                La cancelación deja constancia de la orden anulada y libera los recursos asignados sin alterar el historial.
+            </p>
+            <form th:action="@{/dashboard/serenazgo/atenciones/{id}/cancelar(id=${atencion.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de Cancelación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="3" placeholder="Duplicidad de orden, incidencia inexistente, etc." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                    <button type="button" onclick="cerrarModal('modalCancelar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Regresar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">Confirmar Cancelación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- JavaScript para control de pestañas y modales -->
+<script layout:fragment="scripts">
+    function cambiarPestana(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('border-blue-500', 'text-blue-400');
+            el.classList.add('border-transparent', 'text-slate-400');
+        });
+
+        const activeContent = document.getElementById(tabId);
+        const activeBtn = document.getElementById('btn-' + tabId);
+
+        if (activeContent) activeContent.classList.remove('hidden');
+        if (activeBtn) {
+            activeBtn.classList.add('border-blue-500', 'text-blue-400');
+            activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        }
+    }
+
+    function abrirModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function cerrarModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // Cerrar modal al presionar Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+        }
+    });
+</script>
+</body>
+</html>

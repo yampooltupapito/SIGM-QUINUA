@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Equipamiento ' + ${equipo.codigoInterno} + ' | SIGM-QUINUA'">Ficha de Equipamiento | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado y Breadcrumb -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme pb-5">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                <span>Seguridad Ciudadana</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <a th:href="@{/dashboard/serenazgo/equipamiento}" class="hover:text-indigo-400">Equipamiento</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span class="text-indigo-400 font-semibold" th:text="${equipo.codigoInterno}">EQP-000001</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center space-x-2.5">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-indigo-400"></i>
+                    <span th:text="${equipo.codigoInterno} + ' — ' + ${equipo.descripcion}">EQP-000001</span>
+                </h1>
+                <!-- Badge de estado -->
+                <span th:if="${equipo.estado.name() == 'DISPONIBLE'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Disponible
+                </span>
+                <span th:if="${equipo.estado.name() == 'ASIGNADO'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    Asignado
+                </span>
+                <span th:if="${equipo.estado.name() == 'EN_MANTENIMIENTO' || equipo.estado.name() == 'EN_REPARACION'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    En Reparación
+                </span>
+                <span th:if="${equipo.estado.name() == 'DE_BAJA' || equipo.estado.name() == 'PERDIDO'}"
+                      class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    De Baja
+                </span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 mt-1" th:text="${(equipo.tipoEquipoDesc != null ? equipo.tipoEquipoDesc : '') + ' • Base: ' + (equipo.oficinaResponsableNombre != null ? equipo.oficinaResponsableNombre : 'Central')}">
+                Radio Transceptor VHF/UHF • Base Central
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón Editar -->
+            <a th:href="@{/dashboard/serenazgo/equipamiento/{id}/editar(id=${equipo.id})}"
+               sec:authorize="hasAuthority('SERENAZGO_EQUIPAMIENTO_EDITAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+               class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                <i data-lucide="edit-3" class="w-4 h-4 mr-1.5 text-indigo-400"></i>
+                Editar
+            </a>
+
+            <!-- Botón Asignar / Devolver según stock/estado -->
+            <button th:if="${equipo.disponibleParaAsignacion}" onclick="document.getElementById('modalAsignar').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('SERENAZGO_EQUIPAMIENTO_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all">
+                <i data-lucide="user-plus" class="w-4 h-4 mr-1.5"></i>
+                Asignar Bien
+            </button>
+            <button th:if="${equipo.estado.name() == 'ASIGNADO'}" onclick="document.getElementById('modalDevolver').classList.remove('hidden')"
+                    sec:authorize="hasAuthority('SERENAZGO_EQUIPAMIENTO_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')"
+                    class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all">
+                <i data-lucide="corner-down-left" class="w-4 h-4 mr-1.5"></i>
+                Registrar Devolución
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-3">
+        <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${mensajeExito}">Operación exitosa</span>
+    </div>
+    <div th:if="${error}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}">Error en la operación</span>
+    </div>
+
+    <!-- Pestañas -->
+    <div class="flex border-b border-theme space-x-6 text-xs font-semibold overflow-x-auto">
+        <button onclick="switchTab('general')" id="tabBtn-general"
+                class="tab-btn pb-3 text-indigo-400 border-b-2 border-indigo-500 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>Información General</span>
+        </button>
+        <button onclick="switchTab('asignaciones')" id="tabBtn-asignaciones"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Asignaciones y Entregas (<span th:text="${equipo.asignaciones.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('mantenimientos')" id="tabBtn-mantenimientos"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="wrench" class="w-4 h-4"></i>
+            <span>Mantenimientos (<span th:text="${equipo.mantenimientos.size()}">0</span>)</span>
+        </button>
+        <button onclick="switchTab('incidencias')" id="tabBtn-incidencias"
+                class="tab-btn pb-3 text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>Incidencias / Averías (<span th:text="${equipo.incidencias.size()}">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- PESTAÑA 1: INFORMACIÓN GENERAL -->
+    <div id="tab-general" class="tab-pane space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2.5">
+                    <i data-lucide="package" class="w-4 h-4"></i>
+                    <span>Ficha del Bien o Dispositivo</span>
+                </h3>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Tipo de Equipo</span>
+                        <span class="font-bold text-white" th:text="${equipo.tipoEquipoDesc}">Radio Transceptor</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Código Interno</span>
+                        <span class="font-bold font-mono text-indigo-400" th:text="${equipo.codigoInterno}">EQP-000001</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Marca</span>
+                        <span class="font-semibold text-slate-200" th:text="${equipo.marca != null ? equipo.marca : 'N/D'}">Motorola</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Modelo</span>
+                        <span class="font-semibold text-slate-200" th:text="${equipo.modelo != null ? equipo.modelo : 'N/D'}">DGP8550e</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Número de Serie</span>
+                        <span class="font-mono text-slate-200" th:text="${equipo.numeroSerie != null ? equipo.numeroSerie : 'S/N'}">SN123456</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Código Patrimonial</span>
+                        <span class="font-mono text-slate-200" th:text="${equipo.codigoPatrimonial != null ? equipo.codigoPatrimonial : 'PENDIENTE SBN'}">7464.08.012</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Modalidad de Control</span>
+                        <span class="text-slate-200 font-semibold" th:text="${equipo.esControladoPorCantidad ? 'Control por Cantidad / Existencias' : 'Bien Individualizado'}">Individual</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Stock Disponible / Total</span>
+                        <span class="font-mono font-bold text-emerald-400" th:text="${equipo.stockDisponible} + ' / ' + ${equipo.stockTotal}">1 / 1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ubicación y Asignación actual -->
+            <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-2 border-b border-theme pb-2.5">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span>Ubicación y Asignación Operativa</span>
+                </h3>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Base Responsable</span>
+                        <span class="font-semibold text-white" th:text="${equipo.oficinaResponsableNombre != null ? equipo.oficinaResponsableNombre : 'Base Central Serenazgo'}">Base Central</span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Efectivo Sereno Asignado</span>
+                        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700/60 mt-1 flex items-center justify-between">
+                            <span class="font-bold text-white" th:text="${equipo.responsableNombre != null ? equipo.responsableNombre : 'SIN PERSONAL ASIGNADO'}">Juan Pérez</span>
+                            <span th:if="${equipo.responsableNombre != null}" class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold">En Custodia</span>
+                            <span th:if="${equipo.responsableNombre == null}" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold">En Almacén</span>
+                        </div>
+                    </div>
+
+                    <div th:if="${equipo.unidadMovilInfo != null}">
+                        <span class="text-slate-400 block text-[11px]">Unidad Móvil Vinculada</span>
+                        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700/60 mt-1">
+                            <span class="font-bold text-indigo-400" th:text="${equipo.unidadMovilInfo}">UNI-001 (EGI-450)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Observaciones y Estado del Material</h3>
+            <p class="text-xs text-slate-400 whitespace-pre-line" th:text="${equipo.observaciones != null && !equipo.observaciones.isEmpty() ? equipo.observaciones : 'Sin observaciones registradas.'}">
+                Cargador de mesa y clip de cinturón incluidos.
+            </p>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 2: ASIGNACIONES -->
+    <div id="tab-asignaciones" class="tab-pane hidden space-y-4">
+        <h3 class="text-sm font-bold text-white">Historial de Entregas y Devoluciones</h3>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Fecha Entrega</th>
+                        <th class="px-4 py-3">Asignado a</th>
+                        <th class="px-4 py-3">Cantidad</th>
+                        <th class="px-4 py-3">Motivo</th>
+                        <th class="px-4 py-3">Fecha Devolución</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${equipo.asignaciones.empty}">
+                        <td colspan="6" class="text-center py-6 text-slate-400">No hay movimientos ni asignaciones registradas para este bien.</td>
+                    </tr>
+                    <tr th:each="a : ${equipo.asignaciones}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono text-slate-200" th:text="${#temporals.format(a.fechaEntrega, 'dd/MM/yyyy HH:mm')}">2026-10-25 08:00</td>
+                        <td class="px-4 py-3 font-semibold text-white">
+                            <span th:if="${a.personalNombre != null}" th:text="${a.personalNombre}">Juan Pérez</span>
+                            <span th:if="${a.unidadInfo != null}" class="text-indigo-300 block text-[11px]" th:text="'Unidad: ' + ${a.unidadInfo}">UNI-001</span>
+                        </td>
+                        <td class="px-4 py-3 font-mono" th:text="${a.cantidad}">1</td>
+                        <td class="px-4 py-3" th:text="${a.motivo}">Dotación de Servicio Turno Mañana</td>
+                        <td class="px-4 py-3 font-mono text-slate-300" th:text="${a.fechaDevolucion != null ? #temporals.format(a.fechaDevolucion, 'dd/MM/yyyy HH:mm') : 'EN USO'}">EN USO</td>
+                        <td class="px-4 py-3">
+                            <span th:if="${a.estadoAsignacion.name() == 'ACTIVA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300">Activa</span>
+                            <span th:if="${a.estadoAsignacion.name() == 'DEVUELTA_TOTAL' || a.estadoAsignacion.name() == 'DEVUELTA'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Devuelta</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 3: MANTENIMIENTOS -->
+    <div id="tab-mantenimientos" class="tab-pane hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Mantenimientos y Calibraciones</h3>
+            <button onclick="document.getElementById('modalMantenimiento').classList.remove('hidden')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors">
+                + Programar Mantenimiento
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Tipo</th>
+                        <th class="px-4 py-3">Fecha</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${equipo.mantenimientos.empty}">
+                        <td colspan="5" class="text-center py-6 text-slate-400">Sin mantenimientos técnicos para este equipo.</td>
+                    </tr>
+                    <tr th:each="m : ${equipo.mantenimientos}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${m.codigo}">MNT-000001</td>
+                        <td class="px-4 py-3" th:text="${m.tipoMantenimientoDesc}">Preventivo</td>
+                        <td class="px-4 py-3 font-mono" th:text="${m.fechaProgramada}">2026-11-01</td>
+                        <td class="px-4 py-3 text-white" th:text="${m.descripcion}">Calibración de frecuencia y cambio de batería</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300" th:text="${m.estadoDesc}">Programado</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 4: INCIDENCIAS -->
+    <div id="tab-incidencias" class="tab-pane hidden space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Incidencias y Reportes de Avería</h3>
+            <button onclick="document.getElementById('modalIncidencia').classList.remove('hidden')"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors">
+                + Reportar Incidencia
+            </button>
+        </div>
+
+        <div class="bg-card border border-theme rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-theme">
+                    <tr>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Fecha</th>
+                        <th class="px-4 py-3">Tipo</th>
+                        <th class="px-4 py-3">Gravedad</th>
+                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-theme">
+                    <tr th:if="${equipo.incidencias.empty}">
+                        <td colspan="6" class="text-center py-6 text-slate-400">Sin incidencias técnicas registradas.</td>
+                    </tr>
+                    <tr th:each="i : ${equipo.incidencias}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-rose-400" th:text="${i.codigo}">INC-000001</td>
+                        <td class="px-4 py-3 font-mono" th:text="${#temporals.format(i.fechaReporte, 'dd/MM/yyyy HH:mm')}">2026-10-25</td>
+                        <td class="px-4 py-3 font-medium text-white" th:text="${i.tipoIncidenciaDesc}">Falla de batería</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300" th:text="${i.nivelGravedadDesc}">Media</span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-200" th:text="${i.descripcion}">No retiene carga por más de 1 hora</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300" th:text="${i.estadoDesc}">Reportada</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL 1: ASIGNAR BIEN -->
+    <div id="modalAsignar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Asignar Equipamiento Operativo</span>
+                </h3>
+                <button onclick="document.getElementById('modalAsignar').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/equipamiento/{id}/asignar(id=${equipo.id})}" method="POST" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Asignar a Efectivo de Serenazgo</label>
+                    <select name="personalId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- No asignar a persona (o asignar a unidad móvil) --</option>
+                        <option th:each="p : ${personalActivo}" th:value="${p.id}"
+                                th:text="${p.codigoInterno} + ' - ' + ${p.persona.nombreCompleto}"></option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">O Asignar a Unidad Móvil / Patrullero</label>
+                    <select name="unidadId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="">-- No vincular a patrulla --</option>
+                        <option th:each="u : ${unidadesActivas}" th:value="${u.id}"
+                                th:text="${u.codigoInterno} + ' - ' + ${(u.placa != null ? u.placa : u.tipoUnidad.descripcion)}"></option>
+                    </select>
+                </div>
+
+                <div th:if="${equipo.esControladoPorCantidad}">
+                    <label class="block font-semibold text-slate-300 mb-1">Cantidad a Entregar (Disponible: <span th:text="${equipo.stockDisponible}"></span>) *</label>
+                    <input type="number" min="1" th:max="${equipo.stockDisponible}" name="cantidad" value="1" required
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Motivo / Destino de la Asignación *</label>
+                    <input type="text" name="motivo" required placeholder="Ej: Dotación ordinaria de patrullaje a pie"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Observaciones</label>
+                    <textarea name="observaciones" rows="2" placeholder="Estado de entrega del bien..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalAsignar').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Confirmar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: DEVOLVER BIEN -->
+    <div id="modalDevolver" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="corner-down-left" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Recepción y Devolución a Base</span>
+                </h3>
+                <button onclick="document.getElementById('modalDevolver').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/equipamiento/{id}/devolver(id=${equipo.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="p-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
+                    <span class="text-slate-400 block text-[11px]">Custodio actual:</span>
+                    <span class="font-bold text-white text-sm" th:text="${equipo.responsableNombre != null ? equipo.responsableNombre : (equipo.unidadMovilInfo != null ? equipo.unidadMovilInfo : 'Asignación activa')}">Juan Pérez</span>
+                </div>
+
+                <div th:if="${equipo.esControladoPorCantidad}">
+                    <label class="block font-semibold text-slate-300 mb-1">Cantidad Devuelta</label>
+                    <input type="number" min="1" name="cantidadDevuelta" value="1"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Estado de Conservación al Devolver</label>
+                    <input type="text" name="estadoBienDevolucion" value="CONFORME Y OPERATIVO"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Observaciones</label>
+                    <textarea name="observaciones" rows="2" placeholder="Detalle de recepción..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalDevolver').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Registrar Devolución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MANTENIMIENTO -->
+    <div id="modalMantenimiento" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="wrench" class="w-4 h-4 text-amber-400"></i>
+                    <span>Programar Mantenimiento de Equipamiento</span>
+                </h3>
+                <button onclick="document.getElementById('modalMantenimiento').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/equipamiento/{id}/mantenimiento(id=${equipo.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Tipo de Mantenimiento *</label>
+                        <select name="tipoMantenimiento" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="tm : ${tiposMantenimiento}" th:value="${tm}" th:text="${tm.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Fecha Programada *</label>
+                        <input type="date" name="fechaProgramada" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"/>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción del Trabajo Técnico *</label>
+                    <textarea name="descripcion" required rows="2" placeholder="Calibración, reemplazo de componentes..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalMantenimiento').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold">Guardar Mantenimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: INCIDENCIA -->
+    <div id="modalIncidencia" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-card border border-theme rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between border-b border-theme pb-3 mb-4">
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+                    <span>Reportar Avería o Daño de Equipamiento</span>
+                </h3>
+                <button onclick="document.getElementById('modalIncidencia').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form th:action="@{/dashboard/serenazgo/equipamiento/{id}/incidencia(id=${equipo.id})}" method="POST" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Tipo de Incidencia *</label>
+                        <select name="tipoIncidencia" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="ti : ${tiposIncidencia}" th:value="${ti}" th:text="${ti.descripcion}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Nivel de Gravedad *</label>
+                        <select name="nivelGravedad" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                            <option th:each="ng : ${nivelesGravedad}" th:value="${ng}" th:text="${ng.descripcion}"
+                                    th:selected="${ng.name() == 'MEDIA'}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción de la Avería o Pérdida *</label>
+                    <textarea name="descripcion" required rows="3" placeholder="Detalle lo sucedido..."
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-theme">
+                    <button type="button" onclick="document.getElementById('modalIncidencia').classList.add('hidden')"
+                            class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold">Registrar Incidencia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de pestañas -->
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-400', 'border-indigo-500');
+                btn.classList.add('text-slate-400');
+            });
+            const selectedPane = document.getElementById('tab-' + tabName);
+            const selectedBtn = document.getElementById('tabBtn-' + tabName);
+            if (selectedPane && selectedBtn) {
+                selectedPane.classList.remove('hidden');
+                selectedBtn.classList.remove('text-slate-400');
+                selectedBtn.classList.add('text-indigo-400', 'border-indigo-500');
+            }
+        }
+    </script>
+</div>
+</body>
+</html>

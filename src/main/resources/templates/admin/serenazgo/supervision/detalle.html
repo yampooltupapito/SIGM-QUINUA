@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="'Expediente ' + ${detalle.codigo} + ' - Supervisión Serenazgo'">Expediente de Supervisión</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Mensajes Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${mensajeExito}" class="text-sm font-medium">Operación exitosa</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-200">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Encabezado de la Ficha -->
+    <div class="bg-[#202c3d] p-6 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+            <div class="flex items-center space-x-3">
+                <a th:href="@{/dashboard/serenazgo/supervision/seguimientos}"
+                   class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-xl font-bold font-mono text-blue-400" th:text="${detalle.codigo}">SEG-SUP-2026-00001</h1>
+                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold border"
+                              th:classappend="${detalle.estado.badgeClass}"
+                              th:text="${detalle.estado.descripcion}">
+                            EN REVISIÓN
+                        </span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                              th:classappend="${detalle.prioridadAdministrativa.badgeClass}"
+                              th:text="'Prioridad ' + ${detalle.prioridadAdministrativa.descripcion}">
+                            Prioridad Media
+                        </span>
+                        <span th:if="${detalle.vencido}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 uppercase">
+                            Plazo Vencido
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        <span th:text="${detalle.tipoSeguimiento.descripcion}">Revisión Administrativa</span> sobre
+                        <strong class="text-slate-200" th:text="${detalle.tipoRegistroOrigen.descripcion}">Incidencia</strong>
+                        [<span class="font-mono text-blue-400" th:text="${detalle.registroOrigenCodigo}">INC-001</span>]
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Botón PDF -->
+            <a th:href="@{/dashboard/serenazgo/supervision/seguimientos/{id}/pdf(id=${detalle.id})}"
+               target="_blank"
+               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Descargar Ficha PDF</span>
+            </a>
+
+            <!-- Acciones según Estado y Rol -->
+            <div th:if="${detalle.estado.name() != 'CERRADO' and detalle.estado.name() != 'CANCELADO'}" class="flex flex-wrap gap-2">
+                <!-- Asignar Responsable -->
+                <button onclick="abrirModal('modalAsignar')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_ASIGNAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-semibold transition-colors">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span>Asignar</span>
+                </button>
+
+                <!-- Registrar Observación -->
+                <button onclick="abrirModal('modalObservar')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_OBSERVAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 text-xs font-semibold transition-colors">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                    <span>Observar</span>
+                </button>
+
+                <!-- Ingresar Subsanación -->
+                <button onclick="abrirModal('modalSubsanar')"
+                        th:if="${detalle.estado.name() == 'OBSERVADO' or detalle.estado.name() == 'EN_REVISION'}"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_SUBSANAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO', 'SERENO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold transition-colors">
+                    <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
+                    <span>Subsanar</span>
+                </button>
+
+                <!-- Revisar Pronunciamiento -->
+                <button onclick="abrirModal('modalRevisar')"
+                        th:if="${detalle.estado.name() == 'EN_SUBSANACION' or detalle.estado.name() == 'EN_REVISION'}"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_REVISAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 text-xs font-semibold transition-colors">
+                    <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                    <span>Revisar Subsanación</span>
+                </button>
+
+                <!-- Escalar -->
+                <button onclick="abrirModal('modalEscalar')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_ESCALAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs font-semibold transition-colors">
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Escalar</span>
+                </button>
+
+                <!-- Resolver -->
+                <button onclick="abrirModal('modalResolver')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_RESOLVER') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-semibold transition-colors">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Resolver</span>
+                </button>
+
+                <!-- Concluir y Cerrar -->
+                <button onclick="abrirModal('modalCerrar')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_CERRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-500 text-xs font-semibold transition-colors">
+                    <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+                    <span>Cerrar</span>
+                </button>
+
+                <!-- Cancelar -->
+                <button onclick="abrirModal('modalCancelar')"
+                        sec:authorize="hasAuthority('SERENAZGO_SUPERVISION_CERRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA', 'SUPERVISOR_SERENAZGO')"
+                        class="inline-flex items-center p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 border border-slate-700 transition-colors"
+                        title="Cancelar seguimiento">
+                    <i data-lucide="ban" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por 7 Pestañas -->
+    <div class="bg-[#202c3d] rounded-2xl border border-slate-700/60 shadow-xl overflow-hidden">
+        <div class="border-b border-slate-700 flex overflow-x-auto" id="tabContainer">
+            <button onclick="cambiarTab('tabResumen')" id="btnTabResumen"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-blue-500 text-blue-400 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="layout" class="w-4 h-4"></i>
+                <span>1. Resumen</span>
+            </button>
+            <button onclick="cambiarTab('tabRegistro')" id="btnTabRegistro"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="link" class="w-4 h-4"></i>
+                <span>2. Registro Origen</span>
+            </button>
+            <button onclick="cambiarTab('tabCompetencia')" id="btnTabCompetencia"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                <span>3. Asignación y Plazos</span>
+            </button>
+            <button onclick="cambiarTab('tabObservaciones')" id="btnTabObservaciones"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span>4. Observaciones</span>
+                <span class="ml-1 px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-300 font-semibold"
+                      th:text="${detalle.observaciones.size()}">0</span>
+            </button>
+            <button onclick="cambiarTab('tabSubsanaciones')" id="btnTabSubsanaciones"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="file-edit" class="w-4 h-4"></i>
+                <span>5. Subsanaciones</span>
+            </button>
+            <button onclick="cambiarTab('tabDecisiones')" id="btnTabDecisiones"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>6. Pronunciamientos</span>
+            </button>
+            <button onclick="cambiarTab('tabHistorial')" id="btnTabHistorial"
+                    class="tab-btn px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>7. Auditoría</span>
+            </button>
+        </div>
+
+        <!-- Contenido Pestañas -->
+        <div class="p-6">
+            <!-- Pestaña 1: Resumen -->
+            <div id="tabResumen" class="tab-panel space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/60 pb-2">Información del Expediente</h3>
+                        <dl class="space-y-3 text-xs">
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Código de Expediente:</dt>
+                                <dd class="font-mono font-bold text-blue-400" th:text="${detalle.codigo}">SEG-SUP-2026-00001</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Tipo de Seguimiento:</dt>
+                                <dd class="font-medium text-slate-200" th:text="${detalle.tipoSeguimiento.descripcion}">Revisión</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Prioridad Administrativa:</dt>
+                                <dd>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                                          th:classappend="${detalle.prioridadAdministrativa.badgeClass}"
+                                          th:text="${detalle.prioridadAdministrativa.descripcion}">MEDIA</span>
+                                </dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Fecha de Apertura:</dt>
+                                <dd class="text-slate-300" th:text="${#temporals.format(detalle.fechaCreacion, 'dd/MM/yyyy HH:mm:ss')}">Fecha</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Fecha Límite / Compromiso:</dt>
+                                <dd th:if="${detalle.fechaCompromiso != null}"
+                                    th:classappend="${detalle.vencido} ? 'text-rose-400 font-bold' : 'text-slate-300'"
+                                    th:text="${#temporals.format(detalle.fechaCompromiso, 'dd/MM/yyyy')}">Plazo</dd>
+                                <dd th:unless="${detalle.fechaCompromiso != null}" class="text-slate-500">Sin plazo fijado</dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/60 pb-2">Responsabilidades Institucionales</h3>
+                        <dl class="space-y-3 text-xs">
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Supervisor Responsable:</dt>
+                                <dd class="font-medium text-slate-200" th:text="${detalle.supervisorNombre}">Supervisor</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Responsable Asignado:</dt>
+                                <dd class="font-medium text-slate-200" th:text="${detalle.responsableAsignadoNombre != null ? detalle.responsableAsignadoNombre : 'Pendiente de asignación'}">Responsable</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-slate-400">Oficina Responsable:</dt>
+                                <dd class="text-slate-300" th:text="${detalle.oficinaResponsableNombre != null ? detalle.oficinaResponsableNombre : 'Gerencia de Seguridad Ciudadana'}">Oficina</dd>
+                            </div>
+                            <div th:if="${detalle.oficinaEscalamiento != null}" class="flex justify-between">
+                                <dt class="text-slate-400">Oficina de Escalamiento:</dt>
+                                <dd class="text-indigo-400 font-medium" th:text="${detalle.oficinaEscalamiento}">Oficina externa</dd>
+                            </div>
+                            <div th:if="${detalle.fechaCierre != null}" class="flex justify-between">
+                                <dt class="text-slate-400">Fecha de Cierre / Conclusión:</dt>
+                                <dd class="text-slate-300" th:text="${#temporals.format(detalle.fechaCierre, 'dd/MM/yyyy HH:mm')}">Cierre</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-4 border-t border-slate-700/60">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Descripción y Requerimiento de Supervisión</h3>
+                    <div class="p-4 rounded-xl bg-[#101827] border border-slate-700 text-slate-200 text-xs leading-relaxed whitespace-pre-line"
+                         th:text="${detalle.descripcion}">
+                        Descripción del expediente...
+                    </div>
+                </div>
+
+                <div th:if="${detalle.resultado != null}" class="space-y-2 pt-2 border-t border-slate-700/60">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400">Resolución / Conclusión Administrativa</h3>
+                    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs leading-relaxed whitespace-pre-line"
+                         th:text="${detalle.resultado}">
+                        Resultado...
+                    </div>
+                </div>
+
+                <div th:if="${detalle.motivoCancelacion != null}" class="space-y-2 pt-2 border-t border-slate-700/60">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400">Motivo de Cancelación</h3>
+                    <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs leading-relaxed whitespace-pre-line"
+                         th:text="${detalle.motivoCancelacion}">
+                        Cancelado...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Registro Origen -->
+            <div id="tabRegistro" class="tab-panel hidden space-y-4">
+                <div class="p-4 rounded-xl bg-[#101827] border border-slate-700 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-400"></i>
+                            <h3 class="text-sm font-bold text-slate-100" th:text="${detalle.tipoRegistroOrigen.descripcion}">Incidencia de Seguridad</h3>
+                        </div>
+                        <span class="font-mono text-xs text-blue-400 font-bold" th:text="${detalle.registroOrigenCodigo}">INC-001</span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed" th:text="${detalle.resumenRegistroOrigen}">
+                        Resumen de la actuación...
+                    </p>
+
+                    <div class="pt-2 flex items-center justify-end">
+                        <a th:href="@{${detalle.urlRegistroOrigen}}"
+                           class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors">
+                            <span>Ver Registro Completo</span>
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Competencia y Plazos -->
+            <div id="tabCompetencia" class="tab-panel hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-[#101827] border border-slate-700 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase">Supervisor Evaluador</h4>
+                        <p class="text-sm font-semibold text-slate-100" th:text="${detalle.supervisorNombre}">Supervisor</p>
+                        <p class="text-[11px] text-slate-400">Funcionario habilitado de supervisión de Serenazgo.</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#101827] border border-slate-700 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase">Responsable Operativo</h4>
+                        <p class="text-sm font-semibold text-slate-100" th:text="${detalle.responsableAsignadoNombre != null ? detalle.responsableAsignadoNombre : 'Sin asignar'}">Responsable</p>
+                        <p class="text-[11px] text-slate-400">Usuario a cargo del descargo, subsanación o cumplimiento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 4: Observaciones -->
+            <div id="tabObservaciones" class="tab-panel hidden space-y-4">
+                <div th:if="${#lists.isEmpty(detalle.observaciones)}" class="text-center py-8 text-slate-500">
+                    <i data-lucide="check-circle" class="w-8 h-8 mx-auto text-emerald-500/40 mb-2"></i>
+                    <p class="text-xs">No se han registrado observaciones formales en este expediente.</p>
+                </div>
+                <div class="space-y-3">
+                    <div th:each="o : ${detalle.observaciones}"
+                         th:if="${o.tipo.name() == 'OBSERVACION'}"
+                         class="p-4 rounded-xl bg-[#101827] border border-amber-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                <span th:text="${o.motivo}">Motivo</span>
+                            </span>
+                            <span class="text-slate-400 text-[11px]" th:text="${#temporals.format(o.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        </div>
+                        <p class="text-xs text-slate-200 leading-relaxed" th:text="${o.detalle}">Detalle de observación</p>
+                        <div class="text-[10px] text-slate-500 pt-1 border-t border-slate-800">
+                            Registrado por: <span class="text-slate-400" th:text="${o.usuarioNombre}">Supervisor</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 5: Subsanaciones -->
+            <div id="tabSubsanaciones" class="tab-panel hidden space-y-4">
+                <div class="space-y-3">
+                    <div th:each="o : ${detalle.observaciones}"
+                         th:if="${o.tipo.name() == 'SUBSANACION'}"
+                         class="p-4 rounded-xl bg-[#101827] border border-purple-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-purple-400 flex items-center gap-1.5">
+                                <i data-lucide="file-check" class="w-4 h-4"></i>
+                                <span th:text="${o.motivo}">Motivo de descargo</span>
+                            </span>
+                            <span class="text-slate-400 text-[11px]" th:text="${#temporals.format(o.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        </div>
+                        <p class="text-xs text-slate-200 leading-relaxed" th:text="${o.detalle}">Detalle del descargo</p>
+                        <div class="text-[10px] text-slate-500 pt-1 border-t border-slate-800">
+                            Ingresado por: <span class="text-slate-400" th:text="${o.usuarioNombre}">Responsable</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 6: Decisiones Administrativas -->
+            <div id="tabDecisiones" class="tab-panel hidden space-y-4">
+                <div class="space-y-3">
+                    <div th:each="o : ${detalle.observaciones}"
+                         th:if="${o.tipo.name() == 'DECISION' or o.tipo.name() == 'ESCALAMIENTO' or o.tipo.name() == 'REVISION'}"
+                         class="p-4 rounded-xl bg-[#101827] border border-blue-500/30 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-blue-400" th:text="${o.motivo}">Pronunciamiento</span>
+                            <span class="text-slate-400 text-[11px]" th:text="${#temporals.format(o.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        </div>
+                        <p class="text-xs text-slate-200 leading-relaxed" th:text="${o.detalle}">Detalle</p>
+                        <div class="text-[10px] text-slate-500 pt-1 border-t border-slate-800">
+                            Emitido por: <span class="text-slate-400" th:text="${o.usuarioNombre}">Supervisor</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 7: Historial y Auditoría -->
+            <div id="tabHistorial" class="tab-panel hidden space-y-4">
+                <div class="space-y-3">
+                    <div th:each="h : ${detalle.historial}"
+                         class="p-3.5 rounded-xl bg-[#101827] border border-slate-800 flex items-start justify-between text-xs">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-slate-200" th:text="${h.accion}">Creación</span>
+                                <span th:if="${h.estadoNuevo != null}" class="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700" th:text="${h.estadoNuevo}">ESTADO</span>
+                            </div>
+                            <p class="text-slate-400 text-[11px]" th:text="${h.detalle}">Detalle</p>
+                            <p class="text-[10px] text-slate-500">
+                                Por: <span class="text-slate-400" th:text="${h.usuarioNombre}">Usuario</span> | IP: <span class="font-mono" th:text="${h.ipOrigen}">127.0.0.1</span>
+                            </p>
+                        </div>
+                        <span class="text-slate-500 text-[11px] whitespace-nowrap ml-4"
+                              th:text="${#temporals.format(h.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales de Acción -->
+
+    <!-- Modal 1: Asignar Responsable -->
+    <div id="modalAsignar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-md w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i> Asignar Responsable Operativo
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/asignar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario Responsable <span class="text-rose-400">*</span></label>
+                    <select name="responsableId" required class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option value="">Seleccione usuario...</option>
+                        <option th:each="u : ${usuarios}" th:value="${u.id}" th:text="${u.username + (u.persona != null ? ' - ' + u.persona.nombres + ' ' + u.persona.apellidoPaterno : '')}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo o Instrucción</label>
+                    <input type="text" name="motivo" placeholder="Instrucción de supervisión..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalAsignar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Guardar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Registrar Observación -->
+    <div id="modalObservar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-lg w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i> Registrar Observación Formal
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/observar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de la Observación <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivo" required placeholder="Ej. Omisión de acta, falta de georreferencia..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle del Requerimiento <span class="text-rose-400">*</span></label>
+                    <textarea name="detalle" required rows="4" placeholder="Fundamente la observación técnica o administrativa..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalObservar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold">Asentar Observación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Subsanar -->
+    <div id="modalSubsanar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-lg w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="file-edit" class="w-4 h-4 text-purple-400"></i> Ingresar Subsanación o Descargo
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/subsanar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Asunto de Subsanación <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivo" required placeholder="Ej. Aclaración de hechos, adjunción de informe..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle y Descargo <span class="text-rose-400">*</span></label>
+                    <textarea name="detalle" required rows="4" placeholder="Explique las subsanaciones implementadas..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalSubsanar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold">Enviar Subsanación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Revisar Subsanación -->
+    <div id="modalRevisar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-lg w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> Revisión de Descargo / Subsanación
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/revisar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Pronunciamiento <span class="text-rose-400">*</span></label>
+                    <select name="conforme" required class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        <option value="true">Conforme (Levantar observación)</option>
+                        <option value="false">No Conforme (Reiterar observación)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Fundamento del Pronunciamiento <span class="text-rose-400">*</span></label>
+                    <textarea name="observaciones" required rows="4" placeholder="Fundamente el criterio técnico de aceptación o reiteración..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalRevisar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">Guardar Pronunciamiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Escalar -->
+    <div id="modalEscalar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-md w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 text-indigo-400"></i> Escalar a Oficina o Entidad
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/escalar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Oficina Destinataria <span class="text-rose-400">*</span></label>
+                    <input type="text" name="oficinaDestinataria" required placeholder="Ej. Gerencia Municipal, Procuraduría..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo del Escalamiento <span class="text-rose-400">*</span></label>
+                    <input type="text" name="motivo" required placeholder="Ej. Competencia administrativa superior..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones</label>
+                    <textarea name="observaciones" rows="3" placeholder="Instrucciones adicionales..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalEscalar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Confirmar Escalamiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 6: Resolver -->
+    <div id="modalResolver" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-lg w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Emitir Resolución Administrativa
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/resolver(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Pronunciamiento / Conclusión <span class="text-rose-400">*</span></label>
+                    <textarea name="resolucion" required rows="4" placeholder="Establezca la resolución y fundamentación del caso..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalResolver')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">Resolver Expediente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Cerrar -->
+    <div id="modalCerrar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-md w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="archive" class="w-4 h-4 text-slate-300"></i> Conclusión y Archivo de Expediente
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/cerrar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado Final <span class="text-rose-400">*</span></label>
+                    <input type="text" name="resultado" required placeholder="Ej. Expediente concluido conforme, actuaciones subsanadas..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones de Cierre</label>
+                    <textarea name="observacionesFinales" rows="3" placeholder="Anotaciones finales para el archivo..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalCerrar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold">Cerrar y Archivar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 8: Cancelar -->
+    <div id="modalCancelar" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#202c3d] max-w-md w-full rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                <i data-lucide="ban" class="w-4 h-4"></i> Cancelar Expediente de Supervisión
+            </h3>
+            <form th:action="@{/dashboard/serenazgo/supervision/seguimientos/{id}/cancelar(id=${detalle.id})}" method="post" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo de Cancelación <span class="text-rose-400">*</span></label>
+                    <textarea name="motivo" required rows="3" placeholder="Sustente la anulación o desestimación del seguimiento..." class="w-full bg-[#101827] border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="cerrarModal('modalCancelar')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Volver</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Confirmar Cancelación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function cambiarTab(tabId) {
+        document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('border-blue-500', 'text-blue-400');
+            el.classList.add('border-transparent', 'text-slate-400');
+        });
+
+        const panel = document.getElementById(tabId);
+        if (panel) panel.classList.remove('hidden');
+
+        const btnId = 'btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1);
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.classList.add('border-blue-500', 'text-blue-400');
+            btn.classList.remove('border-transparent', 'text-slate-400');
+        }
+    }
+
+    function abrirModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function cerrarModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.add('hidden');
+    }
+</script>
+</body>
+</html>

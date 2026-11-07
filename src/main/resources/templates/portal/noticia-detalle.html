@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/portal-layout}">
+<head>
+    <title th:text="${noticia.titulo} + ' — Municipalidad de Quinua'">Detalle de Noticia</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- CABECERA CON BREADCRUMB -->
+    <section class="bg-gradient-to-b from-slate-900 to-indigo-950 text-white py-10 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-3">
+                <a th:href="@{/}" class="hover:text-white transition-colors">Inicio</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a th:href="@{/noticias}" class="hover:text-white transition-colors">Noticias</a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-blue-400 font-semibold truncate max-w-xs sm:max-w-md" th:text="${noticia.titulo}">Título</span>
+            </nav>
+
+            <div class="flex items-center space-x-3 text-xs mb-3">
+                <span class="px-2.5 py-0.5 rounded font-bold uppercase text-[10px]"
+                      th:classappend="${noticia.tipo == 'COMUNICADO'} ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'"
+                      th:text="${noticia.tipo}">
+                    NOTICIA
+                </span>
+                <span class="text-slate-400 flex items-center">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                    <time th:if="${noticia.fechaPublicacion != null}"
+                          th:datetime="${noticia.fechaPublicacion}"
+                          th:text="${#temporals.format(noticia.fechaPublicacion, 'dd/MM/yyyy HH:mm')}">
+                        01/01/2026
+                    </time>
+                </span>
+                <span class="text-slate-400 flex items-center">
+                    <i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                    <span th:text="${noticia.visitas}">0</span> lecturas
+                </span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight max-w-4xl" th:text="${noticia.titulo}">
+                Título de la Noticia Institucional
+            </h1>
+        </div>
+    </section>
+
+    <!-- CONTENIDO DE LA NOTICIA -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+            <!-- Columna Principal -->
+            <article class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+                <!-- Resumen Destacado -->
+                <div class="p-4 rounded-xl bg-slate-50 border-l-4 border-blue-600 text-slate-800 text-sm font-medium leading-relaxed italic"
+                     th:text="${noticia.resumen}">
+                    Resumen informativo introductorio de la publicación oficial.
+                </div>
+
+                <!-- Cuerpo del Contenido (con saltos de línea preservados) -->
+                <div class="text-slate-800 text-sm leading-relaxed space-y-4 whitespace-pre-line font-normal"
+                     th:text="${noticia.contenido}">
+                    Contenido oficial detallado emitido por la entidad municipal.
+                </div>
+
+                <!-- Firma / Autor Responsable -->
+                <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-500 gap-2">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i>
+                        <span>Emisor: <strong class="text-slate-700" th:text="${noticia.autor}">Municipalidad de Quinua</strong></span>
+                    </div>
+                    <div>
+                        <span>Categoría: <strong class="text-slate-700" th:text="${noticia.categoria}">INSTITUCIONAL</strong></span>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-between items-center">
+                    <a th:href="@{/noticias}" class="inline-flex items-center text-xs font-bold text-blue-700 hover:text-blue-900">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                        Volver al listado de noticias
+                    </a>
+                </div>
+            </article>
+
+            <!-- Columna Lateral: Publicaciones Relacionadas -->
+            <aside class="lg:col-span-4 space-y-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center">
+                        <i data-lucide="bookmark" class="w-4 h-4 mr-2 text-blue-600"></i>
+                        Otras Publicaciones
+                    </h2>
+
+                    <div class="divide-y divide-slate-100 space-y-3">
+                        <th:block th:each="rel : ${noticiasRelacionadas}">
+                            <div class="pt-3 first:pt-0">
+                                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600"
+                                      th:text="${rel.tipo}">
+                                    TIPO
+                                </span>
+                                <h3 class="text-xs font-bold text-slate-900 hover:text-blue-700 transition-colors mt-1.5 leading-snug">
+                                    <a th:href="@{/noticias/{slug}(slug=${rel.slug})}" th:text="${rel.titulo}">
+                                        Título de la noticia relacionada
+                                    </a>
+                                </h3>
+                                <time class="text-[11px] text-slate-400 mt-1 block"
+                                      th:if="${rel.fechaPublicacion != null}"
+                                      th:text="${#temporals.format(rel.fechaPublicacion, 'dd/MM/yyyy')}">
+                                    01/01/2026
+                                </time>
+                            </div>
+                        </th:block>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Contacto Vecinal -->
+                <div class="bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-2xl p-6 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold">¿Desea realizar una consulta a la Municipalidad?</h3>
+                    <p class="text-xs text-blue-100 leading-relaxed">
+                        Nuestro equipo está disponible a través de la ventanilla de Atención Ciudadana.
+                    </p>
+                    <a th:href="@{/contacto}" class="block text-center py-2 px-3 rounded-lg bg-white text-blue-900 hover:bg-blue-50 text-xs font-bold transition-colors">
+                        Escribir Consulta Oficial
+                    </a>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

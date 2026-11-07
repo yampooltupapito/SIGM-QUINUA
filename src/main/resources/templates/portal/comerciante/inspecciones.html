@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{portal/comerciante/layout}">
+<head>
+    <title>Mis Inspecciones Notificadas</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Inspecciones Sanitarias y Técnicas</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Actas de inspección, calificaciones sanitarias y medidas correctivas notificadas formalmente.
+        </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Acta</th>
+                        <th class="px-6 py-3.5">Tipo Inspección</th>
+                        <th class="px-6 py-3.5">Puesto / Mercado</th>
+                        <th class="px-6 py-3.5">Fecha Ejecución</th>
+                        <th class="px-6 py-3.5">Resultado / Puntaje</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr th:each="i : ${inspeccionesPage.content}" class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-6 py-4 font-mono font-bold text-blue-700" th:text="${i.codigoInspeccion}">INSP-2026-0001</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800" th:text="${i.tipoInspeccion}">HIGIENE Y SALUBRIDAD</td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-semibold block text-slate-800" th:text="${i.puestoCodigo}">P-01</span>
+                            <span class="text-xs text-slate-500" th:text="${i.mercadoNombre}">Mercado Central</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs" th:text="${i.fechaEjecucion != null ? #temporals.format(i.fechaEjecucion, 'dd/MM/yyyy') : #temporals.format(i.fechaProgramada, 'dd/MM/yyyy')}">15/01/2026</td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold text-slate-800" th:text="${i.calificacionFinal}">CONFORME</span>
+                            <span th:if="${i.puntajeTotal != null}" class="text-xs text-slate-500 block font-mono" th:text="${i.puntajeTotal + ' pts'}">100 pts</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  th:classappend="${i.estado == 'CONFORME' ? 'bg-emerald-100 text-emerald-800' : (i.estado == 'CON_OBSERVACIONES' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700')}"
+                                  th:text="${i.estadoLabel}">CONFORME</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${inspeccionesPage.empty}">
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                            <i data-lucide="clipboard-check" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="font-medium">No registra inspecciones técnicas comunicadas.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

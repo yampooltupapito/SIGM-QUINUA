@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title>Registro de Intervenciones | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Cabecera Institucional -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-700/60">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-7 h-7 text-blue-500"></i>
+                Registro de intervenciones
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Documentación, revisión y seguimiento de actuaciones del Serenazgo municipal.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a th:href="@{/dashboard/serenazgo/intervenciones/exportar/excel(codigo=${filtro != null ? filtro.codigo : ''}, termino=${filtro != null ? filtro.termino : ''}, estado=${filtro != null ? filtro.estado : ''}, tipo=${filtro != null ? filtro.tipo : ''}, sectorId=${filtro != null ? filtro.sectorId : ''}, desde=${filtro != null ? filtro.desde : ''}, hasta=${filtro != null ? filtro.hasta : ''})}"
+               class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="sheet" class="w-4 h-4 text-emerald-400"></i>
+                <span>Exportar Excel</span>
+            </a>
+            <a th:href="@{/dashboard/serenazgo/intervenciones/exportar/pdf(codigo=${filtro != null ? filtro.codigo : ''}, termino=${filtro != null ? filtro.termino : ''}, estado=${filtro != null ? filtro.estado : ''}, tipo=${filtro != null ? filtro.tipo : ''}, sectorId=${filtro != null ? filtro.sectorId : ''}, desde=${filtro != null ? filtro.desde : ''}, hasta=${filtro != null ? filtro.hasta : ''})}"
+               class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Exportar PDF</span>
+            </a>
+            <a sec:authorize="hasAnyAuthority('SERENAZGO_INTERVENCIONES_CREAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+               th:href="@{/dashboard/serenazgo/intervenciones/nueva}"
+               class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Nueva Intervención</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Advertencia Institucional de No Urgencia -->
+    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 text-amber-400"></i>
+        <span><strong>AVISO OFICIAL:</strong> El Serenazgo actúa en el marco de la Ley N° 31297 de Serenazgo Municipal. Sus registros son de naturaleza administrativa preventiva y disuasiva; no constituyen peritaje policial, investigación penal ni sustituyen a la Policía Nacional del Perú (105).</span>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span th:text="${mensajeExito}">Operación exitosa</span>
+    </div>
+    <div th:if="${mensajeError}" class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+        <i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i>
+        <span th:text="${mensajeError}">Ocurrió un error</span>
+    </div>
+
+    <!-- Indicadores KPI Reales -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- 1. Total -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Total Registros</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-slate-100" th:text="${kpis.total}">0</span>
+                <i data-lucide="folder" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Actuaciones acumuladas</p>
+        </div>
+
+        <!-- 2. Borradores -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Borradores</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-slate-300" th:text="${kpis.borradores}">0</span>
+                <i data-lucide="file-edit" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Pendientes de cierre</p>
+        </div>
+
+        <!-- 3. Registradas -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider block mb-1">Registradas</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-blue-400" th:text="${kpis.registradas}">0</span>
+                <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Listas para envío</p>
+        </div>
+
+        <!-- 4. En Revisión -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider block mb-1">En Revisión</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-purple-400" th:text="${kpis.enRevision}">0</span>
+                <i data-lucide="eye" class="w-4 h-4 text-purple-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">En control supervisor</p>
+        </div>
+
+        <!-- 5. Validadas -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block mb-1">Validadas</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-emerald-400" th:text="${kpis.validadas}">0</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Conformidad aprobada</p>
+        </div>
+
+        <!-- 6. Observadas / Archivadas -->
+        <div class="p-3.5 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+            <span class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block mb-1">Observadas</span>
+            <div class="flex items-baseline justify-between">
+                <span class="text-xl font-extrabold text-amber-400" th:text="${kpis.observadas}">0</span>
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1" th:text="'Archivadas: ' + ${kpis.archivadas}">Archivadas: 0</p>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="p-4 rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm">
+        <form method="get" th:action="@{/dashboard/serenazgo/intervenciones}" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <!-- Término -->
+            <div class="lg:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Búsqueda Rápida</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-3 text-slate-500"></i>
+                    <input type="text" name="termino" th:value="${filtro.termino}"
+                           placeholder="Cód. INT, incidencia, lugar o palabras clave..."
+                           class="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+                </div>
+            </div>
+
+            <!-- Tipo -->
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Tipo de Actuación</label>
+                <select name="tipo" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    <option value="">-- Todos los tipos --</option>
+                    <option th:each="t : ${tipos}" th:value="${t.name()}" th:text="${t.etiqueta}"
+                            th:selected="${filtro.tipo != null and filtro.tipo.name() == t.name()}"></option>
+                </select>
+            </div>
+
+            <!-- Estado -->
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Estado</label>
+                <select name="estado" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    <option value="">-- Todos los estados --</option>
+                    <option th:each="e : ${estados}" th:value="${e.name()}" th:text="${e.etiqueta}"
+                            th:selected="${filtro.estado != null and filtro.estado.name() == e.name()}"></option>
+                </select>
+            </div>
+
+            <!-- Sector -->
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Sector Quinua</label>
+                <select name="sectorId" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    <option value="">-- Todos los sectores --</option>
+                    <option th:each="sec : ${sectores}" th:value="${sec.id}" th:text="${sec.nombre + ' (' + sec.codigo + ')'}"
+                            th:selected="${filtro.sectorId != null and filtro.sectorId.toString() == sec.id.toString()}"></option>
+                </select>
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-end gap-1.5">
+                <button type="submit" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-1 shadow-sm transition">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a th:href="@{/dashboard/serenazgo/intervenciones}" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition" title="Limpiar filtros">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Principal de Intervenciones -->
+    <div class="rounded-xl bg-[#202c3d] border border-slate-700/60 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/60 text-slate-400 font-semibold border-b border-slate-700/60">
+                <tr>
+                    <th class="py-3 px-4">Código / Registro</th>
+                    <th class="py-3 px-4">Incidencia Origen</th>
+                    <th class="py-3 px-4">Tipo / Clasificación</th>
+                    <th class="py-3 px-4">Sector / Ubicación</th>
+                    <th class="py-3 px-4">Responsable</th>
+                    <th class="py-3 px-4 text-center">Actuaciones / Docs</th>
+                    <th class="py-3 px-4">Resultado</th>
+                    <th class="py-3 px-4 text-center">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50 text-slate-300">
+                <tr th:if="${intervenciones.empty}">
+                    <td colspan="9" class="py-12 text-center text-slate-500">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+                        <p class="text-sm font-semibold">No se encontraron intervenciones registradas</p>
+                        <p class="text-[11px] mt-0.5">Utilice el botón "Nueva Intervención" para documentar una actuación operativa.</p>
+                    </td>
+                </tr>
+                <tr th:each="itn : ${intervenciones.content}" class="hover:bg-slate-800/40 transition">
+                    <!-- Código y fecha -->
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-slate-100 font-mono flex items-center gap-1.5">
+                            <span th:text="${itn.codigo}">INT-2026-00001</span>
+                            <span th:if="${itn.registroRetrospectivo}" class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30" title="Registro posterior">Retrospectivo</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <i data-lucide="clock" class="w-3 h-3 text-slate-500"></i>
+                            <span th:text="${itn.fechaInicioFormateada}">25/10/2026 14:30</span>
+                        </div>
+                    </td>
+
+                    <!-- Incidencia Origen -->
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-200" th:text="${itn.incidenciaCodigo}">INC-2026-00045</div>
+                        <div class="text-[11px] text-slate-400 truncate max-w-xs" th:text="${itn.incidenciaTitulo}">Título de la incidencia</div>
+                        <div th:if="${itn.atencionCodigo != null}" class="text-[10px] text-blue-400 font-mono mt-0.5" th:text="'Orden: ' + ${itn.atencionCodigo}">Orden: ATN-2026-00012</div>
+                    </td>
+
+                    <!-- Tipo -->
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-200" th:text="${itn.tipoIntervencionDesc}">Patrullaje Preventivo</div>
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono mt-0.5"
+                              th:classappend="${itn.nivelConfidencialidad.name() == 'PUBLICO'} ? 'bg-slate-700/50 text-slate-300' : (${itn.nivelConfidencialidad.name() == 'RESERVADO'} ? 'bg-amber-500/20 text-amber-300' : 'bg-rose-500/20 text-rose-300')"
+                              th:text="${itn.nivelConfidencialidadDesc}">Público</span>
+                    </td>
+
+                    <!-- Ubicación -->
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-200" th:text="${itn.sectorNombre ?: 'Sector no especificado'}">Sector Plaza Mayor</div>
+                        <div class="text-[11px] text-slate-400 truncate max-w-xs" th:text="${itn.ubicacionDescripcion ?: '-'}">Plaza de Armas de Quinua</div>
+                    </td>
+
+                    <!-- Responsable -->
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-200" th:text="${itn.responsableNombre}">Juan Quispe</div>
+                        <div class="text-[11px] text-slate-400 font-mono" th:text="${itn.responsableCodigo}">SER-0012</div>
+                        <div th:if="${itn.unidadMovilCodigo != null}" class="text-[10px] text-emerald-400 font-mono" th:text="${itn.unidadMovilCodigo}">MOT-01</div>
+                    </td>
+
+                    <!-- Conteo de Actuaciones / Documentos -->
+                    <td class="py-3 px-4 text-center">
+                        <div class="inline-flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md bg-slate-800 text-[11px] font-semibold text-slate-300 border border-slate-700" title="Actuaciones operativas registradas">
+                                <i data-lucide="activity" class="w-3 h-3 inline text-blue-400 mr-0.5"></i>
+                                <span th:text="${itn.cantidadActuaciones}">0</span>
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md bg-slate-800 text-[11px] font-semibold text-slate-300 border border-slate-700" title="Documentos o anexos adjuntos">
+                                <i data-lucide="paperclip" class="w-3 h-3 inline text-amber-400 mr-0.5"></i>
+                                <span th:text="${itn.cantidadDocumentos}">0</span>
+                            </span>
+                        </div>
+                    </td>
+
+                    <!-- Resultado -->
+                    <td class="py-3 px-4">
+                        <div class="text-xs font-semibold text-slate-200" th:text="${itn.resultadoDesc}">Actuación Registrada</div>
+                    </td>
+
+                    <!-- Estado Badge -->
+                    <td class="py-3 px-4 text-center">
+                        <span th:if="${itn.estado.name() == 'BORRADOR'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-700/60 text-slate-300 border border-slate-600">BORRADOR</span>
+                        <span th:if="${itn.estado.name() == 'REGISTRADA'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">REGISTRADA</span>
+                        <span th:if="${itn.estado.name() == 'EN_REVISION'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">EN REVISIÓN</span>
+                        <span th:if="${itn.estado.name() == 'VALIDADA'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">VALIDADA</span>
+                        <span th:if="${itn.estado.name() == 'OBSERVADA'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">OBSERVADA</span>
+                        <span th:if="${itn.estado.name() == 'ARCHIVADA'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">ARCHIVADA</span>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td class="py-3 px-4 text-right">
+                        <div class="inline-flex items-center gap-1.5">
+                            <a th:href="@{/dashboard/serenazgo/intervenciones/{id}(id=${itn.id})}"
+                               class="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 transition"
+                               title="Ver expediente de intervención">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <a th:if="${itn.estado.isEditable()}"
+                               sec:authorize="hasAnyAuthority('SERENAZGO_INTERVENCIONES_EDITAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_SERENO')"
+                               th:href="@{/dashboard/serenazgo/intervenciones/{id}/editar(id=${itn.id})}"
+                               class="p-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/40 text-amber-300 border border-amber-500/30 transition"
+                               title="Editar intervención">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </a>
+                            <a th:href="@{/dashboard/serenazgo/intervenciones/{id}/ficha-pdf(id=${itn.id})}"
+                               class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                               title="Descargar Ficha PDF">
+                                <i data-lucide="file-down" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Real -->
+        <div th:if="${intervenciones.totalPages > 1}"
+             class="p-4 bg-slate-900/40 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Página <span class="font-bold text-slate-200" th:text="${intervenciones.number + 1}">1</span>
+                de <span class="font-bold text-slate-200" th:text="${intervenciones.totalPages}">1</span>
+                (<span th:text="${intervenciones.totalElements}">0</span> intervenciones totales)
+            </div>
+            <div class="flex items-center gap-1">
+                <a th:if="${!intervenciones.first}"
+                   th:href="@{/dashboard/serenazgo/intervenciones(page=${intervenciones.number - 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipo=${filtro.tipo}, sectorId=${filtro.sectorId})}"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Anterior</a>
+                <a th:if="${!intervenciones.last}"
+                   th:href="@{/dashboard/serenazgo/intervenciones(page=${intervenciones.number + 1}, termino=${filtro.termino}, estado=${filtro.estado}, tipo=${filtro.tipo}, sectorId=${filtro.sectorId})}"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Siguiente</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

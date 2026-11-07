@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{admin/admin-layout}">
+<head>
+    <title th:text="${'Asignación ' + asignacion.codigoAsignacion + ' | SIGM-QUINUA'}">Detalle Asignación | SIGM-QUINUA</title>
+</head>
+<body>
+<div layout:fragment="content" class="space-y-6">
+
+    <!-- Encabezado con breadcrumbs y acciones principales -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] shadow-lg">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                <a th:href="@{/dashboard}" class="hover:text-blue-400 transition-colors">SIGM-QUINUA</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados}" class="hover:text-blue-400 transition-colors">Mercados</a>
+                <span>/</span>
+                <a th:href="@{/dashboard/mercados/asignaciones}" class="hover:text-blue-400 transition-colors">Asignaciones</a>
+                <span>/</span>
+                <span class="text-slate-200" th:text="${asignacion.codigoAsignacion}"></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Expediente de Asignación: <span class="font-mono text-blue-400" th:text="${asignacion.codigoAsignacion}"></span>
+                </h1>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold border"
+                      th:classappend="${asignacion.badgeClase}"
+                      th:text="${asignacion.estadoDescripcion}">Estado</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1" th:text="${asignacion.mercadoNombre + ' — Puesto ' + asignacion.puestoCodigo + ' (N° ' + asignacion.puestoNumero + ') | Titular: ' + asignacion.titularNombre}"></p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Descargar Constancia PDF -->
+            <a th:if="${asignacion.estado.name() == 'VIGENTE' or asignacion.estado.name() == 'APROBADA'}"
+               th:href="@{/api/mercados/asignaciones/{id}/constancia(id=${asignacion.id})}"
+               target="_blank"
+               class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Constancia Oficial QR
+            </a>
+
+            <!-- Acciones del Flujo Administrativo -->
+            <button th:if="${asignacion.permitePresentar()}"
+                    onclick="presentarSolicitud()"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_CREAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Presentar Solicitud
+            </button>
+
+            <button th:if="${asignacion.permiteEvaluar()}"
+                    onclick="abrirModal('modalEvaluacion')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_EVALUAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Evaluar Solicitud
+            </button>
+
+            <button th:if="${asignacion.permiteEvaluar()}"
+                    onclick="abrirModal('modalObservacion')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_OBSERVAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Observar
+            </button>
+
+            <button th:if="${asignacion.permiteAprobar()}"
+                    onclick="abrirModal('modalAprobacion')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_APROBAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Aprobar
+            </button>
+
+            <button th:if="${asignacion.permiteEvaluar()}"
+                    onclick="abrirModal('modalRechazo')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_RECHAZAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Rechazar
+            </button>
+
+            <button th:if="${asignacion.permiteActivar()}"
+                    onclick="activarOcupacion()"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_ACTIVAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Activar Ocupación
+            </button>
+
+            <button th:if="${asignacion.permiteSuspender()}"
+                    onclick="abrirModal('modalSuspension')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_SUSPENDER') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Suspender
+            </button>
+
+            <button th:if="${asignacion.permiteReanudar()}"
+                    onclick="reanudarAsignacion()"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_ACTIVAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-colors">
+                Reanudar
+            </button>
+
+            <button th:if="${asignacion.permiteFinalizar()}"
+                    onclick="abrirModal('modalFinalizacion')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_FINALIZAR') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                Finalizar
+            </button>
+
+            <button th:if="${asignacion.permiteDevolucion()}"
+                    onclick="abrirModal('modalDevolucion')"
+                    sec:authorize="hasAuthority('MERCADOS_ASIGNACION_DEVOLUCION') or hasAnyRole('ADMIN', 'SUPERADMIN')"
+                    class="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                Registrar Devolución
+            </button>
+        </div>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="flex items-center gap-2 border-b border-[#334155] text-xs font-semibold">
+        <button type="button" onclick="cambiarPestana('tabGeneral')" id="btnTabGeneral"
+                class="tab-btn px-4 py-2.5 border-b-2 border-blue-500 text-white transition-colors">
+            Información General
+        </button>
+        <button type="button" onclick="cambiarPestana('tabEvaluaciones')" id="btnTabEvaluaciones"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+            Evaluaciones y Resoluciones
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px]" th:text="${#lists.size(asignacion.evaluaciones)}">0</span>
+        </button>
+        <button type="button" onclick="cambiarPestana('tabHistorial')" id="btnTabHistorial"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+            Línea de Tiempo y Trazabilidad
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px]" th:text="${#lists.size(asignacion.historial)}">0</span>
+        </button>
+        <button th:if="${asignacion.devolucion != null}" type="button" onclick="cambiarPestana('tabDevolucion')" id="btnTabDevolucion"
+                class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-slate-400 hover:text-white transition-colors">
+            Acta de Devolución
+        </button>
+    </div>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="space-y-6">
+
+        <!-- Pestaña 1: Información General -->
+        <div id="tabGeneral" class="tab-pane space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Datos del Puesto Comercial y Mercado -->
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        Espacio Municipal Adjudicado
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block">Mercado Municipal:</span>
+                            <span class="font-bold text-white" th:text="${asignacion.mercadoNombre}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Código Puesto:</span>
+                            <span class="font-mono font-bold text-blue-400" th:text="${asignacion.puestoCodigo}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Sector / Pabellón:</span>
+                            <span class="text-slate-200" th:text="${asignacion.sectorNombre + ' / ' + asignacion.pabellonNombre}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Área Estimada:</span>
+                            <span class="text-slate-200" th:text="${(asignacion.puestoArea != null ? asignacion.puestoArea + ' m²' : '-')}"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Tipo de Puesto:</span>
+                            <span class="text-slate-200" th:text="${asignacion.tipoPuestoNombre}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Estado Físico del Puesto:</span>
+                            <span class="text-slate-200" th:text="${asignacion.puestoEstado}">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del Comerciante Titular -->
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        Comerciante Titular
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="col-span-2">
+                            <span class="text-slate-400 block">Nombre o Razón Social:</span>
+                            <span class="font-bold text-white text-sm" th:text="${asignacion.titularNombre}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Código Comerciante:</span>
+                            <span class="font-mono text-emerald-400 font-semibold" th:text="${asignacion.comercianteCodigo}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Documento de Identidad:</span>
+                            <span class="font-mono text-slate-200" th:text="${asignacion.titularDocumento}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Tipo Comerciante:</span>
+                            <span class="text-slate-200" th:text="${asignacion.comercianteTipo}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Teléfono de Contacto:</span>
+                            <span class="text-slate-200" th:text="${asignacion.comercianteTelefono}">-</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-slate-400 block">Domicilio Declarado:</span>
+                            <span class="text-slate-200" th:text="${asignacion.comercianteDireccion}">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Términos de la Asignación y Fechas -->
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                        <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Vigencia y Modalidad
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block">Modalidad:</span>
+                            <span class="font-semibold text-white" th:text="${asignacion.tipoAsignacion}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Fecha Solicitud:</span>
+                            <span class="text-slate-200" th:text="${asignacion.fechaSolicitud}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Fecha de Inicio:</span>
+                            <span class="text-slate-200" th:text="${asignacion.fechaInicio}">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Fecha de Fin:</span>
+                            <span class="text-slate-200" th:text="${(asignacion.fechaFin != null ? asignacion.fechaFin : 'Indefinida')}"></span>
+                        </div>
+                        <div class="col-span-2" th:if="${asignacion.motivo != null}">
+                            <span class="text-slate-400 block">Sustento / Justificación:</span>
+                            <p class="text-slate-200 italic mt-0.5" th:text="${asignacion.motivo}"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trazabilidad Administrativa y Responsables -->
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                        <svg class="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Seguimiento y Registro
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block">Usuario Registro:</span>
+                            <span class="text-slate-200 font-medium" th:text="${asignacion.usuarioRegistro != null ? asignacion.usuarioRegistro : 'SISTEMA'}"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Fecha Registro:</span>
+                            <span class="text-slate-200" th:text="${asignacion.createdAt}">-</span>
+                        </div>
+                        <div th:if="${asignacion.usuarioAprobacion != null}">
+                            <span class="text-slate-400 block">Aprobado por:</span>
+                            <span class="text-teal-400 font-semibold" th:text="${asignacion.usuarioAprobacion}"></span>
+                        </div>
+                        <div th:if="${asignacion.fechaAprobacion != null}">
+                            <span class="text-slate-400 block">Fecha Aprobación:</span>
+                            <span class="text-slate-200" th:text="${asignacion.fechaAprobacion}">-</span>
+                        </div>
+                        <div class="col-span-2" th:if="${asignacion.motivoSuspension != null}">
+                            <span class="text-purple-400 block font-semibold">Causal de Suspensión:</span>
+                            <span class="text-slate-300" th:text="${asignacion.motivoSuspension}">-</span>
+                        </div>
+                        <div class="col-span-2" th:if="${asignacion.motivoFinalizacion != null}">
+                            <span class="text-zinc-400 block font-semibold">Motivo de Culminación:</span>
+                            <span class="text-slate-300" th:text="${asignacion.motivoFinalizacion}">-</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Pestaña 2: Evaluaciones Técnicas y Resoluciones -->
+        <div id="tabEvaluaciones" class="tab-pane hidden space-y-4">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d]">
+                <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Historial de Evaluaciones, Observaciones y Resoluciones
+                </h3>
+
+                <div th:if="${#lists.isEmpty(asignacion.evaluaciones)}" class="text-center py-8 text-slate-400 text-xs">
+                    No se registran actuaciones técnicas previas en esta solicitud.
+                </div>
+
+                <div th:if="${!#lists.isEmpty(asignacion.evaluaciones)}" class="divide-y divide-[#334155]">
+                    <div th:each="e : ${asignacion.evaluaciones}" class="py-4 space-y-1 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-white text-sm" th:text="${e.tipoEvaluacion}">-</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-amber-300 border border-slate-700" th:text="${e.resultado}">-</span>
+                        </div>
+                        <p class="text-slate-300" th:text="${e.motivo}">-</p>
+                        <div class="flex items-center gap-4 text-[11px] text-slate-400 pt-1">
+                            <span>Evaluador: <strong class="text-slate-200" th:text="${e.usuarioEvaluador}"></strong></span>
+                            <span>Fecha: <strong class="text-slate-200" th:text="${e.fechaEvaluacion}"></strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 3: Línea de Tiempo y Trazabilidad -->
+        <div id="tabHistorial" class="tab-pane hidden space-y-4">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d]">
+                <h3 class="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Línea de Tiempo Inmutable de Ocupación
+                </h3>
+
+                <div class="relative border-l border-[#334155] ml-4 space-y-6">
+                    <div th:each="h : ${asignacion.historial}" class="relative pl-6">
+                        <div class="absolute -left-2 top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-[#1e293b]"></div>
+                        <div class="text-xs">
+                            <div class="flex items-center gap-2 font-bold text-white">
+                                <span th:text="${h.tipoMovimiento}">MOVIMIENTO</span>
+                                <span class="text-[10px] font-normal text-slate-400" th:text="${h.fecha}">Fecha</span>
+                            </div>
+                            <p class="text-slate-300 mt-0.5" th:text="${h.motivo}">Motivo</p>
+                            <p th:if="${h.observaciones != null}" class="text-[11px] text-slate-400 italic mt-0.5" th:text="${h.observaciones}"></p>
+                            <div class="text-[10px] text-slate-500 mt-1">
+                                <span>Operador: <strong class="text-slate-400" th:text="${h.usuarioResponsable}"></strong></span>
+                                <span class="ml-2">Transición: <strong class="text-slate-400" th:text="${h.estadoAnterior + ' → ' + h.estadoNuevo}"></strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 4: Acta de Devolución -->
+        <div id="tabDevolucion" class="tab-pane hidden space-y-4" th:if="${asignacion.devolucion != null}">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#202c3d] space-y-3">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-[#334155] pb-2">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Acta de Recepción Física y Devolución del Espacio
+                </h3>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Fecha y Hora de Recepción:</span>
+                        <span class="font-bold text-white" th:text="${asignacion.devolucion.fechaDevolucion}">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Responsable Municipal:</span>
+                        <span class="font-bold text-white" th:text="${asignacion.devolucion.responsableRecepcion}">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Estado Físico en la Recepción:</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-800 text-emerald-300 border border-slate-700"
+                              th:text="${asignacion.devolucion.estadoFisicoPuesto}">BUENO</span>
+                    </div>
+                    <div class="col-span-2" th:if="${asignacion.devolucion.observaciones != null}">
+                        <span class="text-slate-400 block">Observaciones e Inventario Físico:</span>
+                        <p class="text-slate-200 mt-1" th:text="${asignacion.devolucion.observaciones}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Inclusión de Modales Administrativos dentro del fragmento de contenido -->
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-evaluacion}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-observacion}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-aprobacion}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-rechazo}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-suspension}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-finalizacion}"></th:block>
+    <th:block th:replace="~{admin/mercados/asignaciones/componentes/modal-devolucion}"></th:block>
+
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/mercados/asignaciones-detalle.js}"></script>
+</th:block>
+</body>
+</html>

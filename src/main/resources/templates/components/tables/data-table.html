@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE DATA TABLE (Contenedor de tabla profesional para 500+ registros)
+     ========================================================================== -->
+<div th:fragment="dataTable(tableId, theadFragment, tbodyFragment, paginationFragment)" class="sigm-table-card">
+    <div class="table-responsive-wrapper">
+        <table th:id="${!#strings.isEmpty(tableId) ? tableId : 'sigmDataTable'}" class="sigm-table">
+            <thead th:if="${theadFragment != null}">
+                <th:block th:replace="${theadFragment}"></th:block>
+            </thead>
+            <tbody th:if="${tbodyFragment != null}">
+                <th:block th:replace="${tbodyFragment}"></th:block>
+            </tbody>
+        </table>
+    </div>
+    <th:block th:if="${paginationFragment != null}">
+        <th:block th:replace="${paginationFragment}"></th:block>
+    </th:block>
+</div>
+
+</body>
+</html>
+

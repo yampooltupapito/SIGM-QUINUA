@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================================
+     COMPONENTE MODAL ESTÁNDAR ACCESIBLE (Modal)
+     ========================================================================== -->
+<div th:fragment="modal(modalId, titulo, icono, size, bodyFragment, footerFragment)"
+     th:id="${modalId}"
+     role="dialog"
+     aria-modal="true"
+     th:attr="aria-labelledby=${modalId + 'Title'}"
+     aria-hidden="true"
+     class="modal-container sigm-modal-backdrop fixed inset-0 bg-slate-950/75 z-50 hidden items-center justify-center p-4">
+    <div class="sigm-modal-dialog w-full animate-fade-in"
+         th:classappend="${size == 'sm'} ? 'max-w-sm' : (${size == 'lg'} ? 'max-w-2xl' : (${size == 'xl'} ? 'max-w-4xl' : 'max-w-lg'))">
+        <div class="sigm-modal-header">
+            <h3 th:id="${modalId + 'Title'}" class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                <i th:if="${!#strings.isEmpty(icono)}" th:attr="data-lucide=${icono}" class="w-4 h-4 text-blue-400"></i>
+                <span th:text="${titulo}">Título del Modal</span>
+            </h3>
+            <button type="button"
+                    th:attr="data-modal-close=${modalId}"
+                    onclick="cerrarModal(this.getAttribute('data-modal-close'))"
+                    aria-label="Cerrar ventana modal"
+                    class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div class="sigm-modal-body text-xs text-slate-300">
+            <th:block th:if="${bodyFragment != null}">
+                <th:block th:replace="${bodyFragment}"></th:block>
+            </th:block>
+        </div>
+        <div th:if="${footerFragment != null}" class="sigm-modal-footer">
+            <th:block th:replace="${footerFragment}"></th:block>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+
