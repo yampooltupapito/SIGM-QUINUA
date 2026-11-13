@@ -25,4 +25,23 @@ public class DocumentoPredioRequest {
     private LocalDate fechaEmision;
     private String entidadEmisora;
     private String observaciones;
+
+    // Alias de entrada: la ficha del predio (detail.html) envía estos nombres de campo
+    // (descripcion, numeroDocumento, emisor, fechaDocumento) y antes no llegaban a ningún atributo,
+    // por lo que "titulo" quedaba vacío y el documento nunca se podía guardar.
+    public void setDescripcion(String descripcion) {
+        this.titulo = descripcion;
+    }
+
+    public void setNumeroDocumento(String numeroDocumento) {
+        this.numeroFolio = numeroDocumento;
+    }
+
+    public void setEmisor(String emisor) {
+        this.entidadEmisora = emisor;
+    }
+
+    public void setFechaDocumento(LocalDate fechaDocumento) {
+        this.fechaEmision = fechaDocumento;
+    }
 }

@@ -17,7 +17,7 @@ public class CuentaCorrienteSpecification {
             if (query != null && !query.trim().isEmpty()) {
                 String term = "%" + query.trim().toLowerCase() + "%";
                 Predicate porCuenta = cb.like(cb.lower(root.get("codigoCuenta")), term);
-                Predicate porContribuyente = cb.like(cb.lower(root.get("contribuyente").get("razonSocialNombre")), term);
+                Predicate porContribuyente = cb.like(cb.lower(root.get("contribuyente").get("nombreRazonSocial")), term);
                 Predicate porDocumento = cb.like(cb.lower(root.get("contribuyente").get("numeroDocumento")), term);
                 Predicate porCodigoContrib = cb.like(cb.lower(root.get("contribuyente").get("codigoContribuyente")), term);
 

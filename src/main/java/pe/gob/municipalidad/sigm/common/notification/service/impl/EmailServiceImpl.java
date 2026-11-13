@@ -66,7 +66,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificacionEnvio encolarCorreo(NotificationDtos.EmailRequestDto request) {
         if (request == null || request.getDestinatarioCorreo() == null || request.getDestinatarioCorreo().isBlank()) {
             throw new InvalidRequestException("La dirección de correo destinatario es obligatoria.");
@@ -85,6 +85,7 @@ public class EmailServiceImpl implements EmailService {
 
         // 2. Resolver plantilla de correo
         NotificacionPlantilla plantilla = plantillaRepository.findByCodigoAndActivoTrue(request.getPlantillaCodigo())
+                .or(() -> plantillaRepository.findByCodigoAndActivoTrue("NUEVA_NOTIFICACION"))
                 .orElseThrow(() -> new ResourceNotFoundException("Plantilla de notificación no encontrada o inactiva: " + request.getPlantillaCodigo()));
 
         // 3. Renderizar asunto y cuerpo con sanitización

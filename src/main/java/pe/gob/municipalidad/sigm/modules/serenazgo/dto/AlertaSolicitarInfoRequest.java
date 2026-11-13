@@ -14,4 +14,10 @@ public class AlertaSolicitarInfoRequest {
     @NotBlank(message = "El mensaje o requerimiento de información al ciudadano es obligatorio")
     @Size(max = 1000, message = "El requerimiento no puede superar los 1000 caracteres")
     private String solicitud;
+
+    public void setRequerimiento(String requerimiento) {
+        if (requerimiento != null && !requerimiento.isBlank()) {
+            this.solicitud = requerimiento;
+        }
+    }
 }

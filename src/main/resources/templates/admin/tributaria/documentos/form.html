@@ -6,7 +6,7 @@
     <title>Emitir Documento Tributario | SIGM-QUINUA</title>
 </head>
 <body>
-<div layout:fragment="contenido" class="max-w-4xl mx-auto space-y-6">
+<div layout:fragment="content" class="max-w-4xl mx-auto space-y-6">
 
     <!-- Mensajes de feedback -->
     <div th:if="${mensajeError}" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between">
@@ -42,6 +42,17 @@
     <!-- Formulario Principal -->
     <form th:action="@{/dashboard/tributaria/documentos/emitir}" th:object="${form}" method="post" class="space-y-6">
 
+        <!-- Resumen de errores de validación (antes la página se recargaba sin indicar el motivo) -->
+        <div th:if="${#fields.hasErrors('*')}" role="alert" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm shadow-sm">
+            <div class="flex items-center gap-2 font-semibold mb-1">
+                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+                <span>No se pudo emitir. Revise los siguientes datos:</span>
+            </div>
+            <ul class="list-disc pl-9 space-y-0.5">
+                <li th:each="err : ${#fields.allErrors()}" th:text="${err}">El identificador de pago es obligatorio</li>
+            </ul>
+        </div>
+
         <!-- Tarjeta: Selección del Pago Confirmado -->
         <div class="p-5 bg-[#202c3d] rounded-xl border border-[#334155]/60 space-y-4">
             <h2 class="text-sm font-semibold text-white flex items-center gap-2 border-b border-[#334155]/60 pb-2">
@@ -58,7 +69,7 @@
                     </div>
                     <div class="text-right">
                         <span class="text-[10px] text-slate-400 block">Total Recaudado</span>
-                        <span class="text-base font-bold text-emerald-400">S/ <span th:text="${#numbers.formatDecimal(pagoSeleccionado.importeTotal, 1, 'COMMA', 2, 'POINT')}">150.00</span></span>
+                        <span class="text-base font-bold text-emerald-400">S/ <span th:text="${#numbers.formatDecimal(pagoSeleccionado.importe, 1, 'COMMA', 2, 'POINT')}">150.00</span></span>
                     </div>
                 </div>
                 <input type="hidden" th:field="*{pagoId}">
@@ -72,7 +83,7 @@
                     <option value="">-- Seleccione un pago confirmado reciente --</option>
                     <option th:each="p : ${pagosElegibles}"
                             th:value="${p.id}"
-                            th:text="${p.codigoPago} + ' • ' + ${p.contribuyente.nombreRazonSocial} + ' • S/ ' + ${p.importeTotal} + ' • ' + ${p.estado}">
+                            th:text="${p.codigoPago} + ' • ' + ${p.contribuyente.nombreRazonSocial} + ' • S/ ' + ${p.importe} + ' • ' + ${p.estado}">
                     </option>
                 </select>
                 <p class="text-[11px] text-slate-500 mt-1">Solo se listan pagos confirmados. Pagos en borrador o revertidos no pueden ser seleccionados.</p>
@@ -138,6 +149,7 @@
 
 </div>
 
+<th:block layout:fragment="scripts">
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Generar llave de idempotencia si está vacía
@@ -156,6 +168,44 @@
             });
         }
     });
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de emitir el documento se obtiene un token recién emitido (de una página
+    // liviana del mismo módulo) y se envía enseguida. El formulario se identifica por su acción porque
+    // document.querySelector('form') puede devolver otro formulario de la plantilla base.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/documentos';
+        document.addEventListener('DOMContentLoaded', function () {
+            const formEmision = document.querySelector('form[action$="/documentos/emitir"]');
+            if (!formEmision) return;
+
+            formEmision.addEventListener('submit', async function (e) {
+                if (e.defaultPrevented) return;
+                if (formEmision.dataset.csrfFresco === 'true') return;
+                e.preventDefault();
+                try {
+                    const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                    const html = await resp.text();
+                    const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                    if (m) {
+                        let inputs = formEmision.querySelectorAll('input[name="_csrf"]');
+                        if (!inputs.length) {
+                            const i = document.createElement('input');
+                            i.type = 'hidden'; i.name = '_csrf';
+                            formEmision.appendChild(i);
+                            inputs = [i];
+                        }
+                        inputs.forEach(function (i) { i.value = m[1]; });
+                    }
+                } catch (err) {
+                    console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                }
+                formEmision.dataset.csrfFresco = 'true';
+                formEmision.submit();
+            });
+        });
+    })();
 </script>
+</th:block>
 </body>
 </html>

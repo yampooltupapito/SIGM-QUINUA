@@ -371,6 +371,8 @@
         </div>
     </div>
 
+    <!-- Chart.js 4.4.1 completo (el /js/chart.min.js global está truncado y no define Chart) -->
+    <script th:src="@{/js/chart-4.4.1.umd.min.js}"></script>
     <!-- Script para inicializar Chart.js con datos reales inyectados -->
     <script th:inline="javascript">
     (function() {

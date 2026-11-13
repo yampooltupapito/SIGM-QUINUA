@@ -483,6 +483,8 @@
 
 <!-- Scripts JavaScript para Chart.js, Filtros y Reportes -->
 <div layout:fragment="scripts">
+    <!-- Chart.js 4.4.1 completo (el /js/chart.min.js global está truncado y no define Chart) -->
+    <script th:src="@{/js/chart-4.4.1.umd.min.js}"></script>
     <script th:src="@{/js/mesapartes/reportes-filtros.js}"></script>
     <script th:src="@{/js/mesapartes/reportes-graficos.js}"></script>
     <script th:src="@{/js/mesapartes/reportes.js}"></script>

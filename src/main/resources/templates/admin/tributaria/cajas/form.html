@@ -10,6 +10,12 @@
 <body>
 <div layout:fragment="content" class="space-y-6">
 
+    <!-- Aviso de error (el controlador redirige aquí con el motivo cuando la caja no se puede registrar) -->
+    <div th:if="${error}" role="alert" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center space-x-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span th:text="${error}" class="text-sm font-medium">No se pudo registrar la caja</span>
+    </div>
+
     <div class="flex items-center justify-between">
         <div>
             <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
@@ -75,5 +81,47 @@
     </div>
 
 </div>
+
+<th:block layout:fragment="scripts">
+<script>
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de guardar se obtiene un token recién emitido (de una página liviana del
+    // mismo módulo) y se envía enseguida.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/cajas';
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+
+                form.addEventListener('submit', async function (e) {
+                    if (!/\/cajas(\/|$)/.test(form.getAttribute('action') || '')) return;
+                    if (e.defaultPrevented) return;
+                    if (form.dataset.csrfFresco === 'true') return;
+                    e.preventDefault();
+                    try {
+                        const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                        const html = await resp.text();
+                        const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                        if (m) {
+                            let inputs = form.querySelectorAll('input[name="_csrf"]');
+                            if (!inputs.length) {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = '_csrf';
+                                form.appendChild(i);
+                                inputs = [i];
+                            }
+                            inputs.forEach(function (i) { i.value = m[1]; });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                    }
+                    form.dataset.csrfFresco = 'true';
+                    form.submit();
+                });
+            });
+        });
+    })();
+</script>
+</th:block>
 </body>
 </html>

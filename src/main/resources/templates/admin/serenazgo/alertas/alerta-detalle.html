@@ -64,52 +64,45 @@
                 <span>Ficha PDF</span>
             </a>
 
-            <!-- Acciones si no está Cerrada ni Descartada -->
-            <th:block th:if="${alerta.estado.name() != 'CERRADA' && alerta.estado.name() != 'DESCARTADA'}">
+            <!-- Acciones Operativas -->
+            <th:block>
                 <button type="button" onclick="abrirModal('modalClasificar')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_CLASIFICAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                     <i data-lucide="tag" class="w-4 h-4 text-blue-400"></i>
                     <span>Clasificar</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalPrioridad')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_PRIORIZAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                     <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
                     <span>Prioridad</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalSolicitarInfo')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_SOLICITAR_INFORMACION', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                     <i data-lucide="help-circle" class="w-4 h-4 text-purple-400"></i>
                     <span>Solicitar Info</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalVincular')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_VINCULAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition">
                     <i data-lucide="link" class="w-4 h-4"></i>
                     <span>Vincular Incidencia</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalEstado')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_CAMBIAR_ESTADO', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                     <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
                     <span>Estado</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalCerrar')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5">
                     <i data-lucide="check" class="w-4 h-4"></i>
                     <span>Cerrar</span>
                 </button>
 
                 <button type="button" onclick="abrirModal('modalDescartar')"
-                        sec:authorize="hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')"
                         class="px-3 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition flex items-center gap-1.5">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     <span>Descartar</span>
@@ -402,13 +395,13 @@
             <form th:action="@{/dashboard/serenazgo/alertas/{id}/clasificar(id=${alerta.id})}" method="POST" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Nuevo Tipo de Reporte <span class="text-rose-500">*</span></label>
-                    <select name="tipoReporteId" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200">
+                    <select name="nuevoTipoReporteId" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200">
                         <option th:each="tipo : ${tiposReporte}" th:value="${tipo.id}" th:text="${tipo.codigo + ' - ' + tipo.nombre}" th:selected="${alerta.tipoId == tipo.id}">Tipo</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo / Fundamentación</label>
-                    <textarea name="motivo" rows="2" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo de la reclasificación técnica..."></textarea>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo / Fundamentación <span class="text-rose-500">*</span></label>
+                    <textarea name="motivo" rows="2" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo de la reclasificación técnica..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="cerrarModal('modalClasificar')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
@@ -431,7 +424,7 @@
             <form th:action="@{/dashboard/serenazgo/alertas/{id}/prioridad(id=${alerta.id})}" method="POST" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Nivel de Prioridad <span class="text-rose-500">*</span></label>
-                    <select name="prioridad" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200">
+                    <select name="nuevaPrioridad" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200">
                         <option th:each="prio : ${prioridades}" th:value="${prio}" th:text="${prio}" th:selected="${alerta.prioridad == prio}">ALTA</option>
                     </select>
                 </div>
@@ -460,7 +453,7 @@
             <form th:action="@{/dashboard/serenazgo/alertas/{id}/solicitar-informacion(id=${alerta.id})}" method="POST" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Requerimiento Vecinal <span class="text-rose-500">*</span></label>
-                    <textarea name="requerimiento" rows="4" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Indica detalladamente qué aclaración se necesita para proceder..."></textarea>
+                    <textarea name="solicitud" rows="4" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Indica detalladamente qué aclaración se necesita para proceder..."></textarea>
                     <p class="text-[10px] text-slate-500 mt-1">Este mensaje será visible en el portal de seguimiento del ciudadano.</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
@@ -528,8 +521,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo del Cambio</label>
-                    <textarea name="motivo" rows="2" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo de la transición..."></textarea>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo del Cambio <span class="text-rose-500">*</span></label>
+                    <textarea name="motivo" rows="2" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo de la transición..."></textarea>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="cerrarModal('modalEstado')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
@@ -552,7 +545,7 @@
             <form th:action="@{/dashboard/serenazgo/alertas/{id}/cerrar(id=${alerta.id})}" method="POST" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Motivo Interno de Cierre <span class="text-rose-500">*</span></label>
-                    <textarea name="motivoCierre" rows="2" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo administrativo formal de cierre..."></textarea>
+                    <textarea name="motivo" rows="2" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-200" placeholder="Motivo administrativo formal de cierre..."></textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Resultado Comunicable al Ciudadano</label>

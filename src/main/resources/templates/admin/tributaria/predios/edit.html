@@ -53,6 +53,17 @@
     <!-- Formulario de Edición -->
     <form th:action="@{/dashboard/tributaria/predios/{id}/actualizar(id=${predioId})}" th:object="${request}" method="POST" class="space-y-6">
 
+        <!-- Resumen de errores de validación (la página se recarga arriba y el error por campo puede quedar fuera de vista) -->
+        <div th:if="${#fields.hasErrors('*')}" role="alert" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm shadow-sm">
+            <div class="flex items-center space-x-2 font-semibold mb-1">
+                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+                <span>No se pudo guardar. Revise los siguientes datos:</span>
+            </div>
+            <ul class="list-disc pl-9 space-y-0.5">
+                <li th:each="err : ${#fields.allErrors()}" th:text="${err}">El área del terreno es obligatoria</li>
+            </ul>
+        </div>
+
         <!-- 1. IDENTIFICACIÓN Y CLASIFICACIÓN -->
         <div class="bg-card border border-theme rounded-xl p-5 shadow-sm space-y-4">
             <div class="flex items-center space-x-2 border-b border-theme pb-3">
@@ -311,5 +322,35 @@
     </form>
 
 </div>
+
+<th:block layout:fragment="scripts">
+<script>
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de guardar se obtiene un token recién emitido y se envía enseguida.
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form[action$="/actualizar"]');
+        if (!form) return;
+        const urlEditar = form.getAttribute('action').replace(/\/actualizar$/, '/editar');
+
+        form.addEventListener('submit', async function (e) {
+            if (e.defaultPrevented) return;
+            if (form.dataset.csrfFresco === 'true') return;
+            e.preventDefault();
+            try {
+                const resp = await fetch(urlEditar, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                const html = await resp.text();
+                const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                if (m) {
+                    form.querySelectorAll('input[name="_csrf"]').forEach(function (i) { i.value = m[1]; });
+                }
+            } catch (err) {
+                console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+            }
+            form.dataset.csrfFresco = 'true';
+            form.submit();
+        });
+    });
+</script>
+</th:block>
 </body>
 </html>

@@ -176,7 +176,7 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         List<BandejaPendienteItemDto> pendientes = new ArrayList<>();
 
         // 1. Incidencias registradas sin atención asignada
-        List<IncidenciaSeguridadCiudadana> incPend = incidenciaRepository.findByEstado(EstadoIncidenciaSeguridad.REGISTRADA);
+        List<IncidenciaSeguridadCiudadana> incPend = incidenciaRepository.findTop50ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad.REGISTRADA);
         for (IncidenciaSeguridadCiudadana inc : incPend) {
             pendientes.add(BandejaPendienteItemDto.builder()
                     .registroId(inc.getId())
@@ -197,7 +197,7 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         }
 
         // 2. Alertas ciudadanas pendientes de evaluación
-        List<AlertaCiudadanaSeguridad> alertas = alertaRepository.findByEstado(EstadoAlertaCiudadana.RECIBIDA);
+        List<AlertaCiudadanaSeguridad> alertas = alertaRepository.findTop50ByEstadoOrderByFechaRecepcionDesc(EstadoAlertaCiudadana.RECIBIDA);
         for (AlertaCiudadanaSeguridad al : alertas) {
             pendientes.add(BandejaPendienteItemDto.builder()
                     .registroId(al.getId())
@@ -218,10 +218,8 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         }
 
         // 3. Atenciones en espera o en curso prolongadas
-        List<AtencionIncidenciaSerenazgo> atenciones = atencionRepository.findAll().stream()
-                .filter(a -> a.getEstado() == EstadoAtencionIncidencia.EN_ESPERA || a.getEstado() == EstadoAtencionIncidencia.DESPACHADA)
-                .limit(20)
-                .toList();
+        List<AtencionIncidenciaSerenazgo> atenciones = atencionRepository.findTop20ByEstadoInOrderByFechaHoraAsignacionDesc(
+                List.of(EstadoAtencionIncidencia.EN_ESPERA, EstadoAtencionIncidencia.DESPACHADA));
         for (AtencionIncidenciaSerenazgo at : atenciones) {
             pendientes.add(BandejaPendienteItemDto.builder()
                     .registroId(at.getId())
@@ -242,10 +240,8 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         }
 
         // 4. Intervenciones pendientes de validación o con observaciones
-        List<IntervencionSerenazgo> intervenciones = intervencionRepository.findAll().stream()
-                .filter(i -> i.getEstado() == EstadoIntervencionSerenazgo.REGISTRADA || i.getEstado() == EstadoIntervencionSerenazgo.OBSERVADA)
-                .limit(20)
-                .toList();
+        List<IntervencionSerenazgo> intervenciones = intervencionRepository.findTop20ByEstadoInOrderByFechaInicioDesc(
+                List.of(EstadoIntervencionSerenazgo.REGISTRADA, EstadoIntervencionSerenazgo.OBSERVADA));
         for (IntervencionSerenazgo inter : intervenciones) {
             pendientes.add(BandejaPendienteItemDto.builder()
                     .registroId(inter.getId())
@@ -287,10 +283,8 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         }
 
         // 6. Documentos observados o con hash no coincidente
-        List<DocumentoSeguridadCiudadana> docObs = documentoRepository.findAll().stream()
-                .filter(d -> d.getEstado() == EstadoDocumentoSeguridad.OBSERVADO || d.getUltimoResultadoVerificacion() == ResultadoVerificacionIntegridad.NO_COINCIDENTE)
-                .limit(20)
-                .toList();
+        List<DocumentoSeguridadCiudadana> docObs = documentoRepository.findTop20ByEstadoOrUltimoResultadoVerificacionOrderByFechaHoraCargaDesc(
+                EstadoDocumentoSeguridad.OBSERVADO, ResultadoVerificacionIntegridad.NO_COINCIDENTE);
         for (DocumentoSeguridadCiudadana doc : docObs) {
             boolean falloHash = doc.getUltimoResultadoVerificacion() == ResultadoVerificacionIntegridad.NO_COINCIDENTE;
             pendientes.add(BandejaPendienteItemDto.builder()
@@ -312,10 +306,8 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
         }
 
         // 7. Seguimientos de supervisión abiertos u observados
-        List<SeguimientoSupervisionSerenazgo> seguimientos = seguimientoRepository.findAll().stream()
-                .filter(s -> s.getEstado() == EstadoSeguimientoSupervision.ABIERTO || s.getEstado() == EstadoSeguimientoSupervision.OBSERVADO)
-                .limit(20)
-                .toList();
+        List<SeguimientoSupervisionSerenazgo> seguimientos = seguimientoRepository.findTop20ByEstadoInOrderByFechaCreacionDesc(
+                List.of(EstadoSeguimientoSupervision.ABIERTO, EstadoSeguimientoSupervision.OBSERVADO));
         for (SeguimientoSupervisionSerenazgo s : seguimientos) {
             pendientes.add(BandejaPendienteItemDto.builder()
                     .registroId(s.getId())
@@ -361,9 +353,7 @@ public class SupervisionSerenazgoServiceImpl implements SupervisionSerenazgoServ
 
         Map<String, Long> interPorTipo = new LinkedHashMap<>();
         for (TipoIntervencionSerenazgo t : TipoIntervencionSerenazgo.values()) {
-            long c = intervencionRepository.findAll().stream()
-                    .filter(i -> i.getTipoIntervencion() == t)
-                    .count();
+            long c = intervencionRepository.countByTipoIntervencion(t);
             if (c > 0) {
                 interPorTipo.put(t.getDescripcion(), c);
             }

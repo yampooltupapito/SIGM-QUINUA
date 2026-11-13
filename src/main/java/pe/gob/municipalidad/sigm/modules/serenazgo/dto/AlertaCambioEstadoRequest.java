@@ -16,8 +16,13 @@ public class AlertaCambioEstadoRequest {
     private EstadoAlertaCiudadana nuevoEstado;
 
     @NotBlank(message = "El motivo de la transición de estado es obligatorio")
-    private String motivo;
+    @Builder.Default
+    private String motivo = "Actualización administrativa de estado";
 
     @Builder.Default
     private Boolean esVisibleCiudadano = true;
+
+    public void setMotivo(String motivo) {
+        this.motivo = (motivo == null || motivo.isBlank()) ? "Actualización administrativa de estado" : motivo;
+    }
 }

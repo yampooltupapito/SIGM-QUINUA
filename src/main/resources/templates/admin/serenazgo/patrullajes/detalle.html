@@ -379,12 +379,12 @@
                 Sin equipamiento institucional asignado en registro.
             </div>
             <div th:unless="${patrullaje.equipamiento.empty}" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div th:each="eq : ${patrullaje.equipamiento}" class="p-3 bg-slate-900/60 border border-slate-700 rounded-lg">
-                    <span class="block text-xs font-bold text-white" th:text="${eq.tipoEquipo}"></span>
-                    <span class="block text-[10px] text-slate-400 font-mono" th:text="'Cód: ' + ${eq.codigoInterno}"></span>
+                <div th:each="eqp : ${patrullaje.equipamiento}" class="p-3 bg-slate-900/60 border border-slate-700 rounded-lg">
+                    <span class="block text-xs font-bold text-white" th:text="${eqp.tipoEquipo}"></span>
+                    <span class="block text-[10px] text-slate-400 font-mono" th:text="'Cód: ' + ${eqp.codigoInterno}"></span>
                     <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold"
-                          th:classappend="${eq.fechaDevolucion != null ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-400'}"
-                          th:text="${eq.fechaDevolucion != null ? 'DEVUELTO' : 'EN USO'}"></span>
+                          th:classappend="${eqp.fechaDevolucion != null ? 'bg-slate-700 text-slate-300' : 'bg-emerald-500/20 text-emerald-400'}"
+                          th:text="${eqp.fechaDevolucion != null ? 'DEVUELTO' : 'EN USO'}"></span>
                 </div>
             </div>
         </div>

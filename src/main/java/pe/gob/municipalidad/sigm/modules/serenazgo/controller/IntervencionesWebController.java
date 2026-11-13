@@ -145,8 +145,8 @@ public class IntervencionesWebController {
         model.addAttribute("canalesComunicacion", CanalComunicacionDespacho.values());
         model.addAttribute("estadosComunicacion", EstadoComunicacionIntervencion.values());
         model.addAttribute("tiposDocumento", TipoDocumentoIntervencion.values());
-        model.addAttribute("personalDisponible", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
-        model.addAttribute("equiposDisponibles", equipamientoRepository.findAll());
+        model.addAttribute("personalDisponible", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("equiposDisponibles", equipamientoRepository.findTop200ByOrderByCodigoInternoAsc());
 
         model.addAttribute("paginaActiva", "serenazgo_intervenciones");
         model.addAttribute("submenuActivo", "intervenciones");
@@ -477,15 +477,15 @@ public class IntervencionesWebController {
     }
 
     private void cargarModelosFormulario(Model model) {
-        model.addAttribute("incidencias", incidenciaRepository.findAll());
-        model.addAttribute("atenciones", atencionRepository.findAll());
+        model.addAttribute("incidencias", incidenciaRepository.findTop200ByOrderByFechaReporteDesc());
+        model.addAttribute("atenciones", atencionRepository.findTop200ByOrderByFechaHoraAsignacionDesc());
         model.addAttribute("tipos", TipoIntervencionSerenazgo.values());
         model.addAttribute("resultados", ResultadoIntervencionSerenazgo.values());
         model.addAttribute("confidencialidades", NivelConfidencialidad.values());
         model.addAttribute("sectores", sectorRepository.findByEstadoOrderByCodigoAsc(EstadoSectorPatrullaje.ACTIVO));
         model.addAttribute("zonas", zonaRepository.findAll());
-        model.addAttribute("personalDisponible", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
-        model.addAttribute("unidadesDisponibles", unidadMovilRepository.findAll());
-        model.addAttribute("equiposDisponibles", equipamientoRepository.findAll());
+        model.addAttribute("personalDisponible", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("unidadesDisponibles", unidadMovilRepository.findTop200ByOrderByCodigoInternoAsc());
+        model.addAttribute("equiposDisponibles", equipamientoRepository.findTop200ByOrderByCodigoInternoAsc());
     }
 }

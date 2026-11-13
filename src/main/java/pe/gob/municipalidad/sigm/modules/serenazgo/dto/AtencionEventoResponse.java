@@ -25,6 +25,14 @@ public class AtencionEventoResponse {
     private String detallesJson;
     private Boolean visibleCiudadano;
 
+    public String getRegistradoPorNombre() {
+        return usuarioNombre != null ? usuarioNombre : personalNombre;
+    }
+
+    public String getFechaHoraFormateada() {
+        return FormatoFechaVista.fechaHora(fechaEvento);
+    }
+
     public boolean isVisibleCiudadano() {
         return Boolean.TRUE.equals(visibleCiudadano);
     }

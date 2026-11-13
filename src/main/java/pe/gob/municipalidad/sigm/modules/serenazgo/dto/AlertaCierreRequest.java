@@ -14,4 +14,10 @@ public class AlertaCierreRequest {
     private String motivo;
 
     private String resultadoCiudadano;
+
+    public void setMotivoCierre(String motivoCierre) {
+        if (motivoCierre != null && !motivoCierre.isBlank()) {
+            this.motivo = motivoCierre;
+        }
+    }
 }

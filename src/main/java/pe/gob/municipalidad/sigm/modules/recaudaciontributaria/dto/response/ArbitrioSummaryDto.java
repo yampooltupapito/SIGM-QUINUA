@@ -40,4 +40,20 @@ public class ArbitrioSummaryDto {
     public BigDecimal getImporteBeneficio() {
         return BigDecimal.ZERO;
     }
+
+    // Alias de solo lectura usados por la plantilla arbitrios/list.html (no se serializan en JSON)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public Integer getAnioPeriodo() {
+        return periodoAnio;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public BigDecimal getImporteCalculado() {
+        return importeAnualTotal != null ? importeAnualTotal : BigDecimal.ZERO;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public BigDecimal getImportePeriodico() {
+        return importePeriodoTotal != null ? importePeriodoTotal : BigDecimal.ZERO;
+    }
 }

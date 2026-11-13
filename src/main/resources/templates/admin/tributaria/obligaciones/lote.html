@@ -172,6 +172,7 @@
 
 </div>
 
+<th:block layout:fragment="scripts">
 <script>
     document.getElementById('btnPrevisualizar').addEventListener('click', async function() {
         const tipo = document.getElementById('tipoDeterminacion').value;
@@ -203,6 +204,45 @@
             alert('No se pudo cargar la previsualización: ' + e.message);
         }
     });
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, la previsualización, etc.). Antes de ejecutar el lote se obtiene un token recién
+    // emitido (de una página liviana del mismo módulo) y se envía enseguida.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/obligaciones';
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+                if (!/\/obligaciones\//.test(form.getAttribute('action') || '')) return;
+
+                form.addEventListener('submit', async function (e) {
+                    if (e.defaultPrevented) return;
+                    if (form.dataset.csrfFresco === 'true') return;
+                    e.preventDefault();
+                    try {
+                        const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                        const html = await resp.text();
+                        const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                        if (m) {
+                            let inputs = form.querySelectorAll('input[name="_csrf"]');
+                            if (!inputs.length) {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = '_csrf';
+                                form.appendChild(i);
+                                inputs = [i];
+                            }
+                            inputs.forEach(function (i) { i.value = m[1]; });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                    }
+                    form.dataset.csrfFresco = 'true';
+                    form.submit();
+                });
+            });
+        });
+    })();
 </script>
+</th:block>
 </body>
 </html>

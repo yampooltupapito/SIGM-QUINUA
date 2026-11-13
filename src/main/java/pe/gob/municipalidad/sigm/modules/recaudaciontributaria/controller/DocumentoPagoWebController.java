@@ -111,6 +111,17 @@ public class DocumentoPagoWebController {
             Model model) {
 
         if (bindingResult.hasErrors()) {
+            // Al volver al formulario hay que cargar de nuevo los pagos elegibles (antes el desplegable quedaba
+            // vacío y la página se recargaba sin ningún mensaje).
+            if (form.getPagoId() != null) {
+                pagoRepository.findById(form.getPagoId()).ifPresent(pago -> model.addAttribute("pagoSeleccionado", pago));
+            }
+            List<PagoTributario> pagosElegibles = pagoRepository.findAll().stream()
+                    .filter(p -> p.getEstado() == EstadoPagoTributario.CONFIRMADO || p.getEstado() == EstadoPagoTributario.PROCESADO)
+                    .sorted((a, b) -> b.getFechaHoraPago().compareTo(a.getFechaHoraPago()))
+                    .limit(20)
+                    .toList();
+            model.addAttribute("pagosElegibles", pagosElegibles);
             model.addAttribute("tiposDocumento", documentoService.listarTiposDocumento());
             return "admin/tributaria/documentos/form";
         }

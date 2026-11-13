@@ -190,8 +190,8 @@ public class NotificacionTributariaWebController {
             @RequestParam(defaultValue = "resumen") String tab,
             Model model) {
 
-        NotificacionTributaria notif = notificacionService.obtenerEntidadPorId(id);
-        NotificacionResponse response = notificacionService.convertirAResponse(notif);
+        // obtenerPorId es transaccional: convierte a DTO con la sesión Hibernate abierta (evita LazyInitializationException)
+        NotificacionResponse response = notificacionService.obtenerPorId(id);
 
         List<DetalleNotificacionObligacion> detalles = detalleObligacionRepository.findByNotificacionId(id);
         List<AsignacionNotificadorTributario> asignaciones = asignacionService.listarPorNotificacion(id);

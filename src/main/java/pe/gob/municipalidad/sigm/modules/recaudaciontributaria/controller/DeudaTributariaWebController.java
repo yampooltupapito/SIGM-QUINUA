@@ -112,9 +112,7 @@ public class DeudaTributariaWebController {
         LocalDate corte = fechaCorte != null ? fechaCorte : LocalDate.now();
         DeudaDetalleResponse ficha = deudaService.obtenerFichaDeuda(id, corte);
 
-        List<Usuario> usuariosStaff = usuarioRepository.findAll().stream()
-                .filter(u -> Boolean.TRUE.equals(u.getEnabled()))
-                .toList();
+        List<Usuario> usuariosStaff = usuarioRepository.findHabilitadosWithPersona();
 
         model.addAttribute("ficha", ficha);
         model.addAttribute("fechaCorte", corte);

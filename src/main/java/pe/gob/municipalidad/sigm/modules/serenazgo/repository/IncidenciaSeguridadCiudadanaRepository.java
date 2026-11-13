@@ -2,6 +2,7 @@ package pe.gob.municipalidad.sigm.modules.serenazgo.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -28,6 +29,17 @@ public interface IncidenciaSeguridadCiudadanaRepository extends JpaRepository<In
     List<IncidenciaSeguridadCiudadana> findByEstado(EstadoIncidenciaSeguridad estado);
 
     List<IncidenciaSeguridadCiudadana> findByEstadoIn(java.util.Collection<EstadoIncidenciaSeguridad> estados);
+
+    /** Listados acotados (máx. 200, más recientes) para selectores; precargan tipo, sector y zona. */
+    @EntityGraph(attributePaths = {"tipoIncidencia", "sector", "zona"})
+    List<IncidenciaSeguridadCiudadana> findTop200ByOrderByFechaReporteDesc();
+
+    @EntityGraph(attributePaths = {"tipoIncidencia", "sector", "zona"})
+    List<IncidenciaSeguridadCiudadana> findTop200ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad estado);
+
+    @EntityGraph(attributePaths = {"tipoIncidencia", "sector", "zona"})
+    List<IncidenciaSeguridadCiudadana> findTop200ByEstadoInOrderByFechaReporteDesc(java.util.Collection<EstadoIncidenciaSeguridad> estados);
+
 
     Page<IncidenciaSeguridadCiudadana> findByEstado(EstadoIncidenciaSeguridad estado, Pageable pageable);
 
@@ -114,4 +126,8 @@ public interface IncidenciaSeguridadCiudadanaRepository extends JpaRepository<In
     List<IncidenciaSeguridadCiudadana> findParaExportacion(
             @Param("desde") OffsetDateTime desde,
             @Param("hasta") OffsetDateTime hasta);
+
+    /** Bandeja de supervisión: últimas 50 incidencias por estado, con sector precargado. */
+    @EntityGraph(attributePaths = {"sector"})
+    List<IncidenciaSeguridadCiudadana> findTop50ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad estado);
 }

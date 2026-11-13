@@ -102,8 +102,8 @@ public class EquipamientoWebController {
     public String verDetalle(@PathVariable UUID id, Model model) {
         EquipamientoDetailResponse detalle = equipamientoService.obtenerDetalle(id);
         model.addAttribute("equipo", detalle);
-        model.addAttribute("personalActivo", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
-        model.addAttribute("unidadesActivas", unidadRepository.findAll());
+        model.addAttribute("personalActivo", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("unidadesActivas", unidadRepository.findTop200ByOrderByCodigoInternoAsc());
         model.addAttribute("tiposMantenimiento", TipoMantenimientoRecurso.values());
         model.addAttribute("tiposIncidencia", TipoIncidenciaTecnica.values());
         model.addAttribute("nivelesGravedad", NivelGravedadIncidencia.values());

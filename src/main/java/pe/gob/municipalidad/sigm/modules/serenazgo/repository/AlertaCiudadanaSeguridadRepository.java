@@ -38,4 +38,7 @@ public interface AlertaCiudadanaSeguridadRepository extends JpaRepository<Alerta
     long countByPrioridad(PrioridadIncidenciaSeguridad prioridad);
 
     long countByFechaRecepcionBetween(OffsetDateTime desde, OffsetDateTime hasta);
+
+    /** Bandeja de supervisión: últimas 50 alertas por estado (evita cargar la tabla completa). */
+    List<AlertaCiudadanaSeguridad> findTop50ByEstadoOrderByFechaRecepcionDesc(EstadoAlertaCiudadana estado);
 }

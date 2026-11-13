@@ -103,7 +103,7 @@ public class UnidadesMovilesWebController {
     public String verDetalle(@PathVariable UUID id, Model model) {
         UnidadMovilDetailResponse detalle = unidadesService.obtenerDetalle(id);
         model.addAttribute("unidad", detalle);
-        model.addAttribute("personalActivo", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("personalActivo", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
         model.addAttribute("tiposMantenimiento", TipoMantenimientoRecurso.values());
         model.addAttribute("tiposIncidencia", TipoIncidenciaTecnica.values());
         model.addAttribute("nivelesGravedad", NivelGravedadIncidencia.values());

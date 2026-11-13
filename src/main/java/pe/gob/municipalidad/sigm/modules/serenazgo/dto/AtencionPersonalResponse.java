@@ -26,4 +26,24 @@ public class AtencionPersonalResponse {
     private String motivoDesasignacion;
     private Boolean activo;
     private String observaciones;
+
+    public String getCargo() {
+        return cargoNombre;
+    }
+
+    public String getPersonalCodigo() {
+        return codigoInterno;
+    }
+
+    public String getPersonalNombre() {
+        return nombreCompleto;
+    }
+
+    public String getFechaAsignacionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaAsignacion);
+    }
+
+    public String getFechaDesasignacionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaDesasignacion);
+    }
 }

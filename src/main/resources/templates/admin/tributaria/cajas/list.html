@@ -142,8 +142,10 @@
                         </td>
                         <td class="py-3 px-4 text-center">
                             <div class="flex items-center justify-center space-x-2">
+                                <!-- Thymeleaf 3.1 no admite concatenar texto en th:onclick: los datos van en atributos data-* -->
                                 <button th:if="${s.estado.name() == 'ABIERTA'}"
-                                        th:onclick="'abrirModalCierre(\'' + ${s.id} + '\', \'' + ${s.codigoSesion} + '\')'"
+                                        th:attr="data-sesion-id=${s.id},data-sesion-codigo=${s.codigoSesion}"
+                                        onclick="abrirModalCierre(this.getAttribute('data-sesion-id'), this.getAttribute('data-sesion-codigo'))"
                                         class="px-2.5 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded text-[11px] font-bold transition-colors">
                                     Cerrar Turno
                                 </button>
@@ -259,6 +261,45 @@
         document.getElementById('formCierreSesion').action = `/dashboard/tributaria/cajas/sesion/${sesionId}/cerrar`;
         document.getElementById('modalCerrarSesion').classList.remove('hidden');
     }
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de abrir o cerrar un turno se obtiene un token recién emitido (de esta misma
+    // pantalla, que es liviana) y se envía enseguida. La ruta se evalúa al enviar porque el formulario de cierre
+    // recibe su acción por JavaScript al abrir la ventana.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/cajas';
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+
+                form.addEventListener('submit', async function (e) {
+                    if (!/\/cajas\//.test(form.getAttribute('action') || '')) return;
+                    if (e.defaultPrevented) return;
+                    if (form.dataset.csrfFresco === 'true') return;
+                    e.preventDefault();
+                    try {
+                        const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                        const html = await resp.text();
+                        const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                        if (m) {
+                            let inputs = form.querySelectorAll('input[name="_csrf"]');
+                            if (!inputs.length) {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = '_csrf';
+                                form.appendChild(i);
+                                inputs = [i];
+                            }
+                            inputs.forEach(function (i) { i.value = m[1]; });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                    }
+                    form.dataset.csrfFresco = 'true';
+                    form.submit();
+                });
+            });
+        });
+    })();
 </script>
 </th:block>
 </body>

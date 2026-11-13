@@ -302,14 +302,14 @@
                         <tr th:if="${#lists.isEmpty(servicio.equipamientoReservado)}">
                             <td colspan="5" class="py-4 text-center text-slate-500">No hay equipamiento reservado formalmente.</td>
                         </tr>
-                        <tr th:each="eq : ${servicio.equipamientoReservado}">
-                            <td class="py-2.5 px-4 font-mono text-blue-400 font-semibold" th:text="${eq.codigo}">EQP-2026-0001</td>
-                            <td class="py-2.5 px-4" th:text="${eq.tipoEquipamientoDesc}">Radio Portátil VHF</td>
-                            <td class="py-2.5 px-4 font-mono text-slate-400" th:text="${eq.numeroSerie != null ? eq.numeroSerie : 'Control cuantitativo'}">SN-12345</td>
-                            <td class="py-2.5 px-4 text-center font-bold text-slate-200" th:text="${eq.cantidad}">1</td>
+                        <tr th:each="eqp : ${servicio.equipamientoReservado}">
+                            <td class="py-2.5 px-4 font-mono text-blue-400 font-semibold" th:text="${eqp.codigo}">EQP-2026-0001</td>
+                            <td class="py-2.5 px-4" th:text="${eqp.tipoEquipamientoDesc}">Radio Portátil VHF</td>
+                            <td class="py-2.5 px-4 font-mono text-slate-400" th:text="${eqp.numeroSerie != null ? eqp.numeroSerie : 'Control cuantitativo'}">SN-12345</td>
+                            <td class="py-2.5 px-4 text-center font-bold text-slate-200" th:text="${eqp.cantidad}">1</td>
                             <td class="py-2.5 px-4 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30"
-                                      th:text="${eq.estadoReservaDesc}">Reservado</span>
+                                      th:text="${eqp.estadoReservaDesc}">Reservado</span>
                             </td>
                         </tr>
                     </tbody>

@@ -44,4 +44,8 @@ public interface DocumentoSeguridadCiudadanaRepository extends JpaRepository<Doc
 
     @Query("SELECT MAX(d.codigo) FROM DocumentoSeguridadCiudadana d WHERE d.codigo LIKE :prefijo%")
     String findMaxCodigoConPrefijo(@Param("prefijo") String prefijo);
+
+    /** Bandeja de supervisión: últimos 20 documentos observados o con integridad no coincidente. */
+    List<DocumentoSeguridadCiudadana> findTop20ByEstadoOrUltimoResultadoVerificacionOrderByFechaHoraCargaDesc(
+            pe.gob.municipalidad.sigm.modules.serenazgo.enums.EstadoDocumentoSeguridad estado, pe.gob.municipalidad.sigm.modules.serenazgo.enums.ResultadoVerificacionIntegridad resultado);
 }

@@ -342,6 +342,7 @@ public class FraccionamientoWebController {
     }
 
     @GetMapping("/convenios/{id}/pdf")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @PreAuthorize("hasAuthority('TRIBUTARIA_FRACCIONAMIENTOS_VER') or hasAnyRole('ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_TRIBUTACION', 'ROLE_CAJERO')")
     public ResponseEntity<byte[]> descargarPdfConvenio(@PathVariable UUID id) {
         pe.gob.municipalidad.sigm.modules.recaudaciontributaria.entity.ConvenioFraccionamientoTributario conv =

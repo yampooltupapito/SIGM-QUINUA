@@ -36,4 +36,9 @@ public interface IntervencionSerenazgoRepository extends JpaRepository<Intervenc
 
     @Query("SELECT COUNT(i) FROM IntervencionSerenazgo i WHERE i.estado = :estado")
     long contarPorEstado(@Param("estado") EstadoIntervencionSerenazgo estado);
+
+    /** Bandeja de supervisión: últimas 20 intervenciones en los estados indicados. */
+    List<IntervencionSerenazgo> findTop20ByEstadoInOrderByFechaInicioDesc(java.util.Collection<pe.gob.municipalidad.sigm.modules.serenazgo.enums.EstadoIntervencionSerenazgo> estados);
+
+    long countByTipoIntervencion(pe.gob.municipalidad.sigm.modules.serenazgo.enums.TipoIntervencionSerenazgo tipoIntervencion);
 }

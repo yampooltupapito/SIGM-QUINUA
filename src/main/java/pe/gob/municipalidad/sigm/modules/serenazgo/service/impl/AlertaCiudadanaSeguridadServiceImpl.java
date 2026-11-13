@@ -638,7 +638,7 @@ public class AlertaCiudadanaSeguridadServiceImpl implements AlertaCiudadanaSegur
                 emailService.encolarCorreo(NotificationDtos.EmailRequestDto.builder()
                         .destinatarioCorreo(alerta.getReportanteEmail())
                         .destinatarioNombre(alerta.getReportanteNombre() != null ? alerta.getReportanteNombre() : "Ciudadano")
-                        .plantillaCodigo("NOTIFICACION_SISTEMA")
+                        .plantillaCodigo("NUEVA_NOTIFICACION")
                         .asuntoPersonalizado("SIGM-QUINUA: Se requiere información complementaria para su reporte " + alerta.getCodigo())
                         .variables(Map.of(
                                 "codigo", alerta.getCodigo(),
@@ -1085,7 +1085,7 @@ public class AlertaCiudadanaSeguridadServiceImpl implements AlertaCiudadanaSegur
             emailService.encolarCorreo(NotificationDtos.EmailRequestDto.builder()
                     .destinatarioCorreo(alerta.getReportanteEmail())
                     .destinatarioNombre(alerta.getReportanteNombre() != null ? alerta.getReportanteNombre() : "Ciudadano")
-                    .plantillaCodigo("NOTIFICACION_SISTEMA")
+                    .plantillaCodigo("NUEVA_NOTIFICACION")
                     .asuntoPersonalizado("SIGM-QUINUA: Constancia de recepción de reporte de seguridad " + alerta.getCodigo())
                     .variables(Map.of(
                             "codigo", alerta.getCodigo(),

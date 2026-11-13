@@ -304,7 +304,7 @@
                         <option value="">-- No aplica / Comunicación ciudadana directa --</option>
                         <option th:each="p : ${personalList}"
                                 th:value="${p.id}"
-                                th:text="${p.codigoSereno + ' - ' + p.nombres + ' ' + p.apellidos}">Sereno</option>
+                                th:text="${p.codigoInterno + ' - ' + p.persona.nombreCompleto}">Sereno</option>
                     </select>
                 </div>
 

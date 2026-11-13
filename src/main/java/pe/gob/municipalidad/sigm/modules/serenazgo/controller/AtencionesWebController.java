@@ -75,7 +75,7 @@ public class AtencionesWebController {
         }
 
         model.addAttribute("nuevaAtencion", request);
-        model.addAttribute("incidenciasPendientes", incidenciaRepository.findByEstado(EstadoIncidenciaSeguridad.REGISTRADA));
+        model.addAttribute("incidenciasPendientes", incidenciaRepository.findTop200ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad.REGISTRADA));
         model.addAttribute("sectores", sectorRepository.findByEstadoOrderByCodigoAsc(EstadoSectorPatrullaje.ACTIVO));
         model.addAttribute("personalDisponible", atencionService.listarPersonalDisponible());
         model.addAttribute("unidadesDisponibles", atencionService.listarUnidadesDisponibles());
@@ -95,7 +95,7 @@ public class AtencionesWebController {
                                     RedirectAttributes redirectAttributes,
                                     Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("incidenciasPendientes", incidenciaRepository.findByEstado(EstadoIncidenciaSeguridad.REGISTRADA));
+            model.addAttribute("incidenciasPendientes", incidenciaRepository.findTop200ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad.REGISTRADA));
             model.addAttribute("sectores", sectorRepository.findByEstadoOrderByCodigoAsc(EstadoSectorPatrullaje.ACTIVO));
             model.addAttribute("personalDisponible", atencionService.listarPersonalDisponible());
             model.addAttribute("unidadesDisponibles", atencionService.listarUnidadesDisponibles());
@@ -111,8 +111,21 @@ public class AtencionesWebController {
             return "redirect:/dashboard/serenazgo/atenciones/" + atn.getId();
         } catch (Exception e) {
             log.error("Error al crear atención", e);
-            redirectAttributes.addFlashAttribute("mensajeError", e.getMessage());
-            return "redirect:/dashboard/serenazgo/atenciones/nueva" + (request.getIncidenciaId() != null ? "?incidenciaId=" + request.getIncidenciaId() : "");
+            // La aplicación es stateless: un flash attribute se perdería en el redirect, por eso se
+            // vuelve a mostrar el formulario con el mensaje de error.
+            model.addAttribute("mensajeError", e.getMessage() != null ? e.getMessage() : "No se pudo generar la orden de atención.");
+            if (request.getIncidenciaId() != null) {
+                incidenciaRepository.findById(request.getIncidenciaId())
+                        .ifPresent(inc -> model.addAttribute("incidenciaSeleccionada", inc));
+            }
+            model.addAttribute("incidenciasPendientes", incidenciaRepository.findTop200ByEstadoOrderByFechaReporteDesc(EstadoIncidenciaSeguridad.REGISTRADA));
+            model.addAttribute("sectores", sectorRepository.findByEstadoOrderByCodigoAsc(EstadoSectorPatrullaje.ACTIVO));
+            model.addAttribute("personalDisponible", atencionService.listarPersonalDisponible());
+            model.addAttribute("unidadesDisponibles", atencionService.listarUnidadesDisponibles());
+            model.addAttribute("equiposDisponibles", atencionService.listarEquipamientoDisponible());
+            model.addAttribute("prioridades", PrioridadIncidenciaSeguridad.values());
+            model.addAttribute("canales", CanalComunicacionDespacho.values());
+            return "admin/serenazgo/atenciones/nueva";
         }
     }
 

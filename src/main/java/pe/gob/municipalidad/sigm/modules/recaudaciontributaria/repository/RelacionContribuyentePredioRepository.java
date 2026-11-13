@@ -22,5 +22,13 @@ public interface RelacionContribuyentePredioRepository extends JpaRepository<Rel
 
     Optional<RelacionContribuyentePredio> findByContribuyenteIdAndPredioId(UUID contribuyenteId, UUID predioId);
 
+    // Variantes que toleran varias filas para el mismo contribuyente y predio (p. ej. una relación HISTORICA
+    // y otra ACTIVA tras desvincular y volver a vincular). Se usan en el cálculo de arbitrios.
+    Optional<RelacionContribuyentePredio> findFirstByContribuyenteIdAndPredioIdAndEstadoOrderByFechaInicioDesc(
+            UUID contribuyenteId, UUID predioId, EstadoRelacionContribuyentePredio estado);
+
+    Optional<RelacionContribuyentePredio> findFirstByContribuyenteIdAndPredioIdOrderByFechaInicioDesc(
+            UUID contribuyenteId, UUID predioId);
+
     boolean existsByContribuyenteIdAndPredioIdAndEstado(UUID contribuyenteId, UUID predioId, EstadoRelacionContribuyentePredio estado);
 }

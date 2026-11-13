@@ -128,7 +128,7 @@ public class ContribuyenteWebController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Contribuyente registrado con éxito. Código asignado: " + res.getCodigoContribuyente());
             return "redirect:/dashboard/tributaria/contribuyentes/" + res.getId();
-        } catch (BusinessException e) {
+        } catch (BusinessException | pe.gob.municipalidad.sigm.common.exception.DuplicateResourceException e) {
             log.warn("Error de validación al registrar contribuyente: {}", e.getMessage());
             model.addAttribute("errorMessage", e.getMessage());
             model.addAttribute("tiposContribuyente", TipoContribuyente.values());
@@ -208,10 +208,7 @@ public class ContribuyenteWebController {
                              Model model) {
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("contribuyenteId", id);
-            model.addAttribute("mediosContacto", MedioContactoPreferido.values());
-            model.addAttribute("moduloActivo", "tributaria");
-            model.addAttribute("submenuActivo", "contribuyentes");
+            cargarContextoEdicion(model, id);
             return "admin/tributaria/contribuyentes/edit";
         }
 
@@ -220,15 +217,26 @@ public class ContribuyenteWebController {
             contribuyenteService.actualizarContribuyente(id, request, username);
             redirectAttributes.addFlashAttribute("successMessage", "Datos del contribuyente actualizados correctamente.");
             return "redirect:/dashboard/tributaria/contribuyentes/" + id;
-        } catch (BusinessException e) {
+        } catch (BusinessException | pe.gob.municipalidad.sigm.common.exception.DuplicateResourceException e) {
             log.warn("Error actualizando contribuyente: {}", e.getMessage());
             model.addAttribute("errorMessage", e.getMessage());
-            model.addAttribute("contribuyenteId", id);
-            model.addAttribute("mediosContacto", MedioContactoPreferido.values());
-            model.addAttribute("moduloActivo", "tributaria");
-            model.addAttribute("submenuActivo", "contribuyentes");
+            cargarContextoEdicion(model, id);
             return "admin/tributaria/contribuyentes/edit";
         }
+    }
+
+    /**
+     * Datos que la vista de edición necesita para volver a mostrarse tras un error de validación
+     * (antes faltaban el tipo y el código del contribuyente y la página se rompía a medias).
+     */
+    private void cargarContextoEdicion(Model model, UUID id) {
+        ContribuyenteDetailResponse detalle = contribuyenteService.obtenerDetalle(id);
+        model.addAttribute("contribuyenteId", id);
+        model.addAttribute("tipoContribuyente", detalle.getTipoContribuyente());
+        model.addAttribute("codigoContribuyente", detalle.getCodigoContribuyente());
+        model.addAttribute("mediosContacto", MedioContactoPreferido.values());
+        model.addAttribute("moduloActivo", "tributaria");
+        model.addAttribute("submenuActivo", "contribuyentes");
     }
 
     @PostMapping("/{id}/estado")

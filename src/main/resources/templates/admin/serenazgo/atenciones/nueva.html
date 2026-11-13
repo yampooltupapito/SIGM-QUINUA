@@ -63,12 +63,12 @@
                         <h3 class="text-sm font-bold text-slate-100" th:text="${incidenciaSeleccionada.tipoIncidencia?.nombre}">Tipo de Incidencia</h3>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                          th:text="${incidenciaSeleccionada.estado?.etiqueta}">REGISTRADA</span>
+                          th:text="${incidenciaSeleccionada.estado?.descripcion}">REGISTRADA</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300">
                     <div>
                         <span class="text-slate-500 block text-[11px]">Ubicación / Dirección:</span>
-                        <span class="font-medium" th:text="${incidenciaSeleccionada.direccion}">Plaza Mayor</span>
+                        <span class="font-medium" th:text="${incidenciaSeleccionada.ubicacionReferencia}">Plaza Mayor</span>
                     </div>
                     <div>
                         <span class="text-slate-500 block text-[11px]">Sector / Zona:</span>
@@ -76,7 +76,7 @@
                     </div>
                     <div>
                         <span class="text-slate-500 block text-[11px]">Fecha / Hora Hecho:</span>
-                        <span class="font-medium" th:text="${incidenciaSeleccionada.fechaHoraOcurrencia}">25/10/2026 14:00</span>
+                        <span class="font-medium" th:text="${incidenciaSeleccionada.fechaOcurrencia != null ? #temporals.format(incidenciaSeleccionada.fechaOcurrencia, 'dd/MM/yyyy HH:mm') : '-'}">25/10/2026 14:00</span>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-t border-slate-800 text-xs">
@@ -93,7 +93,7 @@
                     <option value="">-- Seleccionar incidencia pendiente de atención --</option>
                     <option th:each="inc : ${incidenciasPendientes}"
                             th:value="${inc.id}"
-                            th:text="${inc.codigo + ' — ' + (inc.tipoIncidencia?.nombre ?: 'Incidencia') + ' (' + inc.direccion + ') - Prioridad: ' + inc.prioridad?.name()}">
+                            th:text="${inc.codigo + ' — ' + (inc.tipoIncidencia?.nombre ?: 'Incidencia') + ' (' + inc.ubicacionReferencia + ') - Prioridad: ' + inc.prioridad?.name()}">
                     </option>
                 </select>
                 <p class="text-[11px] text-slate-500 mt-1">Solo se listan incidencias registradas que no cuentan con atención activa en curso.</p>

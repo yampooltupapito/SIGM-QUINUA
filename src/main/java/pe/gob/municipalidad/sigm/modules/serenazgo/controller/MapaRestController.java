@@ -43,7 +43,7 @@ public class MapaRestController {
     public ResponseEntity<GeoJsonFeatureCollectionResponse> obtenerIncidencias(
             @ModelAttribute MapaFiltroRequest filtro,
             @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(mapaService.obtenerCapaIncidencias(filtro, user));
+        return ResponseEntity.ok(limitar(mapaService.obtenerCapaIncidencias(filtro, user)));
     }
 
     @GetMapping("/alertas")
@@ -51,7 +51,7 @@ public class MapaRestController {
     public ResponseEntity<GeoJsonFeatureCollectionResponse> obtenerAlertas(
             @ModelAttribute MapaFiltroRequest filtro,
             @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(mapaService.obtenerCapaAlertas(filtro, user));
+        return ResponseEntity.ok(limitar(mapaService.obtenerCapaAlertas(filtro, user)));
     }
 
     @GetMapping("/intervenciones")
@@ -59,7 +59,7 @@ public class MapaRestController {
     public ResponseEntity<GeoJsonFeatureCollectionResponse> obtenerIntervenciones(
             @ModelAttribute MapaFiltroRequest filtro,
             @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(mapaService.obtenerCapaIntervenciones(filtro, user));
+        return ResponseEntity.ok(limitar(mapaService.obtenerCapaIntervenciones(filtro, user)));
     }
 
     @GetMapping("/patrullajes")
@@ -67,7 +67,7 @@ public class MapaRestController {
     public ResponseEntity<GeoJsonFeatureCollectionResponse> obtenerPatrullajes(
             @ModelAttribute MapaFiltroRequest filtro,
             @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(mapaService.obtenerCapaPatrullajes(filtro, user));
+        return ResponseEntity.ok(limitar(mapaService.obtenerCapaPatrullajes(filtro, user)));
     }
 
     @GetMapping("/rutas")
@@ -120,5 +120,15 @@ public class MapaRestController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"sigm_mapa_" + capa.toLowerCase() + ".geojson\"")
                 .body(json);
+    }
+
+    /** Máximo de elementos puntuales que se envían al navegador por capa (evita congelar el mapa al hacer zoom). */
+    private static final int MAX_ELEMENTOS_CAPA = 500;
+
+    private GeoJsonFeatureCollectionResponse limitar(GeoJsonFeatureCollectionResponse fc) {
+        if (fc != null && fc.getFeatures() != null && fc.getFeatures().size() > MAX_ELEMENTOS_CAPA) {
+            fc.setFeatures(new java.util.ArrayList<>(fc.getFeatures().subList(0, MAX_ELEMENTOS_CAPA)));
+        }
+        return fc;
     }
 }

@@ -9,6 +9,20 @@
 <body>
 <div layout:fragment="content" class="space-y-6">
 
+    <!-- Estilos locales del calendario (tailwind.min.css precompilado no incluye grid-cols-7 ni min-h-[90px]) -->
+    <style>
+        #calendarioGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.5rem; }
+        #calendarioGrid > div { min-width: 0; }
+        #calendarioGrid > div[class*="min-h-[90px]"] { min-height: 90px; }
+        #calendarioGrid > div[class*="text-center"] { font-size: 11px; line-height: 1.2; }
+        #calendarioGrid > div[class*="min-h-[90px]"] > div:first-child { font-size: 11px; }
+        #calendarioGrid .truncate { font-size: 10px; }
+        @media (max-width: 640px) {
+            #calendarioGrid { gap: 0.25rem; }
+            #calendarioGrid > div[class*="min-h-[90px]"] { min-height: 64px; }
+        }
+    </style>
+
     <!-- Encabezado Principal -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/80 pb-5">
         <div>

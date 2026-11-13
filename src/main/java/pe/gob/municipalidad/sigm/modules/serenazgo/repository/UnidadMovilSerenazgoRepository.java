@@ -26,6 +26,11 @@ public interface UnidadMovilSerenazgoRepository extends JpaRepository<UnidadMovi
 
     List<UnidadMovilSerenazgo> findByEstadoOperativo(EstadoUnidadMovil estadoOperativo);
 
+    /** Listado acotado (máx. 200) para selectores de formularios. */
+    List<UnidadMovilSerenazgo> findTop200ByEstadoOperativoInOrderByCodigoInternoAsc(java.util.Collection<EstadoUnidadMovil> estados);
+
+    List<UnidadMovilSerenazgo> findTop200ByOrderByCodigoInternoAsc();
+
     List<UnidadMovilSerenazgo> findByTipoUnidadAndEstadoOperativo(TipoUnidadMovil tipoUnidad, EstadoUnidadMovil estadoOperativo);
 
     Page<UnidadMovilSerenazgo> findByEstadoOperativo(EstadoUnidadMovil estadoOperativo, Pageable pageable);

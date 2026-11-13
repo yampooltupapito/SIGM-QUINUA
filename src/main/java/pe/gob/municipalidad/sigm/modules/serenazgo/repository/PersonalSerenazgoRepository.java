@@ -2,6 +2,7 @@ package pe.gob.municipalidad.sigm.modules.serenazgo.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -25,6 +26,10 @@ public interface PersonalSerenazgoRepository extends JpaRepository<PersonalSeren
     Optional<PersonalSerenazgo> findByUsuarioId(Long usuarioId);
 
     List<PersonalSerenazgo> findByEstado(EstadoPersonalSerenazgo estado);
+
+    /** Listado acotado (máx. 200) para selectores de formularios; precarga persona y cargo. */
+    @EntityGraph(attributePaths = {"persona", "cargoOperativo"})
+    List<PersonalSerenazgo> findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo estado);
 
     Page<PersonalSerenazgo> findByEstado(EstadoPersonalSerenazgo estado, Pageable pageable);
 

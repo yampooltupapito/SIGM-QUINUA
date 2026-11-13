@@ -488,15 +488,15 @@
                     <tr th:if="${#lists.isEmpty(intervencion.equipamiento)}">
                         <td colspan="5" class="py-8 text-center text-slate-500">No se asoció equipamiento específico a esta intervención.</td>
                     </tr>
-                    <tr th:each="eq : ${intervencion.equipamiento}">
-                        <td class="py-3 px-4 font-bold text-slate-100" th:text="${eq.equipamientoNombre}">Radio VHF Portátil</td>
-                        <td class="py-3 px-4 font-mono text-slate-400" th:text="${eq.equipamientoCodigo}">PAT-0012</td>
-                        <td class="py-3 px-4 text-center font-bold text-slate-200" th:text="${eq.cantidad}">1</td>
+                    <tr th:each="eqp : ${intervencion.equipamiento}">
+                        <td class="py-3 px-4 font-bold text-slate-100" th:text="${eqp.equipamientoNombre}">Radio VHF Portátil</td>
+                        <td class="py-3 px-4 font-mono text-slate-400" th:text="${eqp.equipamientoCodigo}">PAT-0012</td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-200" th:text="${eqp.cantidad}">1</td>
                         <td class="py-3 px-4">
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                  th:text="${eq.estadoUso}">UTILIZADO_CONFORME</span>
+                                  th:text="${eqp.estadoUso}">UTILIZADO_CONFORME</span>
                         </td>
-                        <td class="py-3 px-4 text-slate-400" th:text="${eq.observaciones ?: '-'}">-</td>
+                        <td class="py-3 px-4 text-slate-400" th:text="${eqp.observaciones ?: '-'}">-</td>
                     </tr>
                     </tbody>
                 </table>
@@ -917,6 +917,7 @@
 </div>
 
 <!-- Scripts de Pestañas y Modales -->
+<th:block layout:fragment="scripts">
 <script>
     function cambiarTab(tabName) {
         document.querySelectorAll('.tab-content').forEach(function(el) {
@@ -953,5 +954,6 @@
         }
     }
 </script>
+</th:block>
 </body>
 </html>

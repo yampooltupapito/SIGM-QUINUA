@@ -244,9 +244,8 @@
             <li>El registro de compromisos informativos o derivaciones no altera fechas de vencimiento ni sustituye convenios formales de fraccionamiento.</li>
         </ul>
     </div>
-</div>
 
-<!-- Inicialización de Gráficos Chart.js -->
+<!-- Inicialización de Gráficos Chart.js (dentro de #main-content para que el layout lo incluya) -->
 <script th:inline="javascript">
     document.addEventListener("DOMContentLoaded", function() {
         const rawTramos = /*[[${dashboard.distribucionPorTramo}]]*/ {};
@@ -329,5 +328,6 @@
         }
     });
 </script>
+</div>
 </body>
 </html>

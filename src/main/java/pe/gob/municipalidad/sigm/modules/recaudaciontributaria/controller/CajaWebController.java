@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -79,7 +80,7 @@ public class CajaWebController {
     @PreAuthorize("hasAuthority('TRIBUTARIA_CAJA_ADMINISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')")
     public String crearCaja(@ModelAttribute @Valid CrearCajaRequest request,
                             BindingResult result,
-                            @AuthenticationPrincipal UserDetails userDetails,
+                            Principal principal,
                             RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", result.getAllErrors().get(0).getDefaultMessage());
@@ -87,7 +88,7 @@ public class CajaWebController {
         }
 
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "ADMIN";
+            String username = principal != null ? principal.getName() : "ADMIN";
             CajaResponse response = cajaService.crearCaja(request, username);
             redirectAttributes.addFlashAttribute("success", "Caja Municipal creada exitosamente: " + response.getCodigo());
             return "redirect:/dashboard/tributaria/cajas";
@@ -101,7 +102,7 @@ public class CajaWebController {
     @PreAuthorize("hasAuthority('TRIBUTARIA_CAJA_ABRIR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')")
     public String abrirSesion(@ModelAttribute @Valid AbrirSesionCajaRequest request,
                               BindingResult result,
-                              @AuthenticationPrincipal UserDetails userDetails,
+                              Principal principal,
                               RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", result.getAllErrors().get(0).getDefaultMessage());
@@ -109,7 +110,7 @@ public class CajaWebController {
         }
 
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "CAJERO";
+            String username = principal != null ? principal.getName() : "CAJERO";
             SesionCajaResponse sesion = cajaService.abrirSesion(request, username);
             redirectAttributes.addFlashAttribute("success", "Sesión de caja aperturada con éxito: " + sesion.getCodigoSesion());
         } catch (BusinessException e) {
@@ -123,7 +124,7 @@ public class CajaWebController {
     public String cerrarSesion(@PathVariable("id") UUID id,
                                @ModelAttribute @Valid CerrarSesionCajaRequest request,
                                BindingResult result,
-                               @AuthenticationPrincipal UserDetails userDetails,
+                               Principal principal,
                                RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", result.getAllErrors().get(0).getDefaultMessage());
@@ -131,7 +132,7 @@ public class CajaWebController {
         }
 
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "CAJERO";
+            String username = principal != null ? principal.getName() : "CAJERO";
             SesionCajaResponse sesion = cajaService.cerrarSesion(id, request, username);
             redirectAttributes.addFlashAttribute("success", "Sesión " + sesion.getCodigoSesion() + " cerrada correctamente.");
         } catch (BusinessException e) {

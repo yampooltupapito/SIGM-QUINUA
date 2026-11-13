@@ -408,16 +408,16 @@
                     <tr th:if="${unidad.equipamientosAsignados.empty}">
                         <td colspan="6" class="text-center py-6 text-slate-400">No hay equipos asignados a este patrullero o vehículo.</td>
                     </tr>
-                    <tr th:each="eq : ${unidad.equipamientosAsignados}" class="hover:bg-slate-800/40">
-                        <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${eq.codigoInterno}">EQP-000001</td>
-                        <td class="px-4 py-3" th:text="${eq.tipoEquipoDesc}">Radio Transceptor</td>
-                        <td class="px-4 py-3 text-white font-medium" th:text="${eq.descripcion}">Radio Base Móvil Motorola</td>
-                        <td class="px-4 py-3 font-mono" th:text="${eq.numeroSerie != null ? eq.numeroSerie : 'N/D'}">SER-12345</td>
+                    <tr th:each="eqp : ${unidad.equipamientosAsignados}" class="hover:bg-slate-800/40">
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-400" th:text="${eqp.codigoInterno}">EQP-000001</td>
+                        <td class="px-4 py-3" th:text="${eqp.tipoEquipoDesc}">Radio Transceptor</td>
+                        <td class="px-4 py-3 text-white font-medium" th:text="${eqp.descripcion}">Radio Base Móvil Motorola</td>
+                        <td class="px-4 py-3 font-mono" th:text="${eqp.numeroSerie != null ? eqp.numeroSerie : 'N/D'}">SER-12345</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300" th:text="${eq.estadoDesc}">Asignado</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300" th:text="${eqp.estadoDesc}">Asignado</span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a th:href="@{/dashboard/serenazgo/equipamiento/{id}(id=${eq.id})}" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">
+                            <a th:href="@{/dashboard/serenazgo/equipamiento/{id}(id=${eqp.id})}" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">
                                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                             </a>
                         </td>

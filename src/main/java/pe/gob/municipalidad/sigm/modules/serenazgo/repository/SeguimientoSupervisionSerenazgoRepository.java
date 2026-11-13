@@ -51,4 +51,7 @@ public interface SeguimientoSupervisionSerenazgoRepository extends JpaRepository
            "WHERE s.estado IN ('ABIERTO', 'EN_REVISION', 'OBSERVADO', 'EN_SUBSANACION') " +
            "AND s.fechaCompromiso IS NOT NULL AND s.fechaCompromiso < :ahora")
     long contarVencidos(@Param("ahora") OffsetDateTime ahora);
+
+    /** Bandeja de supervisión: últimos 20 seguimientos en los estados indicados. */
+    List<SeguimientoSupervisionSerenazgo> findTop20ByEstadoInOrderByFechaCreacionDesc(java.util.Collection<pe.gob.municipalidad.sigm.modules.serenazgo.enums.EstadoSeguimientoSupervision> estados);
 }

@@ -105,4 +105,28 @@ public class EquipamientoSerenazgo {
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
+
+    /** Alias de solo lectura para las vistas: código interno del equipo. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getCodigo() {
+        return codigoInterno;
+    }
+
+    /** Alias de solo lectura para las vistas: nombre descriptivo del equipo. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getNombre() {
+        return descripcion != null ? descripcion : getTipo();
+    }
+
+    /** Alias de solo lectura para las vistas: descripción del tipo de equipo. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTipo() {
+        return tipoEquipo != null ? tipoEquipo.getDescripcion() : null;
+    }
+
+    /** Alias de solo lectura para las vistas (formulario de programación). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTipoEquipamientoDesc() {
+        return getTipo();
+    }
 }

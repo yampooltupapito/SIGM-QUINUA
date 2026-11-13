@@ -94,6 +94,56 @@ public class AtencionDetailResponse {
     // Concurrencia
     private Long version;
 
+    public String getDireccionIncidencia() {
+        return incidenciaUbicacion;
+    }
+
+    public String getReferenciaIncidencia() {
+        return null;
+    }
+
+    public String getObservaciones() {
+        return observacionesOperativas;
+    }
+
+    public String getResponsableAsignacionNombre() {
+        return supervisorAsignadorNombre;
+    }
+
+    /** Minutos entre la asignación y la aceptación (o el inicio) de la atención. */
+    public Long getTiempoRespuestaMinutos() {
+        OffsetDateTime fin = fechaHoraAceptacion != null ? fechaHoraAceptacion : fechaHoraInicio;
+        return minutosEntre(fechaHoraAsignacion, fin);
+    }
+
+    /** Minutos entre el inicio y la finalización de la atención. */
+    public Long getDuracionMinutos() {
+        return minutosEntre(fechaHoraInicio, fechaHoraFinalizacion);
+    }
+
+    private static Long minutosEntre(OffsetDateTime desde, OffsetDateTime hasta) {
+        if (desde == null || hasta == null) {
+            return null;
+        }
+        return Math.max(0L, java.time.Duration.between(desde, hasta).toMinutes());
+    }
+
+    public String getFechaHoraAsignacionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaHoraAsignacion);
+    }
+
+    public String getFechaHoraDespachoFormateada() {
+        return FormatoFechaVista.fechaHora(fechaHoraDespacho);
+    }
+
+    public String getFechaHoraInicioFormateada() {
+        return FormatoFechaVista.fechaHora(fechaHoraInicio);
+    }
+
+    public String getFechaHoraFinalizacionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaHoraFinalizacion);
+    }
+
     public List<AtencionPersonalResponse> getPersonal() {
         return personalAsignado;
     }

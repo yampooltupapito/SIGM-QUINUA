@@ -361,7 +361,12 @@ public class ArbitrioExportServiceImpl implements ArbitrioExportService {
     @Override
     @Transactional(readOnly = true)
     public byte[] exportarHojaLiquidacionPdf(UUID calculoId) {
-        ArbitrioDetailResponse c = arbitrioService.obtenerCalculoPorId(calculoId);
+        return exportarHojaLiquidacionPdf(arbitrioService.obtenerCalculoPorId(calculoId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarHojaLiquidacionPdf(ArbitrioDetailResponse c) {
         boolean esSimulacion = c.getEstado() == EstadoCalculoArbitrio.SIMULACION;
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {

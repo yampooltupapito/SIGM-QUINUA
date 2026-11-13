@@ -139,7 +139,7 @@
                             class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
                         <option value="">Sin vehículo asignado (Patrullaje a pie)</option>
                         <option th:each="u : ${unidadesDisponibles}" th:value="${u.id}"
-                                th:text="${u.codigo + ' - ' + u.placa + ' (' + u.marca + ' ' + (u.modelo != null ? u.modelo : '') + ')'}"></option>
+                                th:text="${u.codigoInterno + ' - ' + u.placa + ' (' + u.marca + ' ' + (u.modelo != null ? u.modelo : '') + ')'}"></option>
                     </select>
                 </div>
 
@@ -148,8 +148,8 @@
                     <select id="selectEquipamiento"
                             class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
                         <option value="">Sin reserva previa de equipo</option>
-                        <option th:each="eq : ${equipamientoDisponible}" th:value="${eq.id}"
-                                th:text="${eq.codigo + ' - ' + eq.tipoEquipamientoDesc + ' (' + (eq.numeroSerie != null ? eq.numeroSerie : 'General') + ')'}"></option>
+                        <option th:each="eqp : ${equipamientoDisponible}" th:value="${eqp.id}"
+                                th:text="${eqp.codigo + ' - ' + eqp.tipoEquipamientoDesc + ' (' + (eqp.numeroSerie != null ? eqp.numeroSerie : 'General') + ')'}"></option>
                     </select>
                 </div>
             </div>
@@ -197,7 +197,7 @@
 <th:block layout:fragment="scripts">
 <script th:inline="javascript">
     /*<![CDATA[*/
-    const personalDisponibles = /*[[${personalDisponible}]]*/ [];
+    const personalDisponibles = /*[[${personalOpciones}]]*/ [];
     let contadorPersonal = 0;
 
     function agregarFilaPersonal() {

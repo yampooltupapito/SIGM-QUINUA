@@ -406,9 +406,18 @@ public class TurnosProgramacionWebController {
         model.addAttribute("turnos", turnoService.listarTurnosActivos());
         model.addAttribute("sectores", sectorService.listarSectoresActivos());
         model.addAttribute("tiposServicio", TipoServicioSerenazgo.values());
-        model.addAttribute("personalDisponible", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
-        model.addAttribute("unidadesDisponibles", unidadRepository.findByEstadoOperativo(EstadoUnidadMovil.DISPONIBLE));
-        model.addAttribute("equipamientoDisponible", equipamientoRepository.findByEstado(EstadoEquipamientoSerenazgo.DISPONIBLE));
+        var personalActivo = personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO);
+        model.addAttribute("personalDisponible", personalActivo);
+        // Versión ligera para serializar a JavaScript (evita serializar entidades JPA con referencias cíclicas)
+        model.addAttribute("personalOpciones", personalActivo.stream()
+                .map(p -> java.util.Map.of(
+                        "id", String.valueOf(p.getId()),
+                        "codigoInterno", p.getCodigoInterno() != null ? p.getCodigoInterno() : "",
+                        "nombreCompleto", p.getNombreCompleto() != null ? p.getNombreCompleto() : "",
+                        "cargo", p.getCargo() != null ? p.getCargo() : "Sereno"))
+                .toList());
+        model.addAttribute("unidadesDisponibles", unidadRepository.findTop200ByEstadoOperativoInOrderByCodigoInternoAsc(java.util.List.of(EstadoUnidadMovil.DISPONIBLE)));
+        model.addAttribute("equipamientoDisponible", equipamientoRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoEquipamientoSerenazgo.DISPONIBLE));
         model.addAttribute("oficinas", oficinaRepository.findAll());
     }
 }

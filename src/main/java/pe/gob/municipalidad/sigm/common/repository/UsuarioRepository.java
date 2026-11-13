@@ -26,6 +26,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u JOIN FETCH u.persona p LEFT JOIN FETCH u.roles r WHERE LOWER(u.username) = LOWER(:identifier) OR LOWER(p.correo) = LOWER(:identifier)")
     Optional<Usuario> findByUsernameOrPersonaCorreo(@Param("identifier") String identifier);
 
+    @Query("SELECT u FROM Usuario u JOIN FETCH u.persona WHERE u.enabled = true")
+    java.util.List<Usuario> findHabilitadosWithPersona();
+
     Optional<Usuario> findByPersonaId(Long personaId);
 
     boolean existsByPersonaId(Long personaId);

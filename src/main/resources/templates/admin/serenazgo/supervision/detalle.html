@@ -584,6 +584,7 @@
 
 </div>
 
+<th:block layout:fragment="scripts">
 <script>
     function cambiarTab(tabId) {
         document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
@@ -613,5 +614,6 @@
         if (modal) modal.classList.add('hidden');
     }
 </script>
+</th:block>
 </body>
 </html>

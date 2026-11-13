@@ -22,6 +22,11 @@ public interface EquipamientoSerenazgoRepository extends JpaRepository<Equipamie
 
     Optional<EquipamientoSerenazgo> findByCodigoInterno(String codigoInterno);
 
+    /** Listado acotado (máx. 200) para selectores de formularios. */
+    List<EquipamientoSerenazgo> findTop200ByEstadoOrderByCodigoInternoAsc(EstadoEquipamientoSerenazgo estado);
+
+    List<EquipamientoSerenazgo> findTop200ByOrderByCodigoInternoAsc();
+
     List<EquipamientoSerenazgo> findByTipoEquipoAndEstado(TipoEquipamientoSerenazgo tipoEquipo, EstadoEquipamientoSerenazgo estado);
 
     List<EquipamientoSerenazgo> findByResponsableId(UUID responsableId);

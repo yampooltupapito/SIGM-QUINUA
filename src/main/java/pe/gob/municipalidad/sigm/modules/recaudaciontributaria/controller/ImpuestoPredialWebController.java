@@ -199,8 +199,12 @@ public class ImpuestoPredialWebController {
                                   Principal principal,
                                   RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        calculoService.enviarARevision(id, request != null ? request.getMotivo() : "Pase a revisión", username);
-        redirectAttributes.addFlashAttribute("success", "El cálculo fue derivado al estado EN REVISIÓN administrativa.");
+        try {
+            calculoService.enviarARevision(id, request != null ? request.getMotivo() : "Pase a revisión", username);
+            redirectAttributes.addFlashAttribute("success", "El cálculo fue derivado al estado EN REVISIÓN administrativa.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + id;
     }
 
@@ -211,8 +215,12 @@ public class ImpuestoPredialWebController {
                                   Principal principal,
                                   RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        calculoService.registrarObservaciones(id, request != null ? request.getMotivo() : "Observaciones técnicas", username);
-        redirectAttributes.addFlashAttribute("warning", "El cálculo ha sido marcado como OBSERVADO con los motivos indicados.");
+        try {
+            calculoService.registrarObservaciones(id, request != null ? request.getMotivo() : "Observaciones técnicas", username);
+            redirectAttributes.addFlashAttribute("warning", "El cálculo ha sido marcado como OBSERVADO con los motivos indicados.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + id;
     }
 
@@ -225,8 +233,12 @@ public class ImpuestoPredialWebController {
         String username = principal != null ? principal.getName() : "SISTEMA";
         String resolucion = (request != null && request.getResolucionSustento() != null) ? request.getResolucionSustento() : "RESOLUCION-PREDIAL-AUTORIZADA";
         String motivo = (request != null && request.getMotivo() != null) ? request.getMotivo() : "Aprobación formal de determinación predial";
-        calculoService.aprobarCalculo(id, resolucion, motivo, username);
-        redirectAttributes.addFlashAttribute("success", "Determinación tributaria APROBADA formalmente. No genera obligaciones en cuenta corriente hasta la emisión del P57.");
+        try {
+            calculoService.aprobarCalculo(id, resolucion, motivo, username);
+            redirectAttributes.addFlashAttribute("success", "Determinación tributaria APROBADA formalmente. No genera obligaciones en cuenta corriente hasta la emisión del P57.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + id;
     }
 
@@ -237,8 +249,12 @@ public class ImpuestoPredialWebController {
                                 Principal principal,
                                 RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        calculoService.anularCalculo(id, request != null ? request.getMotivo() : "Anulación formal", username);
-        redirectAttributes.addFlashAttribute("info", "El cálculo predial ha sido ANULADO.");
+        try {
+            calculoService.anularCalculo(id, request != null ? request.getMotivo() : "Anulación formal", username);
+            redirectAttributes.addFlashAttribute("info", "El cálculo predial ha sido ANULADO.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + id;
     }
 
@@ -249,9 +265,14 @@ public class ImpuestoPredialWebController {
                              Principal principal,
                              RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        CalculoPredialDetailResponse nuevo = calculoService.recalcularNuevaVersion(id, motivo, username);
-        redirectAttributes.addFlashAttribute("success", "Nueva versión generada: " + nuevo.getCodigoCalculo() + " (v" + nuevo.getVersionCalculo() + ")");
-        return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + nuevo.getId();
+        try {
+            CalculoPredialDetailResponse nuevo = calculoService.recalcularNuevaVersion(id, motivo, username);
+            redirectAttributes.addFlashAttribute("success", "Nueva versión generada: " + nuevo.getCodigoCalculo() + " (v" + nuevo.getVersionCalculo() + ")");
+            return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + nuevo.getId();
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/dashboard/tributaria/impuesto-predial/calculos/" + id;
+        }
     }
 
     @GetMapping("/exportar/excel")

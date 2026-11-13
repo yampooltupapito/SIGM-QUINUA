@@ -82,6 +82,18 @@ public class PersonalSerenazgo {
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
+    /** Alias de solo lectura para las vistas: nombre completo de la persona asociada. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getNombreCompleto() {
+        return persona != null ? persona.getNombreCompleto() : codigoInterno;
+    }
+
+    /** Alias de solo lectura para las vistas: nombre del cargo operativo. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getCargo() {
+        return cargoOperativo != null ? cargoOperativo.getNombre() : null;
+    }
+
     public String getCodigoEmpleado() {
         return codigoInterno;
     }

@@ -230,7 +230,16 @@
         tbody.innerHTML = '';
 
         try {
-            const res = await fetch(`/dashboard/tributaria/pagos/api/contribuyente/${contribuyenteId}/obligaciones`);
+            const res = await fetch(`/dashboard/tributaria/pagos/api/contribuyente/${contribuyenteId}/obligaciones`, {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            // Si el acceso caducó (dura 15 min) el servidor responde 401 o redirige a la pantalla de login (HTML):
+            // antes eso terminaba en el mensaje técnico "Unexpected token '<' ... is not valid JSON".
+            const tipo = res.headers.get('content-type') || '';
+            if (res.status === 401 || res.redirected || !tipo.includes('application/json')) {
+                throw new Error('su sesión ha caducado. Inicie sesión nuevamente (/login) y vuelva a abrir esta pantalla.');
+            }
             if (!res.ok) throw new Error('Error al consultar obligaciones');
             const data = await res.json();
 
@@ -335,6 +344,38 @@
     if (contribSelect.value) {
         cargarDeudas(contribSelect.value);
     }
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, la carga de deudas, etc.). Este listener se registra DESPUÉS del de validación de arriba:
+    // si esa validación cancela el envío (e.defaultPrevented) no se hace nada; si no, se obtiene un token recién
+    // emitido (de una página liviana del mismo módulo) y se envía enseguida.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/pagos';
+        form.addEventListener('submit', async function (e) {
+            if (e.defaultPrevented) return;
+            if (form.dataset.csrfFresco === 'true') return;
+            e.preventDefault();
+            try {
+                const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                const html = await resp.text();
+                const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                if (m) {
+                    let inputs = form.querySelectorAll('input[name="_csrf"]');
+                    if (!inputs.length) {
+                        const i = document.createElement('input');
+                        i.type = 'hidden'; i.name = '_csrf';
+                        form.appendChild(i);
+                        inputs = [i];
+                    }
+                    inputs.forEach(function (i) { i.value = m[1]; });
+                }
+            } catch (err) {
+                console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+            }
+            form.dataset.csrfFresco = 'true';
+            form.submit();
+        });
+    })();
 </script>
 </th:block>
 </body>

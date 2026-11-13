@@ -60,9 +60,14 @@
                         <label class="block text-xs font-semibold text-slate-300 mb-1">
                             Identificador del Registro (UUID) <span class="text-rose-400">*</span>
                         </label>
-                        <input type="text" th:field="*{registroOrigenId}" placeholder="UUID de la actuación a supervisar"
+                        <input type="text" th:field="*{registroOrigenId}" placeholder="Ej. 250b9777-01ab-4226-91af-da9d4b69e6bb"
+                               pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                               title="Ingrese el identificador completo (UUID) con el formato 8-4-4-4-12, por ejemplo 250b9777-01ab-4226-91af-da9d4b69e6bb"
                                class="w-full bg-[#101827] border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
-                        <p th:if="${#fields.hasErrors('registroOrigenId')}" th:errors="*{registroOrigenId}" class="text-rose-400 text-[11px] mt-1"></p>
+                        <p th:if="${#fields.hasErrors('registroOrigenId')}"
+                           th:text="${#strings.contains(#strings.listJoin(#fields.errors('registroOrigenId'), ' '), 'Failed to convert')} ? 'El identificador no es válido. Debe ser el UUID completo del registro (formato 8-4-4-4-12), por ejemplo 250b9777-01ab-4226-91af-da9d4b69e6bb. Lo encuentra en la dirección (URL) del detalle del registro.' : ${#strings.listJoin(#fields.errors('registroOrigenId'), ' ')}"
+                           class="text-rose-400 text-[11px] mt-1"></p>
+                        <p th:unless="${#fields.hasErrors('registroOrigenId')}" class="text-slate-500 text-[10px] mt-1">Copie el UUID desde la dirección (URL) del detalle del registro, p. ej. .../intervenciones/<span class="font-mono">250b9777-01ab-...</span></p>
                     </div>
 
                     <div>

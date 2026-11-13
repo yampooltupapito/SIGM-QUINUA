@@ -68,6 +68,17 @@
         <form th:action="${esNuevoCalculo == true ? '/dashboard/tributaria/arbitrios/nuevo' : '/dashboard/tributaria/arbitrios/simular'}"
               th:object="${request}" method="POST" class="space-y-4" id="formCalculoArbitrio">
 
+            <!-- Resumen de errores de validación (antes la página se recargaba sin indicar el motivo) -->
+            <div th:if="${#fields.hasErrors('*')}" role="alert" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm shadow-sm">
+                <div class="flex items-center space-x-2 font-semibold mb-1">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+                    <span>No se pudo procesar. Revise los siguientes datos:</span>
+                </div>
+                <ul class="list-disc pl-9 space-y-0.5">
+                    <li th:each="err : ${#fields.allErrors()}" th:text="${err}">El contribuyente es obligatorio</li>
+                </ul>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Contribuyente -->
                 <div>
@@ -168,7 +179,10 @@
 
             <!-- Botón de descarga o registro -->
             <div class="flex items-center space-x-2">
-                <a th:href="@{/dashboard/tributaria/arbitrios/calculos/{id}/liquidacion-pdf(id=${resultado.id})}"
+                <!-- Una simulación no se guarda (su id no existe en la base): se imprime recalculándola con los mismos datos -->
+                <a th:href="${resultado.estado.name() == 'SIMULACION'}
+                            ? @{/dashboard/tributaria/arbitrios/simular/liquidacion-pdf(contribuyenteId=${request.contribuyenteId},predioId=${request.predioId},periodoId=${request.periodoId},beneficio=${request.beneficio},porcentajeCondomino=${request.porcentajeCondomino},fechaReferencia=${request.fechaReferencia})}
+                            : @{/dashboard/tributaria/arbitrios/calculos/{id}/liquidacion-pdf(id=${resultado.id})}"
                    target="_blank"
                    class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-sm">
                     <i data-lucide="printer" class="w-4 h-4"></i>
@@ -261,6 +275,7 @@
 </div>
 
 <!-- Script para carga dinámica de predios por contribuyente -->
+<th:block layout:fragment="scripts">
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const selectContribuyente = document.getElementById('selectContribuyente');
@@ -304,6 +319,45 @@
             });
         }
     });
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, la carga de predios, etc.). Antes de enviar el formulario se obtiene un token recién
+    // emitido (de una página liviana del mismo módulo) y se envía enseguida.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/arbitrios';
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+                if (!/\/arbitrios\//.test(form.getAttribute('action') || '')) return;
+
+                form.addEventListener('submit', async function (e) {
+                    if (e.defaultPrevented) return;
+                    if (form.dataset.csrfFresco === 'true') return;
+                    e.preventDefault();
+                    try {
+                        const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                        const html = await resp.text();
+                        const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                        if (m) {
+                            let inputs = form.querySelectorAll('input[name="_csrf"]');
+                            if (!inputs.length) {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = '_csrf';
+                                form.appendChild(i);
+                                inputs = [i];
+                            }
+                            inputs.forEach(function (i) { i.value = m[1]; });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                    }
+                    form.dataset.csrfFresco = 'true';
+                    form.submit();
+                });
+            });
+        });
+    })();
 </script>
+</th:block>
 </body>
 </html>

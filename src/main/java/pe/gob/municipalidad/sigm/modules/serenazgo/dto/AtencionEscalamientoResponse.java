@@ -26,6 +26,18 @@ public class AtencionEscalamientoResponse {
     private String usuarioNombre;
     private String observaciones;
 
+    public String getContactoReceptor() {
+        return contactoNombre;
+    }
+
+    public String getRegistradoPorNombre() {
+        return usuarioNombre;
+    }
+
+    public String getFechaHoraFormateada() {
+        return FormatoFechaVista.fechaHora(fechaEscalamiento);
+    }
+
     public EntidadEscalamiento getEntidad() {
         return entidadDestinataria;
     }

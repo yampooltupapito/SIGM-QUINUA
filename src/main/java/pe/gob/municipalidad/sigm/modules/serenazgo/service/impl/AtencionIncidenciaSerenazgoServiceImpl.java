@@ -818,7 +818,7 @@ public class AtencionIncidenciaSerenazgoServiceImpl implements AtencionIncidenci
     @Override
     @Transactional(readOnly = true)
     public List<PersonalSerenazgo> listarPersonalDisponible() {
-        return personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO).stream()
+        return personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO).stream()
                 .filter(p -> !atencionRepository.isPersonalEnAtencionActiva(p.getId(), ESTADOS_FINALIZADOS))
                 .collect(Collectors.toList());
     }
@@ -826,7 +826,7 @@ public class AtencionIncidenciaSerenazgoServiceImpl implements AtencionIncidenci
     @Override
     @Transactional(readOnly = true)
     public List<UnidadMovilSerenazgo> listarUnidadesDisponibles() {
-        return unidadMovilRepository.findAll().stream()
+        return unidadMovilRepository.findTop200ByEstadoOperativoInOrderByCodigoInternoAsc(java.util.List.of(EstadoUnidadMovil.DISPONIBLE, EstadoUnidadMovil.OPERATIVA)).stream()
                 .filter(u -> u.getEstadoOperativo() != null && u.getEstadoOperativo().isDisponiblePatrullaje())
                 .filter(u -> !atencionRepository.existsByUnidadMovilIdAndEstadoNotIn(u.getId(), ESTADOS_FINALIZADOS))
                 .collect(Collectors.toList());
@@ -835,7 +835,7 @@ public class AtencionIncidenciaSerenazgoServiceImpl implements AtencionIncidenci
     @Override
     @Transactional(readOnly = true)
     public List<EquipamientoSerenazgo> listarEquipamientoDisponible() {
-        return equipamientoRepository.findByEstado(EstadoEquipamientoSerenazgo.DISPONIBLE);
+        return equipamientoRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoEquipamientoSerenazgo.DISPONIBLE);
     }
 
     @Override

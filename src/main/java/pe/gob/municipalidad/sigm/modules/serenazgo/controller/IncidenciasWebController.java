@@ -465,7 +465,7 @@ public class IncidenciasWebController {
         model.addAttribute("origenesHecho", OrigenHechoIncidencia.values());
         model.addAttribute("nivelesConfidencialidad", NivelConfidencialidad.values());
         model.addAttribute("prioridades", PrioridadIncidenciaSeguridad.values());
-        model.addAttribute("personalList", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("personalList", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
         model.addAttribute("oficinas", oficinaRepository.findByEstado("ACTIVO"));
     }
 }

@@ -197,11 +197,15 @@ public class ArbitriosWebController {
                                   Principal principal,
                                   RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        arbitrioService.cambiarEstado(id, CambioEstadoArbitrioRequest.builder()
-                .nuevoEstado(EstadoCalculoArbitrio.EN_REVISION)
-                .motivo("Enviado a revisión técnica")
-                .build(), username);
-        redirectAttributes.addFlashAttribute("mensajeExito", "La determinación ha pasado a estado EN REVISIÓN");
+        try {
+            arbitrioService.cambiarEstado(id, CambioEstadoArbitrioRequest.builder()
+                    .nuevoEstado(EstadoCalculoArbitrio.EN_REVISION)
+                    .motivo("Enviado a revisión técnica")
+                    .build(), username);
+            redirectAttributes.addFlashAttribute("mensajeExito", "La determinación ha pasado a estado EN REVISIÓN");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorNegocio", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/arbitrios/calculos/" + id;
     }
 
@@ -212,11 +216,15 @@ public class ArbitriosWebController {
                                   Principal principal,
                                   RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        arbitrioService.cambiarEstado(id, CambioEstadoArbitrioRequest.builder()
-                .nuevoEstado(EstadoCalculoArbitrio.OBSERVADO)
-                .motivo(motivo)
-                .build(), username);
-        redirectAttributes.addFlashAttribute("mensajeExito", "La determinación ha sido OBSERVADA debidamente");
+        try {
+            arbitrioService.cambiarEstado(id, CambioEstadoArbitrioRequest.builder()
+                    .nuevoEstado(EstadoCalculoArbitrio.OBSERVADO)
+                    .motivo(motivo)
+                    .build(), username);
+            redirectAttributes.addFlashAttribute("mensajeExito", "La determinación ha sido OBSERVADA debidamente");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorNegocio", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/arbitrios/calculos/" + id;
     }
 
@@ -226,8 +234,12 @@ public class ArbitriosWebController {
                                  Principal principal,
                                  RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        arbitrioService.aprobarCalculo(id, username);
-        redirectAttributes.addFlashAttribute("mensajeExito", "Determinación de arbitrios APROBADA satisfactoriamente. Consérvese en archivo tributario.");
+        try {
+            arbitrioService.aprobarCalculo(id, username);
+            redirectAttributes.addFlashAttribute("mensajeExito", "Determinación de arbitrios APROBADA satisfactoriamente. Consérvese en archivo tributario.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorNegocio", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/arbitrios/calculos/" + id;
     }
 
@@ -238,8 +250,12 @@ public class ArbitriosWebController {
                                 Principal principal,
                                 RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        arbitrioService.anularCalculo(id, motivo, username);
-        redirectAttributes.addFlashAttribute("mensajeExito", "La determinación de arbitrios ha sido ANULADA debidamente");
+        try {
+            arbitrioService.anularCalculo(id, motivo, username);
+            redirectAttributes.addFlashAttribute("mensajeExito", "La determinación de arbitrios ha sido ANULADA debidamente");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorNegocio", e.getMessage());
+        }
         return "redirect:/dashboard/tributaria/arbitrios/calculos/" + id;
     }
 
@@ -250,10 +266,15 @@ public class ArbitriosWebController {
                              Principal principal,
                              RedirectAttributes redirectAttributes) {
         String username = principal != null ? principal.getName() : "SISTEMA";
-        ArbitrioDetailResponse nuevaVersion = arbitrioService.recalcular(id, motivo, username);
-        redirectAttributes.addFlashAttribute("mensajeExito",
-                "Nueva versión generada: " + nuevaVersion.getCodigoCalculo() + " (v" + nuevaVersion.getVersionCalculo() + ")");
-        return "redirect:/dashboard/tributaria/arbitrios/calculos/" + nuevaVersion.getId();
+        try {
+            ArbitrioDetailResponse nuevaVersion = arbitrioService.recalcular(id, motivo, username);
+            redirectAttributes.addFlashAttribute("mensajeExito",
+                    "Nueva versión generada: " + nuevaVersion.getCodigoCalculo() + " (v" + nuevaVersion.getVersionCalculo() + ")");
+            return "redirect:/dashboard/tributaria/arbitrios/calculos/" + nuevaVersion.getId();
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorNegocio", e.getMessage());
+            return "redirect:/dashboard/tributaria/arbitrios/calculos/" + id;
+        }
     }
 
     @GetMapping("/exportar/excel")
@@ -282,6 +303,23 @@ public class ArbitriosWebController {
         byte[] bytes = exportService.exportarHojaLiquidacionPdf(id);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"hoja_liquidacion_arbitrios_" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
+
+    /**
+     * Hoja de liquidación de una SIMULACIÓN. Una simulación no se guarda, por lo que no tiene un id que
+     * buscar en la base de datos: se vuelve a calcular con los mismos parámetros y se imprime el resultado.
+     */
+    @GetMapping("/simular/liquidacion-pdf")
+    @PreAuthorize("hasAnyAuthority('TRIBUTARIA_ARBITRIOS_EXPORTAR', 'TRIBUTARIA_ARBITRIOS_SIMULAR', 'TRIBUTARIA_ARBITRIOS_VER', 'ROLE_ADMIN', 'ROLE_SUPERADMIN', 'ROLE_JEFE_OFICINA', 'ROLE_ESPECIALISTA_TRIBUTARIO')")
+    public ResponseEntity<byte[]> exportarHojaLiquidacionSimulacionPdf(@Valid @ModelAttribute SimulacionArbitrioRequest request,
+                                                                      Principal principal) {
+        String username = principal != null ? principal.getName() : "SISTEMA";
+        ArbitrioDetailResponse simulacion = arbitrioService.simularCalculo(request, username);
+        byte[] bytes = exportService.exportarHojaLiquidacionPdf(simulacion);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"hoja_liquidacion_simulacion_arbitrios.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(bytes);
     }

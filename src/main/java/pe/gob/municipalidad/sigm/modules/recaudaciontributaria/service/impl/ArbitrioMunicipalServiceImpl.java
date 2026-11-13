@@ -342,7 +342,7 @@ public class ArbitrioMunicipalServiceImpl implements ArbitrioMunicipalService {
 
         // Determinar participación en copropiedad
         BigDecimal participacion = CIEN;
-        var relOpt = relacionRepository.findByContribuyenteIdAndPredioId(cont.getId(), predio.getId());
+        var relOpt = buscarRelacionVigente(cont.getId(), predio.getId());
         if (relOpt.isPresent() && relOpt.get().getPorcentajeParticipacion() != null) {
             participacion = relOpt.get().getPorcentajeParticipacion();
         }
@@ -421,7 +421,7 @@ public class ArbitrioMunicipalServiceImpl implements ArbitrioMunicipalService {
         PeriodoTributario periodo = periodoRepository.findById(request.getPeriodoId()).orElseThrow();
 
         BigDecimal participacion = CIEN;
-        var relOpt = relacionRepository.findByContribuyenteIdAndPredioId(cont.getId(), predio.getId());
+        var relOpt = buscarRelacionVigente(cont.getId(), predio.getId());
         if (relOpt.isPresent() && relOpt.get().getPorcentajeParticipacion() != null) {
             participacion = relOpt.get().getPorcentajeParticipacion();
         }
@@ -453,7 +453,10 @@ public class ArbitrioMunicipalServiceImpl implements ArbitrioMunicipalService {
                 .contribuyente(cont)
                 .predio(predio)
                 .periodo(periodo)
-                .configuracion(configs.isEmpty() ? null : configs.get(0))
+                // Solo se referencia una configuración ya guardada: cuando no hay configuraciones registradas para el
+                // ejercicio, resolverConfiguracionesAplicables() las sintetiza en memoria (sin id) y Hibernate
+                // rechazaba el guardado con TransientPropertyValueException. La columna admite nulo.
+                .configuracion(configs.isEmpty() || configs.get(0).getId() == null ? null : configs.get(0))
                 .tipoCalculo(request.getTipoCalculo() != null ? request.getTipoCalculo() : TipoCalculoArbitrio.DETERMINACION_INDIVIDUAL)
                 .estado(EstadoCalculoArbitrio.PRELIMINAR)
                 .fechaCalculo(OffsetDateTime.now())
@@ -489,9 +492,20 @@ public class ArbitrioMunicipalServiceImpl implements ArbitrioMunicipalService {
 
         for (DetalleCalculoArbitrio det : detallesEntities) {
             det.setCalculo(guardado);
+            // Igual que en el cálculo: no referenciar configuraciones sintetizadas que no existen en la base
+            if (det.getConfiguracion() != null && det.getConfiguracion().getId() == null) {
+                det.setConfiguracion(null);
+            }
             detalleRepository.save(det);
         }
-        guardado.setDetalles(detallesEntities);
+        // La colección "detalles" usa orphanRemoval: no se puede reemplazar por otra lista (HibernateException
+        // "A collection with orphan deletion was no longer referenced"), hay que rellenar la existente.
+        if (guardado.getDetalles() != null) {
+            guardado.getDetalles().clear();
+            guardado.getDetalles().addAll(detallesEntities);
+        } else {
+            guardado.setDetalles(detallesEntities);
+        }
 
         registrarHistorial("CALCULO", guardado.getId(), guardado.getCodigoCalculo(),
                 AccionHistorialArbitrio.CREACION, null, EstadoCalculoArbitrio.PRELIMINAR.name(),
@@ -1027,5 +1041,20 @@ public class ArbitrioMunicipalServiceImpl implements ArbitrioMunicipalService {
     public List<ConfiguracionArbitrioSummaryDto> listarConfiguracionesActivas() {
         return configuracionRepository.findActivasPorAnio(LocalDate.now().getYear())
                 .stream().map(this::mapConfiguracionToSummary).toList();
+    }
+
+    /**
+     * Relación contribuyente-predio a usar en el cálculo: la ACTIVA más reciente y, si no hay,
+     * la más reciente de cualquier estado. Evita NonUniqueResultException cuando un predio se vuelve
+     * a vincular tras una baja (quedan una fila HISTORICA y otra ACTIVA).
+     */
+    private Optional<RelacionContribuyentePredio> buscarRelacionVigente(UUID contribuyenteId, UUID predioId) {
+        Optional<RelacionContribuyentePredio> activa = relacionRepository
+                .findFirstByContribuyenteIdAndPredioIdAndEstadoOrderByFechaInicioDesc(
+                        contribuyenteId, predioId, EstadoRelacionContribuyentePredio.ACTIVO);
+        if (activa.isPresent()) {
+            return activa;
+        }
+        return relacionRepository.findFirstByContribuyenteIdAndPredioIdOrderByFechaInicioDesc(contribuyenteId, predioId);
     }
 }

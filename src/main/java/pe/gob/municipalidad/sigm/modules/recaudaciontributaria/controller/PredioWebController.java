@@ -130,7 +130,7 @@ public class PredioWebController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Predio registrado exitosamente con código interno " + predio.getCodigoPredio());
             return "redirect:/dashboard/tributaria/predios/" + predio.getId();
-        } catch (BusinessException e) {
+        } catch (BusinessException | pe.gob.municipalidad.sigm.common.exception.DuplicateResourceException e) {
             log.warn("Error de validación al registrar predio: {}", e.getMessage());
             model.addAttribute("errorMessage", e.getMessage());
             model.addAttribute("clasificaciones", ClasificacionPredio.values());
@@ -231,13 +231,7 @@ public class PredioWebController {
         log.info("Procesando actualización de predio: {}", id);
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("predioId", id);
-            model.addAttribute("clasificaciones", ClasificacionPredio.values());
-            model.addAttribute("usos", UsoDeclaradoPredio.values());
-            model.addAttribute("fuentesCoordenadas", FuenteCoordenadas.values());
-            model.addAttribute("tiposPredio", TipoPredio.values());
-            model.addAttribute("moduloActivo", "tributaria");
-            model.addAttribute("submenuActivo", "predios");
+            cargarContextoEdicionPredio(model, id);
             return "admin/tributaria/predios/edit";
         }
 
@@ -245,18 +239,27 @@ public class PredioWebController {
             predioService.actualizarPredio(id, request);
             redirectAttributes.addFlashAttribute("successMessage", "Predio actualizado exitosamente");
             return "redirect:/dashboard/tributaria/predios/" + id;
-        } catch (BusinessException e) {
+        } catch (BusinessException | pe.gob.municipalidad.sigm.common.exception.DuplicateResourceException e) {
             log.warn("Error al actualizar predio {}: {}", id, e.getMessage());
             model.addAttribute("errorMessage", e.getMessage());
-            model.addAttribute("predioId", id);
-            model.addAttribute("clasificaciones", ClasificacionPredio.values());
-            model.addAttribute("usos", UsoDeclaradoPredio.values());
-            model.addAttribute("fuentesCoordenadas", FuenteCoordenadas.values());
-            model.addAttribute("tiposPredio", TipoPredio.values());
-            model.addAttribute("moduloActivo", "tributaria");
-            model.addAttribute("submenuActivo", "predios");
+            cargarContextoEdicionPredio(model, id);
             return "admin/tributaria/predios/edit";
         }
+    }
+
+    /**
+     * Datos que la vista de edición necesita para volver a mostrarse tras un error
+     * (antes faltaba el código del predio en la cabecera y el título de la página).
+     */
+    private void cargarContextoEdicionPredio(Model model, UUID id) {
+        model.addAttribute("predioId", id);
+        model.addAttribute("codigoPredio", predioService.obtenerPredioPorId(id).getCodigoPredio());
+        model.addAttribute("clasificaciones", ClasificacionPredio.values());
+        model.addAttribute("usos", UsoDeclaradoPredio.values());
+        model.addAttribute("fuentesCoordenadas", FuenteCoordenadas.values());
+        model.addAttribute("tiposPredio", TipoPredio.values());
+        model.addAttribute("moduloActivo", "tributaria");
+        model.addAttribute("submenuActivo", "predios");
     }
 
     @PostMapping("/{id}/estado")

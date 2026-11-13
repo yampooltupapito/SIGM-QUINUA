@@ -20,6 +20,16 @@
         </button>
     </div>
 
+    <div th:if="${errorNegocio}" role="alert" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs md:text-sm flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="alert-octagon" class="w-5 h-5 flex-shrink-0"></i>
+            <span th:text="${errorNegocio}">No se pudo completar la acción</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
     <!-- Encabezado Institucional -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-700/60 pb-5">
         <div>
@@ -406,6 +416,7 @@
 </div>
 
 <!-- Script para pestañas y modales -->
+<th:block layout:fragment="scripts">
 <script>
     function cambiarPestana(id) {
         const pestanas = ['pestana-resumen', 'pestana-servicios', 'pestana-normas', 'pestana-historial'];
@@ -435,6 +446,45 @@
 
     function abrirModalAnular() { document.getElementById('modalAnular').classList.remove('hidden'); }
     function cerrarModalAnular() { document.getElementById('modalAnular').classList.add('hidden'); }
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de enviar cualquier formulario POST de este módulo se obtiene un token
+    // recién emitido (de una página liviana del mismo módulo) y se envía enseguida.
+    (function () {
+        const URL_TOKEN = '/dashboard/tributaria/arbitrios';
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                if ((form.getAttribute('method') || '').toLowerCase() !== 'post') return;
+                if (!/\/arbitrios\//.test(form.getAttribute('action') || '')) return;
+
+                form.addEventListener('submit', async function (e) {
+                    if (e.defaultPrevented) return;
+                    if (form.dataset.csrfFresco === 'true') return;
+                    e.preventDefault();
+                    try {
+                        const resp = await fetch(URL_TOKEN, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                        const html = await resp.text();
+                        const m = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                        if (m) {
+                            let inputs = form.querySelectorAll('input[name="_csrf"]');
+                            if (!inputs.length) {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = '_csrf';
+                                form.appendChild(i);
+                                inputs = [i];
+                            }
+                            inputs.forEach(function (i) { i.value = m[1]; });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                    }
+                    form.dataset.csrfFresco = 'true';
+                    form.submit();
+                });
+            });
+        });
+    })();
 </script>
+</th:block>
 </body>
 </html>

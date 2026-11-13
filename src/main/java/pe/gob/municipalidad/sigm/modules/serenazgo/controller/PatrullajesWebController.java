@@ -118,7 +118,7 @@ public class PatrullajesWebController {
         model.addAttribute("rutasDisponibles", patrullajeService.listarRutasPorSector(det.getSectorId()));
         model.addAttribute("tiposNovedad", TipoNovedadPatrullaje.values());
         model.addAttribute("metodosRegistro", MetodoRegistroVisita.values());
-        model.addAttribute("incidenciasActivas", incidenciaRepository.findByEstadoIn(
+        model.addAttribute("incidenciasActivas", incidenciaRepository.findTop200ByEstadoInOrderByFechaReporteDesc(
                 java.util.List.of(EstadoIncidenciaSeguridad.REGISTRADA, EstadoIncidenciaSeguridad.ASIGNADA, EstadoIncidenciaSeguridad.EN_ATENCION)));
 
         model.addAttribute("moduloActivo", "serenazgo");
@@ -324,9 +324,9 @@ public class PatrullajesWebController {
     private void cargarDatosFormulario(Model model) {
         model.addAttribute("sectores", sectorRepository.findByEstadoOrderByCodigoAsc(EstadoSectorPatrullaje.ACTIVO));
         model.addAttribute("rutas", patrullajeService.listarRutasActivas());
-        model.addAttribute("personalActivo", personalRepository.findByEstado(EstadoPersonalSerenazgo.ACTIVO));
-        model.addAttribute("unidadesDisponibles", unidadMovilRepository.findByEstadoOperativo(EstadoUnidadMovil.DISPONIBLE));
-        model.addAttribute("equipamientoDisponible", equipamientoRepository.findByEstado(EstadoEquipamientoSerenazgo.DISPONIBLE));
+        model.addAttribute("personalActivo", personalRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoPersonalSerenazgo.ACTIVO));
+        model.addAttribute("unidadesDisponibles", unidadMovilRepository.findTop200ByEstadoOperativoInOrderByCodigoInternoAsc(java.util.List.of(EstadoUnidadMovil.DISPONIBLE)));
+        model.addAttribute("equipamientoDisponible", equipamientoRepository.findTop200ByEstadoOrderByCodigoInternoAsc(EstadoEquipamientoSerenazgo.DISPONIBLE));
         model.addAttribute("tiposPatrullaje", TipoPatrullajeSerenazgo.values());
     }
 }

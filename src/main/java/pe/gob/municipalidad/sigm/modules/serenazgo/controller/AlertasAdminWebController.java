@@ -42,7 +42,7 @@ public class AlertasAdminWebController {
     private final IncidenciaSeguridadCiudadanaRepository incidenciaRepository;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VER', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_SERENO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String bandejaAlertas(@ModelAttribute("filtro") AlertaFilter filtro,
                                  @RequestParam(value = "page", defaultValue = "0") int page,
                                  @RequestParam(value = "size", defaultValue = "15") int size,
@@ -64,13 +64,16 @@ public class AlertasAdminWebController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VER', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_SERENO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String detalleAlerta(@PathVariable("id") UUID id,
                                 Authentication auth,
                                 Model model) {
         boolean puedeVerSensibles = auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_SUPERADMIN") ||
                 a.getAuthority().equals("ROLE_ADMIN") ||
+                a.getAuthority().equals("ADMINISTRACION_MANAGE") ||
                 a.getAuthority().equals("ROLE_SUPERVISOR_SERENAZGO") ||
+                a.getAuthority().equals("SERENAZGO_ALERTAS_VER") ||
                 a.getAuthority().equals("SERENAZGO_INCIDENCIAS_VER"));
 
         AlertaDetailResponse alerta = alertaService.obtenerDetalleAdmin(id, puedeVerSensibles);
@@ -87,7 +90,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/clasificar")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CLASIFICAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CLASIFICAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String clasificar(@PathVariable("id") UUID id,
                              @Valid @ModelAttribute("reqClasificar") AlertaClasificarRequest req,
                              BindingResult result,
@@ -110,7 +113,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/prioridad")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_PRIORIZAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_PRIORIZAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String cambiarPrioridad(@PathVariable("id") UUID id,
                                    @Valid @ModelAttribute("reqPrioridad") AlertaPrioridadRequest req,
                                    BindingResult result,
@@ -133,7 +136,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/estado")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CAMBIAR_ESTADO', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CAMBIAR_ESTADO', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String cambiarEstado(@PathVariable("id") UUID id,
                                 @Valid @ModelAttribute("reqEstado") AlertaCambioEstadoRequest req,
                                 BindingResult result,
@@ -156,7 +159,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/solicitar-informacion")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_SOLICITAR_INFORMACION', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_SOLICITAR_INFORMACION', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String solicitarInformacion(@PathVariable("id") UUID id,
                                        @Valid @ModelAttribute("reqInfo") AlertaSolicitarInfoRequest req,
                                        BindingResult result,
@@ -179,7 +182,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/vincular-incidencia")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VINCULAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_VINCULAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String vincularIncidencia(@PathVariable("id") UUID id,
                                      @Valid @ModelAttribute("reqVincular") AlertaVincularIncidenciaRequest req,
                                      BindingResult result,
@@ -202,7 +205,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/cerrar")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String cerrar(@PathVariable("id") UUID id,
                          @Valid @ModelAttribute("reqCierre") AlertaCierreRequest req,
                          BindingResult result,
@@ -225,7 +228,7 @@ public class AlertasAdminWebController {
     }
 
     @PostMapping("/{id}/descartar")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_CERRAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public String descartar(@PathVariable("id") UUID id,
                             @Valid @ModelAttribute("reqDescarte") AlertaDescarteRequest req,
                             BindingResult result,
@@ -248,7 +251,7 @@ public class AlertasAdminWebController {
     }
 
     @GetMapping("/{id}/pdf")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_EXPORTAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public ResponseEntity<byte[]> exportarPdf(@PathVariable("id") UUID id) {
         byte[] pdfBytes = alertaService.exportarFichaPdf(id);
         return ResponseEntity.ok()
@@ -258,7 +261,7 @@ public class AlertasAdminWebController {
     }
 
     @GetMapping("/exportar/excel")
-    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_EXPORTAR', 'ROLE_ADMIN', 'ROLE_SUPERVISOR_SERENAZGO')")
+    @PreAuthorize("hasAnyAuthority('SERENAZGO_ALERTAS_EXPORTAR', 'SERENAZGO_ALERTAS_VER', 'ROLE_SUPERADMIN', 'ROLE_ADMIN', 'ADMINISTRACION_MANAGE', 'ROLE_SUPERVISOR_SERENAZGO', 'ROLE_OPERADOR_SERENAZGO', 'ROLE_OPERADOR_CENTRAL', 'ROLE_OPERADOR_CC', 'ROLE_SERENO')")
     public ResponseEntity<byte[]> exportarExcel(@RequestParam(value = "desde", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
                                                 @RequestParam(value = "hasta", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
         byte[] excelBytes = alertaService.exportarAlertasExcel(desde, hasta);

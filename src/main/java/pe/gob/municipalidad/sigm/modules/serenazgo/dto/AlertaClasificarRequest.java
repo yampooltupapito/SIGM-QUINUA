@@ -17,5 +17,16 @@ public class AlertaClasificarRequest {
     private UUID nuevoTipoReporteId;
 
     @NotBlank(message = "El motivo de la clasificación es obligatorio")
-    private String motivo;
+    @Builder.Default
+    private String motivo = "Clasificación técnica administrativa";
+
+    public void setTipoReporteId(UUID tipoReporteId) {
+        if (tipoReporteId != null) {
+            this.nuevoTipoReporteId = tipoReporteId;
+        }
+    }
+
+    public void setMotivo(String motivo) {
+        this.motivo = (motivo == null || motivo.isBlank()) ? "Clasificación técnica administrativa" : motivo;
+    }
 }

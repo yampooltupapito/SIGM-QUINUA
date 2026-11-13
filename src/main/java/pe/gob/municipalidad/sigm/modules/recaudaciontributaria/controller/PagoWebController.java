@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import java.security.Principal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -82,10 +83,10 @@ public class PagoWebController {
     @GetMapping("/nuevo")
     @PreAuthorize("hasAuthority('TRIBUTARIA_PAGOS_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')")
     public String nuevoPagoForm(@RequestParam(value = "contribuyenteId", required = false) UUID contribuyenteId,
-                                @AuthenticationPrincipal UserDetails userDetails,
+                                Principal principal,
                                 Model model) {
 
-        Usuario cajero = userDetails != null ? usuarioRepository.findByUsername(userDetails.getUsername()).orElse(null) : null;
+        Usuario cajero = principal != null ? usuarioRepository.findByUsername(principal.getName()).orElse(null) : null;
         Optional<SesionCajaResponse> sesionActiva = cajero != null ? cajaService.obtenerSesionActivaPorCajero(cajero.getId()) : Optional.empty();
 
         model.addAttribute("sesionActiva", sesionActiva.orElse(null));
@@ -102,12 +103,12 @@ public class PagoWebController {
     @PreAuthorize("hasAuthority('TRIBUTARIA_PAGOS_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')")
     public String registrarPago(@Valid @RequestBody RegistrarPagoRequest request,
                                 BindingResult result,
-                                @AuthenticationPrincipal UserDetails userDetails) {
+                                Principal principal) {
         if (result.hasErrors()) {
             throw new BusinessException(result.getAllErrors().get(0).getDefaultMessage());
         }
 
-        String username = userDetails != null ? userDetails.getUsername() : "CAJERO";
+        String username = principal != null ? principal.getName() : "CAJERO";
         PagoResponse response = pagoService.registrarPago(request, username);
         return "redirect:/dashboard/tributaria/pagos/" + response.getId();
     }
@@ -116,7 +117,7 @@ public class PagoWebController {
     @PreAuthorize("hasAuthority('TRIBUTARIA_PAGOS_REGISTRAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'CAJERO')")
     public String registrarPagoForm(@ModelAttribute @Valid RegistrarPagoRequest request,
                                     BindingResult result,
-                                    @AuthenticationPrincipal UserDetails userDetails,
+                                    Principal principal,
                                     RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", result.getAllErrors().get(0).getDefaultMessage());
@@ -124,7 +125,7 @@ public class PagoWebController {
         }
 
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "CAJERO";
+            String username = principal != null ? principal.getName() : "CAJERO";
             PagoResponse response = pagoService.registrarPago(request, username);
             redirectAttributes.addFlashAttribute("success", "Pago registrado y procesado exitosamente: " + response.getCodigoPago());
             return "redirect:/dashboard/tributaria/pagos/" + response.getId();
@@ -148,10 +149,10 @@ public class PagoWebController {
     @PreAuthorize("hasAuthority('TRIBUTARIA_PAGOS_CONFIRMAR') or hasAnyRole('ADMIN', 'SUPERADMIN', 'JEFE_OFICINA')")
     public String confirmarPago(@PathVariable("id") UUID id,
                                 @RequestParam(value = "observaciones", required = false) String observaciones,
-                                @AuthenticationPrincipal UserDetails userDetails,
+                                Principal principal,
                                 RedirectAttributes redirectAttributes) {
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "SUPERVISOR";
+            String username = principal != null ? principal.getName() : "SUPERVISOR";
             PagoResponse res = pagoService.confirmarPago(id, new ConfirmarPagoRequest(observaciones), username);
             redirectAttributes.addFlashAttribute("success", "Pago " + res.getCodigoPago() + " confirmado correctamente.");
         } catch (BusinessException e) {
@@ -165,10 +166,10 @@ public class PagoWebController {
     public String revertirPago(@PathVariable("id") UUID id,
                                @RequestParam("motivoReversion") String motivoReversion,
                                @RequestParam(value = "observaciones", required = false) String observaciones,
-                               @AuthenticationPrincipal UserDetails userDetails,
+                               Principal principal,
                                RedirectAttributes redirectAttributes) {
         try {
-            String username = userDetails != null ? userDetails.getUsername() : "SUPERVISOR";
+            String username = principal != null ? principal.getName() : "SUPERVISOR";
             PagoResponse res = pagoService.revertirPago(id, new RevertirPagoRequest(motivoReversion, observaciones), username);
             redirectAttributes.addFlashAttribute("success", "Pago " + res.getCodigoPago() + " revertido con contraasiento contable.");
         } catch (BusinessException e) {

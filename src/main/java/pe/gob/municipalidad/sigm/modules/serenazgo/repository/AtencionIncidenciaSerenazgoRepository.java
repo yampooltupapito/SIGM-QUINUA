@@ -1,5 +1,6 @@
 package pe.gob.municipalidad.sigm.modules.serenazgo.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,10 @@ public interface AtencionIncidenciaSerenazgoRepository extends
         JpaSpecificationExecutor<AtencionIncidenciaSerenazgo> {
 
     Optional<AtencionIncidenciaSerenazgo> findByCodigo(String codigo);
+
+    /** Listado acotado (máx. 200, más recientes) para selectores de formularios. */
+    @EntityGraph(attributePaths = {"incidencia"})
+    List<AtencionIncidenciaSerenazgo> findTop200ByOrderByFechaHoraAsignacionDesc();
 
     List<AtencionIncidenciaSerenazgo> findByIncidenciaIdOrderByFechaHoraAsignacionDesc(UUID incidenciaId);
 
@@ -44,4 +49,8 @@ public interface AtencionIncidenciaSerenazgoRepository extends
     boolean isPersonalEnAtencionActiva(
             @Param("personalId") UUID personalId,
             @Param("estadosFinales") Collection<EstadoAtencionIncidencia> estadosFinales);
+
+    /** Bandeja de supervisión: últimas 20 atenciones en los estados indicados. */
+    @EntityGraph(attributePaths = {"incidencia", "unidadMovil"})
+    List<AtencionIncidenciaSerenazgo> findTop20ByEstadoInOrderByFechaHoraAsignacionDesc(Collection<EstadoAtencionIncidencia> estados);
 }

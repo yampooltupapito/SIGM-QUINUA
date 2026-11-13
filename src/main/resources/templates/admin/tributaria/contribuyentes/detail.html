@@ -689,6 +689,35 @@
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     }
+
+    // El token CSRF de la página caduca porque la sesión del servidor se renueva en cada petición autenticada
+    // (scripts, estilos, etc.). Antes de enviar cualquier formulario POST de la ficha se obtiene un token recién
+    // emitido (de la propia ficha) y se envía enseguida.
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function (form) {
+            const m = (form.getAttribute('action') || '').match(/^(.*\/contribuyentes\/[0-9a-fA-F-]{36})/);
+            if (!m) return;
+            const urlFicha = m[1];
+
+            form.addEventListener('submit', async function (e) {
+                if (e.defaultPrevented) return;                  // p. ej. el usuario canceló el confirm() de una baja
+                if (form.dataset.csrfFresco === 'true') return;
+                e.preventDefault();
+                try {
+                    const resp = await fetch(urlFicha, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                    const html = await resp.text();
+                    const t = html.match(/name="_csrf"\s+value="([^"]+)"/);
+                    if (t) {
+                        form.querySelectorAll('input[name="_csrf"]').forEach(function (i) { i.value = t[1]; });
+                    }
+                } catch (err) {
+                    console.warn('No se pudo renovar el token CSRF; se envía con el actual.', err);
+                }
+                form.dataset.csrfFresco = 'true';
+                form.submit();
+            });
+        });
+    });
 </script>
 </body>
 </html>

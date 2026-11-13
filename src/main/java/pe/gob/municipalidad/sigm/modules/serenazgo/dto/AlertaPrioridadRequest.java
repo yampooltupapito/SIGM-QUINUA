@@ -17,4 +17,10 @@ public class AlertaPrioridadRequest {
 
     @NotBlank(message = "La justificación de cambio de prioridad es obligatoria")
     private String justificacion;
+
+    public void setPrioridad(PrioridadIncidenciaSeguridad prioridad) {
+        if (prioridad != null) {
+            this.nuevaPrioridad = prioridad;
+        }
+    }
 }

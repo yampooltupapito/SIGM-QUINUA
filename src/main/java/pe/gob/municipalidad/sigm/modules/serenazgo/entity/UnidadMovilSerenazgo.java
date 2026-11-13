@@ -95,4 +95,16 @@ public class UnidadMovilSerenazgo {
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
+
+    /** Alias de solo lectura para las vistas: código interno de la unidad. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getCodigo() {
+        return codigoInterno;
+    }
+
+    /** Alias de solo lectura para las vistas: descripción del tipo de unidad. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTipo() {
+        return tipoUnidad != null ? tipoUnidad.getDescripcion() : null;
+    }
 }

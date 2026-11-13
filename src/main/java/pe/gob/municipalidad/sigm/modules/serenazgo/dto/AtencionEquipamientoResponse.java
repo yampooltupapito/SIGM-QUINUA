@@ -22,4 +22,29 @@ public class AtencionEquipamientoResponse {
     private OffsetDateTime fechaDevolucion;
     private Boolean devuelto;
     private String observaciones;
+
+    public String getEquipamientoCodigo() {
+        return codigoInterno;
+    }
+
+    public String getEquipamientoNombre() {
+        return descripcion;
+    }
+
+    public String getEquipamientoTipo() {
+        return tipoEquipoDesc;
+    }
+
+    /** El detalle de atención no registra custodio individual del equipo. */
+    public String getCustodioNombre() {
+        return null;
+    }
+
+    public String getFechaAsignacionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaAsignacion);
+    }
+
+    public String getFechaDevolucionFormateada() {
+        return FormatoFechaVista.fechaHora(fechaDevolucion);
+    }
 }
